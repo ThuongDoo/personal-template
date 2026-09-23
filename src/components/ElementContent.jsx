@@ -1,5 +1,13 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef } from 'react'
 import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
+import { shapeSvg } from '../lib/shapes.js'
+
+function Shape({ el, style, ghost }) {
+  // useId keeps SVG ids unique when the same element renders in both the editor and preview.
+  const id = 'shape' + useId().replace(/[^a-zA-Z0-9_-]/g, '')
+  const html = useMemo(() => shapeSvg(el, id, { ghost }), [el, id, ghost])
+  return <div style={style} dangerouslySetInnerHTML={{ __html: html }} />
+}
 
 function TextBlock({ text, style, editing, onCommit }) {
   const ref = useRef(null)
@@ -93,6 +101,9 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
           />
         </div>
       )
+
+    case 'shape':
+      return <Shape el={el} style={css} ghost={editing} />
 
     case 'divider':
       return (

@@ -14,6 +14,12 @@ const ICONS = {
       <path d="m21 15-5-5L5 21" />
     </>
   ),
+  shape: (
+    <>
+      <path d="M8 3l5 5-5 5-5-5z" />
+      <circle cx="16" cy="16" r="5" />
+    </>
+  ),
   box: <rect x="4" y="4" width="16" height="16" rx="3" />,
   divider: <path d="M3 12h18M8 7h8M8 17h8" />,
   video: (
@@ -63,6 +69,7 @@ const ICONS = {
     </>
   ),
   magnet: <path d="M5 4h4v7a3 3 0 0 0 6 0V4h4v7a7 7 0 0 1-14 0zM5 8h4M15 8h4" />,
+  move: <path d="M12 3v18M3 12h18M9 6l3-3 3 3M9 18l3 3 3-3M6 9l-3 3 3 3M18 9l3 3-3 3" />,
   close: <path d="M18 6 6 18M6 6l12 12" />,
   front: <path d="M12 19V5M5 12l7-7 7 7" />,
   back: <path d="M12 5v14M19 12l-7 7-7-7" />,

@@ -1,8 +1,9 @@
 import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
-import { ELEMENT_TYPES, FONTS, TEXT_TYPES, youtubeEmbed } from '../lib/elements.js'
+import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
 import { loadImageSize, readImageFile } from '../lib/image.js'
+import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
   [300, 'Mảnh'],
@@ -42,9 +43,11 @@ const FITS = [
 
 function ImageSection({ el, setProps, setGeom }) {
   const fileRef = useRef(null)
+  const latestSrc = useRef(el.props.src)
   const [busy, setBusy] = useState(false)
   const { src, alt, fit } = el.props
   const uploaded = src.startsWith('data:')
+  const isShape = el.type === 'shape'
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
@@ -53,12 +56,27 @@ function ImageSection({ el, setProps, setGeom }) {
     setBusy(true)
     try {
       const img = await readImageFile(file)
-      setProps({ src: img.src, alt: alt || file.name.replace(/\.[^.]+$/, '') })
+      latestSrc.current = img.src
+      const props = isShape ? shapeImageProps(img, file.name) : { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') }
+      setProps({ ...props, alt: alt || props.alt })
     } catch {
       alert('Không đọc được tệp ảnh này.')
     } finally {
       setBusy(false)
     }
+  }
+
+  const onUrl = (url) => {
+    latestSrc.current = url
+    if (!isShape) return setProps({ src: url }, 'src')
+    // Shapes position the image from its natural size, measured once the URL loads.
+    setProps({ src: url, imgW: 0, imgH: 0, imgX: 50, imgY: 50, imgZoom: 1 }, 'src')
+    if (!url) return
+    loadImageSize(url)
+      .then(({ width, height }) => {
+        if (latestSrc.current === url) setProps({ imgW: width, imgH: height }, 'src')
+      })
+      .catch(() => {})
   }
 
   const matchRatio = async () => {
@@ -76,11 +94,17 @@ function ImageSection({ el, setProps, setGeom }) {
       <div className="row">
         <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
           <Icon name="upload" size={14} />
-          {busy ? 'Đang xử lý…' : 'Tải ảnh lên'}
+          {busy ? 'Đang xử lý…' : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
         </button>
-        <button type="button" className="btn" onClick={matchRatio} disabled={!src} title="Đặt chiều cao theo tỉ lệ ảnh gốc">
-          Khớp tỉ lệ
-        </button>
+        {isShape ? (
+          <button type="button" className="btn" onClick={() => onUrl('')} disabled={!src} title="Bỏ ảnh, dùng màu nền">
+            Bỏ ảnh
+          </button>
+        ) : (
+          <button type="button" className="btn" onClick={matchRatio} disabled={!src} title="Đặt chiều cao theo tỉ lệ ảnh gốc">
+            Khớp tỉ lệ
+          </button>
+        )}
       </div>
       <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
       <Field label="Hoặc dán đường dẫn ảnh">
@@ -88,12 +112,14 @@ function ImageSection({ el, setProps, setGeom }) {
           className="input"
           value={uploaded ? '' : src}
           placeholder={uploaded ? '(đang dùng ảnh tải lên)' : 'https://...'}
-          onChange={(e) => setProps({ src: e.target.value.trim() }, 'src')}
+          onChange={(e) => onUrl(e.target.value.trim())}
         />
       </Field>
-      <Field label="Cách hiển thị">
-        <Segmented value={fit} options={FITS} onChange={(v) => setProps({ fit: v })} />
-      </Field>
+      {!isShape && (
+        <Field label="Cách hiển thị">
+          <Segmented value={fit} options={FITS} onChange={(v) => setProps({ fit: v })} />
+        </Field>
+      )}
       <Field label="Mô tả ảnh (alt)">
         <input className="input" value={alt} onChange={(e) => setProps({ alt: e.target.value }, 'alt')} />
       </Field>
@@ -101,9 +127,125 @@ function ImageSection({ el, setProps, setGeom }) {
   )
 }
 
-function ContentSection({ el, setProps, setGeom }) {
+function ImagePositionSection({ el, editing, setProps, onAction }) {
+  const p = el.props
+  const [measuring, setMeasuring] = useState(false)
+  if (!p.src) return null
+
+  // Images added before positioning existed have no stored size yet.
+  if (!p.imgW) {
+    const measure = async () => {
+      setMeasuring(true)
+      try {
+        const { width, height } = await loadImageSize(p.src)
+        setProps({ imgW: width, imgH: height })
+      } catch {
+        alert('Không tải được ảnh.')
+      } finally {
+        setMeasuring(false)
+      }
+    }
+    return (
+      <Section title="Vị trí ảnh trong hình">
+        <button type="button" className="btn block" onClick={measure} disabled={measuring}>
+          {measuring ? 'Đang tải ảnh…' : 'Bật căn chỉnh vị trí ảnh'}
+        </button>
+      </Section>
+    )
+  }
+
+  return (
+    <Section title="Vị trí ảnh trong hình">
+      <button type="button" className={`btn block${editing ? ' primary' : ''}`} onClick={() => onAction('crop')} disabled={el.locked}>
+        <Icon name="move" size={14} />
+        {editing ? 'Xong' : 'Kéo ảnh trực tiếp trên trang'}
+      </button>
+      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời ảnh, cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
+      <Field label="Ngang">
+        <RangeInput value={p.imgX} min={0} max={100} format={(v) => `${Math.round(v)}%`} onChange={(v) => setProps({ imgX: v }, 'imgX')} />
+      </Field>
+      <Field label="Dọc">
+        <RangeInput value={p.imgY} min={0} max={100} format={(v) => `${Math.round(v)}%`} onChange={(v) => setProps({ imgY: v }, 'imgY')} />
+      </Field>
+      <Field label="Thu phóng">
+        <RangeInput
+          value={p.imgZoom}
+          min={IMG_ZOOM_MIN}
+          max={IMG_ZOOM_MAX}
+          step={0.01}
+          format={(v) => `${Math.round(v * 100)}%`}
+          onChange={(v) => setProps(zoomImageAt(el.w, el.h, p, v), 'imgZoom')}
+        />
+      </Field>
+      <button type="button" className="btn block" onClick={() => setProps({ imgX: 50, imgY: 50, imgZoom: 1 })}>
+        Đặt lại vị trí ảnh
+      </button>
+    </Section>
+  )
+}
+
+function ShapeSection({ el, setProps }) {
+  const p = el.props
+  const torn = p.shape === 'torn'
+  return (
+    <Section title="Hình dạng">
+      <Field label="Dạng hình">
+        <Select value={p.shape} options={SHAPE_ORDER.map((s) => [s, SHAPES[s].label])} onChange={(v) => setProps({ shape: v })} />
+      </Field>
+      {torn && (
+        <>
+          <Field label="Vị trí mép rách">
+            <Select value={p.edge} options={TORN_EDGES} onChange={(v) => setProps({ edge: v })} />
+          </Field>
+          <div className="grid2">
+            <Field label="Độ sâu vết rách">
+              <NumberInput value={p.depth} min={0} max={80} suffix="px" onChange={(v) => setProps({ depth: v }, 'depth')} />
+            </Field>
+            <Field label="Cỡ răng cưa">
+              <NumberInput value={p.tooth} min={2} max={80} suffix="px" onChange={(v) => setProps({ tooth: v }, 'tooth')} />
+            </Field>
+          </div>
+        </>
+      )}
+      {(torn || p.shape === 'blob') && (
+        <button type="button" className="btn block" onClick={() => setProps({ seed: randomSeed() })}>
+          {torn ? 'Xé lại (tạo vết rách khác)' : 'Tạo hình cong khác'}
+        </button>
+      )}
+      <div className="grid2">
+        <Field label={torn ? 'Viền giấy' : 'Viền'}>
+          <NumberInput value={p.rim} min={0} max={40} suffix="px" onChange={(v) => setProps({ rim: v }, 'rim')} />
+        </Field>
+        {p.rim > 0 && (
+          <Field label="Màu viền">
+            <ColorInput value={p.rimColor} onChange={(v) => setProps({ rimColor: v }, 'rimColor')} />
+          </Field>
+        )}
+      </div>
+      <label className="check">
+        <input type="checkbox" checked={p.texture} onChange={(e) => setProps({ texture: e.target.checked })} />
+        Vân giấy
+      </label>
+      <label className="check">
+        <input type="checkbox" checked={p.shadow} onChange={(e) => setProps({ shadow: e.target.checked })} />
+        Đổ bóng
+      </label>
+    </Section>
+  )
+}
+
+function ContentSection({ el, editing, setProps, setGeom, onAction }) {
   const p = el.props
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
+  if (el.type === 'shape') {
+    return (
+      <>
+        <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
+        <ImagePositionSection el={el} editing={editing} setProps={setProps} onAction={onAction} />
+        <ShapeSection el={el} setProps={setProps} />
+      </>
+    )
+  }
 
   if (el.type === 'video') {
     const valid = !p.url || youtubeEmbed(p.url)
@@ -200,6 +342,19 @@ function TypographySection({ s, setStyle }) {
 }
 
 function AppearanceSection({ el, s, setStyle }) {
+  if (el.type === 'shape') {
+    return (
+      <Section title="Màu nền">
+        <Field label="Màu nền (khi không có ảnh)">
+          <ColorInput value={s.background} allowNone onChange={(v) => setStyle({ background: v }, 'background')} />
+        </Field>
+        <Field label="Độ mờ">
+          <OpacitySlider value={s.opacity} onChange={(v) => setStyle({ opacity: v }, 'opacity')} />
+        </Field>
+      </Section>
+    )
+  }
+
   if (el.type === 'divider') {
     return (
       <Section title="Đường kẻ">
@@ -252,6 +407,15 @@ function AppearanceSection({ el, s, setStyle }) {
         <OpacitySlider value={s.opacity} onChange={(v) => setStyle({ opacity: v }, 'opacity')} />
       </Field>
     </Section>
+  )
+}
+
+function RangeInput({ value, min, max, step = 1, format, onChange }) {
+  return (
+    <div className="slider">
+      <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
+      <span>{format(value)}</span>
+    </div>
   )
 }
 
@@ -320,7 +484,7 @@ function PageSettings({ page, onChange }) {
   )
 }
 
-export default function Inspector({ el, page, onChange, onPageChange, onAction }) {
+export default function Inspector({ el, editing, page, onChange, onPageChange, onAction }) {
   if (!el) return <PageSettings page={page} onChange={onPageChange} />
 
   const s = el.style
@@ -332,7 +496,7 @@ export default function Inspector({ el, page, onChange, onPageChange, onAction }
     <div className="inspector">
       <div className="insp-head">
         <div>
-          <strong>{ELEMENT_TYPES[el.type].label}</strong>
+          <strong>{elementLabel(el)}</strong>
           <small>{el.locked ? 'Đã khoá vị trí' : 'Kéo để di chuyển, kéo góc để đổi cỡ'}</small>
         </div>
       </div>
@@ -361,7 +525,7 @@ export default function Inspector({ el, page, onChange, onPageChange, onAction }
         </button>
       </div>
 
-      <ContentSection el={el} setProps={setProps} setGeom={setGeom} />
+      <ContentSection el={el} editing={editing} setProps={setProps} setGeom={setGeom} onAction={onAction} />
 
       <Section title="Vị trí & kích thước">
         <div className="grid2">

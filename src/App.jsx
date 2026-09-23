@@ -5,9 +5,10 @@ import Layers from './components/Layers.jsx'
 import Palette from './components/Palette.jsx'
 import Preview from './components/Preview.jsx'
 import Toolbar from './components/Toolbar.jsx'
-import { ELEMENT_TYPES, applyPatch, clamp, createElement, normalizeDoc, uid } from './lib/elements.js'
+import { applyPatch, clamp, createElement, createFromKey, normalizeDoc, uid } from './lib/elements.js'
 import { download, exportHtml } from './lib/exportHtml.js'
 import { readImageFile } from './lib/image.js'
+import { shapeImageProps } from './lib/shapes.js'
 import { TEMPLATES } from './lib/templates.js'
 import { useHistory } from './lib/useHistory.js'
 import './App.css'
@@ -87,16 +88,41 @@ export default function App() {
     y: Math.round(clamp(pos.y - h / 2, 0, Math.max(0, doc.page.height - h))),
   })
 
-  const addElement = (type, pos) => {
-    const t = ELEMENT_TYPES[type]
-    let at = placeAt(t.w, t.h, pos ?? viewCenter())
+  /** `key` is an element type or a shape preset like `shape:diamond`. */
+  const addElement = (key, pos) => {
+    const el = createFromKey(key)
+    let at = placeAt(el.w, el.h, pos ?? viewCenter())
     // Clicking the palette repeatedly shouldn't stack elements exactly on top of each other.
-    while (!pos && doc.elements.some((el) => el.x === at.x && el.y === at.y)) at = { x: at.x + 24, y: at.y + 24 }
-    insertElement(createElement(type, at))
+    while (!pos && doc.elements.some((e) => e.x === at.x && e.y === at.y)) at = { x: at.x + 24, y: at.y + 24 }
+    insertElement({ ...el, ...at })
   }
 
   const addImageFiles = async (files, pos) => {
     const images = files.filter((f) => f.type.startsWith('image/'))
+    // A single image dropped onto a shape fills that shape instead of becoming a new element.
+    const target =
+      images.length === 1 &&
+      doc.elements.findLast(
+        (el) =>
+          el.type === 'shape' &&
+          !el.hidden &&
+          !el.locked &&
+          pos.x >= el.x &&
+          pos.x <= el.x + el.w &&
+          pos.y >= el.y &&
+          pos.y <= el.y + el.h,
+      )
+    if (target) {
+      try {
+        const img = await readImageFile(images[0])
+        updateElement(target.id, { props: shapeImageProps(img, images[0].name) })
+        setSelectedId(target.id)
+        setTab('props')
+      } catch {
+        alert(`Không đọc được ảnh "${images[0].name}".`)
+      }
+      return
+    }
     for (const [i, file] of images.entries()) {
       try {
         const img = await readImageFile(file)
@@ -160,9 +186,15 @@ export default function App() {
     })
   }
 
+  const select = (id) => {
+    setSelectedId(id)
+    if (id !== editingId) setEditingId(null)
+  }
+
   const onAction = (action) => {
     if (!selected) return
-    if (action === 'delete') removeElement(selected.id)
+    if (action === 'crop') setEditingId(editingId === selected.id ? null : selected.id)
+    else if (action === 'delete') removeElement(selected.id)
     else if (action === 'duplicate') duplicateElement(selected)
     else if (action === 'lock') toggleFlag(selected.id, 'locked')
     else reorder(selected.id, action)
@@ -241,7 +273,8 @@ export default function App() {
       return
     }
     if (e.key === 'Escape') {
-      setSelectedId(null)
+      if (editingId) setEditingId(null)
+      else setSelectedId(null)
       return
     }
     if (!selected) return
@@ -257,6 +290,9 @@ export default function App() {
     } else if (e.key === 'Enter' && ['heading', 'text', 'button'].includes(selected.type) && !selected.locked) {
       e.preventDefault()
       setEditingId(selected.id)
+    } else if (e.key === 'Enter' && selected.type === 'shape' && selected.props.src && !selected.locked) {
+      e.preventDefault()
+      setEditingId(editingId === selected.id ? null : selected.id)
     } else if (e.key.startsWith('Arrow') && !selected.locked) {
       e.preventDefault()
       const step = e.shiftKey ? 10 : 1
@@ -309,7 +345,7 @@ export default function App() {
           canvasRef={canvasRef}
           set={set}
           checkpoint={checkpoint}
-          onSelect={setSelectedId}
+          onSelect={select}
           onEdit={setEditingId}
           onCommitText={commitText}
           onDropElement={addElement}
@@ -329,13 +365,14 @@ export default function App() {
             <Inspector
               key={selected?.id ?? 'page'}
               el={selected}
+              editing={!!selected && editingId === selected.id}
               page={doc.page}
               onChange={updateElement}
               onPageChange={updatePage}
               onAction={onAction}
             />
           ) : (
-            <Layers elements={doc.elements} selectedId={selectedId} onSelect={setSelectedId} onToggle={toggleFlag} />
+            <Layers elements={doc.elements} selectedId={selectedId} onSelect={select} onToggle={toggleFlag} />
           )}
         </aside>
       </div>

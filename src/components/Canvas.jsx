@@ -1,6 +1,8 @@
-import { useState } from 'react'
+import { useEffect, useEffectEvent, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
-import { DND_TYPE, GRID, TEXT_TYPES } from '../lib/elements.js'
+import Icon from './Icon.jsx'
+import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp } from '../lib/elements.js'
+import { imageRect, zoomImageAt } from '../lib/shapes.js'
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const MIN_SIZE = 16
@@ -9,6 +11,7 @@ const AUTOSCROLL_EDGE = 60
 const AUTOSCROLL_MAX = 10 // px per frame (~600px/s)
 const AUTOSCROLL_ACCEL = 0.12
 const toGrid = (v) => Math.round(v / GRID) * GRID
+const ZOOM_STEP = 1.2
 
 /** Closest target line to any of the given edges, within threshold. */
 function findSnap(edges, targets, threshold) {
@@ -54,6 +57,45 @@ export default function Canvas({
       transient: true,
     })
 
+  const setPropsLive = (id, props) =>
+    set((d) => ({ ...d, elements: d.elements.map((el) => (el.id === id ? applyPatch(el, { props }) : el)) }), {
+      transient: true,
+    })
+
+  const cropping = elements.find((el) => el.id === editingId && el.type === 'shape')
+
+  /** Zooms a shape's image, keeping the point (px, py) in element coordinates fixed. One undo step per burst. */
+  const zoomImage = (el, zoomTo, px, py) =>
+    set(
+      (d) => ({
+        ...d,
+        elements: d.elements.map((e) =>
+          e.id === el.id ? applyPatch(e, { props: zoomImageAt(e.w, e.h, e.props, zoomTo(e.props.imgZoom), px, py) }) : e,
+        ),
+      }),
+      { merge: `${el.id}:imgZoom` },
+    )
+
+  // Mouse wheel over the shape being cropped zooms its image around the pointer. Registered natively
+  // because React's wheel listener is passive and can't stop the page from scrolling.
+  const onWheel = useEffectEvent((e) => {
+    if (!cropping?.props.imgW) return
+    const r = canvasRef.current.getBoundingClientRect()
+    const px = (e.clientX - r.left) / zoom - cropping.x
+    const py = (e.clientY - r.top) / zoom - cropping.y
+    if (px < 0 || py < 0 || px > cropping.w || py > cropping.h) return
+    e.preventDefault()
+    const factor = Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015))
+    zoomImage(cropping, (z) => z * factor, px, py)
+  })
+
+  useEffect(() => {
+    const node = canvasRef.current
+    const handler = (e) => onWheel(e)
+    node.addEventListener('wheel', handler, { passive: false })
+    return () => node.removeEventListener('wheel', handler)
+  }, [canvasRef])
+
   // Tracks a pointer gesture in canvas units. History is checkpointed once the pointer actually moves,
   // so a plain click doesn't create an undo step.
   const track = (e, onMove, onEnd) => {
@@ -82,10 +124,11 @@ export default function Canvas({
   const startMove = (e, el) => {
     if (e.button !== 0) return
     e.stopPropagation()
-    if (editingId === el.id) return
+    if (editingId === el.id && el.type !== 'shape') return
     blurActive()
     onSelect(el.id)
     if (el.locked) return
+    if (el.type === 'shape' && editingId === el.id) return startPan(e, el)
     e.preventDefault()
 
     const others = elements.filter((o) => o.id !== el.id && !o.hidden)
@@ -114,6 +157,24 @@ export default function Canvas({
       },
       () => setGuides([]),
     )
+  }
+
+  // Drags the image inside a shape. imgX/imgY work like object-position: the image's offset is
+  // (box − image) · pct/100, so moving it by dx changes the percentage by dx·100/(box − image).
+  const startPan = (e, el) => {
+    e.preventDefault()
+    const r = imageRect(el.w, el.h, el.props)
+    if (!r) return
+    const spanX = el.w - r.w
+    const spanY = el.h - r.h
+    const { imgX, imgY } = el.props
+    const pct = (v) => Math.round(clamp(v, 0, 100) * 10) / 10
+    track(e, (dx, dy) => {
+      setPropsLive(el.id, {
+        imgX: spanX ? pct(imgX + (dx * 100) / spanX) : imgX,
+        imgY: spanY ? pct(imgY + (dy * 100) / spanY) : imgY,
+      })
+    })
   }
 
   const startResize = (e, el, handle) => {
@@ -249,11 +310,12 @@ export default function Canvas({
             el.hidden ? null : (
               <div
                 key={el.id}
-                className={`el${el.locked ? ' locked' : ''}${editingId === el.id ? ' editing' : ''}`}
+                className={`el${el.locked ? ' locked' : ''}${editingId === el.id ? (el.type === 'shape' ? ' cropping' : ' editing') : ''}`}
                 style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1 }}
                 onPointerDown={(e) => startMove(e, el)}
                 onDoubleClick={() => {
-                  if (TEXT_TYPES.includes(el.type) && !el.locked) onEdit(el.id)
+                  if (el.locked) return
+                  if (TEXT_TYPES.includes(el.type) || (el.type === 'shape' && el.props.src)) onEdit(el.id)
                 }}
               >
                 <ElementContent
@@ -292,10 +354,26 @@ export default function Canvas({
                 HANDLES.map((h) => (
                   <span key={h} className={`handle handle-${h}`} onPointerDown={(e) => startResize(e, selected, h)} />
                 ))}
-              <span className="size-badge">
-                {selected.locked ? 'Đã khoá · ' : ''}
-                {selected.w} × {selected.h}
-              </span>
+              {cropping?.id === selected.id ? (
+                <div className="crop-bar" onPointerDown={(e) => e.stopPropagation()}>
+                  <button type="button" title="Thu nhỏ ảnh" onClick={() => zoomImage(selected, (z) => z / ZOOM_STEP)}>
+                    <Icon name="minus" size={14} />
+                  </button>
+                  <span>{Math.round(selected.props.imgZoom * 100)}%</span>
+                  <button type="button" title="Phóng to ảnh" onClick={() => zoomImage(selected, (z) => z * ZOOM_STEP)}>
+                    <Icon name="plus" size={14} />
+                  </button>
+                  <span className="crop-hint">Kéo để dời · cuộn chuột để phóng</span>
+                  <button type="button" className="crop-done" onClick={() => onEdit(null)}>
+                    Xong
+                  </button>
+                </div>
+              ) : (
+                <span className="size-badge">
+                  {selected.locked ? 'Đã khoá · ' : ''}
+                  {selected.w} × {selected.h}
+                </span>
+              )}
             </div>
           )}
         </div>

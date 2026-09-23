@@ -1,4 +1,5 @@
 import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, youtubeEmbed } from './elements.js'
+import { shapeSvg } from './shapes.js'
 
 const UNITLESS = new Set(['opacity', 'fontWeight', 'lineHeight', 'zIndex'])
 
@@ -32,6 +33,8 @@ function renderInner(el) {
       return p.src
         ? `<div style="${css}"><img src="${attr(p.src)}" alt="${attr(p.alt)}" style="width:100%;height:100%;object-fit:${attr(p.fit)};display:block"></div>`
         : `<div style="${css}"></div>`
+    case 'shape':
+      return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}</div>`
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
     case 'video': {

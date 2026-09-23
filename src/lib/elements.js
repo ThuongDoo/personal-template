@@ -1,3 +1,5 @@
+import { SHAPES, randomSeed } from './shapes.js'
+
 export const GRID = 10
 export const DND_TYPE = 'application/x-builder-element'
 export const TEXT_TYPES = ['heading', 'text', 'button']
@@ -106,6 +108,32 @@ export const ELEMENT_TYPES = {
     props: {},
     style: { color: '#d1d5db' },
   },
+  shape: {
+    label: 'Hình khối',
+    w: 320,
+    h: 320,
+    props: {
+      shape: 'diamond',
+      src: '',
+      alt: '',
+      imgW: 0,
+      imgH: 0,
+      imgX: 50,
+      imgY: 50,
+      imgZoom: 1,
+      rim: 0,
+      rimColor: '#ffffff',
+      texture: false,
+      shadow: false,
+      seed: 0,
+      // Torn paper only.
+      edge: 'diagonal',
+      depth: 14,
+      tooth: 14,
+    },
+    initProps: () => ({ seed: randomSeed() }),
+    style: { background: '#2f5597' },
+  },
   video: {
     label: 'Video YouTube',
     w: 480,
@@ -116,6 +144,17 @@ export const ELEMENT_TYPES = {
 }
 
 export const PALETTE_ORDER = ['heading', 'text', 'button', 'image', 'box', 'divider', 'video']
+
+/**
+ * Palette/drag key → new element. Keys are element types, or `shape:<name>` for a shape preset
+ * (size and props from the SHAPES catalog).
+ */
+export function createFromKey(key, rest = {}) {
+  const [type, shape] = key.split(':')
+  if (type !== 'shape' || !SHAPES[shape]) return createElement(type, rest)
+  const s = SHAPES[shape]
+  return createElement('shape', { w: s.w, h: s.h, ...rest, props: { ...s.props, shape, ...rest.props } })
+}
 
 export function createElement(type, { props, style, ...rest } = {}) {
   const t = ELEMENT_TYPES[type]
@@ -129,7 +168,7 @@ export function createElement(type, { props, style, ...rest } = {}) {
     hidden: false,
     locked: false,
     ...rest,
-    props: { ...t.props, ...props },
+    props: { ...t.props, ...t.initProps?.(), ...props },
     style: { ...BASE_STYLE, ...t.style, ...style },
   }
 }
@@ -150,9 +189,16 @@ export function normalizeDoc(raw) {
   if (!raw || typeof raw !== 'object' || !Array.isArray(raw.elements)) throw new Error('Invalid document')
   const page = { ...DEFAULT_PAGE, ...raw.page }
   const elements = raw.elements
+    // Torn paper used to be its own element type.
+    .map((el) => (el?.type === 'torn' ? { ...el, type: 'shape', props: { ...el.props, shape: 'torn' } } : el))
     .filter((el) => el && ELEMENT_TYPES[el.type])
     .map((el) => createElement(el.type, { ...el, id: el.id || uid() }))
   return { page, elements }
+}
+
+/** Display name of an element's kind (shapes show their preset, e.g. "Hình thoi"). */
+export function elementLabel(el) {
+  return (el.type === 'shape' && SHAPES[el.props.shape]?.label) || ELEMENT_TYPES[el.type].label
 }
 
 export function fontStack(value) {
@@ -200,6 +246,10 @@ export function contentStyle(el) {
   }
   if (el.type === 'divider') {
     Object.assign(css, { display: 'flex', alignItems: 'center' })
+  }
+  if (el.type === 'shape') {
+    // The SVG draws its own fill, rim and shadow, and the shadow must spill past the box.
+    Object.assign(css, { background: 'none', border: 'none', boxShadow: 'none', borderRadius: 0, padding: 0, overflow: 'visible' })
   }
   return css
 }

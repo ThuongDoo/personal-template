@@ -1,12 +1,12 @@
 import Icon from './Icon.jsx'
-import { ELEMENT_TYPES, TEXT_TYPES } from '../lib/elements.js'
+import { TEXT_TYPES, elementLabel } from '../lib/elements.js'
 
 function layerName(el) {
   if (TEXT_TYPES.includes(el.type) && el.props.text) {
     const t = el.props.text.replace(/\s+/g, ' ').trim()
     return t.length > 28 ? t.slice(0, 28) + '…' : t
   }
-  return ELEMENT_TYPES[el.type].label
+  return elementLabel(el)
 }
 
 export default function Layers({ elements, selectedId, onSelect, onToggle }) {

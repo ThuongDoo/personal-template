@@ -890,3 +890,79 @@ textarea.input {
     display: none;
   }
 }
+
+.el.cropping {
+  cursor: grab;
+  outline: calc(2px / var(--z)) dashed var(--accent);
+}
+
+.el.cropping:active {
+  cursor: grabbing;
+}
+
+.tiles-3 {
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.tiles-3 .tile {
+  padding: 10px 4px 8px;
+  font-size: 11px;
+}
+
+.crop-bar {
+  position: absolute;
+  top: 100%;
+  left: 50%;
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding: 3px;
+  border-radius: 8px;
+  background: #1e1b4b;
+  color: #fff;
+  font: 500 12px/1 'Be Vietnam Pro', system-ui, sans-serif;
+  white-space: nowrap;
+  pointer-events: auto;
+  box-shadow: 0 6px 18px rgba(15, 23, 42, 0.25);
+  transform: translate(-50%, 10px) scale(calc(1 / var(--z)));
+  transform-origin: top center;
+}
+
+.crop-bar button {
+  display: grid;
+  place-items: center;
+  min-width: 26px;
+  height: 26px;
+  padding: 0 6px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+}
+
+.crop-bar button:hover {
+  background: rgba(255, 255, 255, 0.15);
+}
+
+.crop-bar > span {
+  min-width: 40px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.crop-bar .crop-hint {
+  padding: 0 6px;
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 11px;
+}
+
+.crop-bar .crop-done {
+  background: var(--accent);
+}
+
+.crop-bar .crop-done:hover {
+  background: var(--accent);
+  filter: brightness(1.1);
+}
