@@ -1,0 +1,113 @@
+const ICONS = {
+  heading: <path d="M6 4v16M18 4v16M6 12h12" />,
+  text: <path d="M4 6h16M4 12h16M4 18h10" />,
+  button: (
+    <>
+      <rect x="3" y="7" width="18" height="10" rx="3" />
+      <path d="M9 12h6" />
+    </>
+  ),
+  image: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <circle cx="8.5" cy="8.5" r="1.5" />
+      <path d="m21 15-5-5L5 21" />
+    </>
+  ),
+  box: <rect x="4" y="4" width="16" height="16" rx="3" />,
+  divider: <path d="M3 12h18M8 7h8M8 17h8" />,
+  video: (
+    <>
+      <rect x="2" y="5" width="15" height="14" rx="2" />
+      <path d="m17 10 5-3v10l-5-3z" />
+    </>
+  ),
+  undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
+  redo: <path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />,
+  eye: (
+    <>
+      <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />
+      <circle cx="12" cy="12" r="3" />
+    </>
+  ),
+  eyeOff: (
+    <path d="m3 3 18 18M10.6 5.1A10 10 0 0 1 12 5c6.5 0 10 7 10 7a17 17 0 0 1-3 3.9M6.6 6.6A17 17 0 0 0 2 12s3.5 7 10 7a9.7 9.7 0 0 0 5.4-1.6M9.9 9.9a3 3 0 0 0 4.2 4.2" />
+  ),
+  lock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 8 0v4" />
+    </>
+  ),
+  unlock: (
+    <>
+      <rect x="5" y="11" width="14" height="10" rx="2" />
+      <path d="M8 11V7a4 4 0 0 1 7.9-1" />
+    </>
+  ),
+  trash: <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />,
+  copy: (
+    <>
+      <rect x="9" y="9" width="12" height="12" rx="2" />
+      <path d="M5 15H4a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v1" />
+    </>
+  ),
+  play: <path d="M7 4.5v15l12-7.5z" />,
+  download: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
+  upload: <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />,
+  code: <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" />,
+  grid: (
+    <>
+      <rect x="3" y="3" width="18" height="18" rx="2" />
+      <path d="M3 9h18M3 15h18M9 3v18M15 3v18" />
+    </>
+  ),
+  magnet: <path d="M5 4h4v7a3 3 0 0 0 6 0V4h4v7a7 7 0 0 1-14 0zM5 8h4M15 8h4" />,
+  close: <path d="M18 6 6 18M6 6l12 12" />,
+  front: <path d="M12 19V5M5 12l7-7 7 7" />,
+  back: <path d="M12 5v14M19 12l-7 7-7-7" />,
+  top: <path d="M5 4h14M12 20V9M6 14l6-6 6 6" />,
+  bottom: <path d="M5 20h14M12 4v11M6 10l6 6 6-6" />,
+  alignLeft: <path d="M4 6h16M4 12h10M4 18h14" />,
+  alignCenter: <path d="M4 6h16M7 12h10M5 18h14" />,
+  alignRight: <path d="M4 6h16M10 12h10M6 18h14" />,
+  alignJustify: <path d="M4 6h16M4 12h16M4 18h16" />,
+  vTop: <path d="M4 4h16M12 8v12M8 12l4-4 4 4" />,
+  vMiddle: <path d="M4 12h16M12 3v5M12 16v5M9 6l3 2 3-2M9 18l3-2 3 2" />,
+  vBottom: <path d="M4 20h16M12 4v12M8 12l4 4 4-4" />,
+  minus: <path d="M5 12h14" />,
+  plus: <path d="M12 5v14M5 12h14" />,
+  external: <path d="M15 3h6v6M10 14 21 3M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" />,
+  fit: <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3" />,
+  centerH: <path d="M12 3v18M7 8h10v8H7z" />,
+  layers: <path d="m12 3 9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5" />,
+  sliders: <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4" />,
+  italic: <path d="M19 4h-9M14 20H5M15 4 9 20" />,
+  underline: <path d="M6 4v6a6 6 0 0 0 12 0V4M4 20h16" />,
+  logo: (
+    <>
+      <rect x="3" y="3" width="8" height="8" rx="2" />
+      <rect x="13" y="3" width="8" height="5" rx="2" />
+      <rect x="13" y="10" width="8" height="11" rx="2" />
+      <rect x="3" y="13" width="8" height="8" rx="2" />
+    </>
+  ),
+}
+
+export default function Icon({ name, size = 16 }) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.8"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden="true"
+    >
+      {ICONS[name]}
+    </svg>
+  )
+}
