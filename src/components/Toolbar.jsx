@@ -1,5 +1,5 @@
-import { useRef } from 'react'
 import Icon from './Icon.jsx'
+import UserChip from './UserChip.jsx'
 
 const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.25, 1.5, 2]
 
@@ -23,18 +23,17 @@ export default function Toolbar({
   onToggleGrid,
   snap,
   onToggleSnap,
-  onImport,
-  onExportJson,
-  onExportHtml,
   onPreview,
+  onSave,
   saveState,
   notice,
   user,
   onSignOut,
+  onHome,
+  onMakeTemplate,
 }) {
   const saveError = saveState === 'error' || saveState === 'too-large'
   const status = notice ?? { text: SAVE_LABELS[saveState], error: saveError }
-  const fileRef = useRef(null)
   const zoomStep = (dir) => {
     const next = dir > 0 ? ZOOMS.find((z) => z > zoom + 0.001) : [...ZOOMS].reverse().find((z) => z < zoom - 0.001)
     if (next) onZoom(next)
@@ -42,12 +41,12 @@ export default function Toolbar({
 
   return (
     <header className="topbar">
-      <div className="brand">
+      <button type="button" className="brand brand-btn" title="Về trang chủ (danh sách trang)" onClick={onHome}>
         <span className="brand-mark">
-          <Icon name="logo" size={18} />
+          <Icon name="home" size={16} />
         </span>
-        <span>Kéo Thả Web</span>
-      </div>
+        <span>Trang chủ</span>
+      </button>
 
       <div className="tool-group">
         <button type="button" className="icon-btn" title="Hoàn tác (Ctrl+Z)" disabled={!canUndo} onClick={onUndo}>
@@ -88,47 +87,30 @@ export default function Toolbar({
         {status.text}
       </span>
 
-      <div className="tool-group">
-        <button type="button" className="btn ghost" title="Mở tệp JSON đã lưu" onClick={() => fileRef.current?.click()}>
-          <Icon name="upload" size={14} />
-          Mở
+      <button
+        type="button"
+        className="btn"
+        title="Lưu thiết kế lên đám mây ngay (Ctrl+S)"
+        onClick={onSave}
+        disabled={saveState === 'saving'}
+      >
+        <Icon name="cloud" size={14} />
+        {saveState === 'saving' ? 'Đang lưu…' : 'Lưu'}
+      </button>
+
+      {onMakeTemplate && (
+        <button type="button" className="btn ghost" title="Quản trị: đăng trang này thành mẫu cho mọi người" onClick={onMakeTemplate}>
+          <Icon name="layers" size={14} />
+          Lưu làm mẫu
         </button>
-        <button type="button" className="btn ghost" title="Lưu thiết kế ra tệp JSON" onClick={onExportJson}>
-          <Icon name="download" size={14} />
-          Lưu
-        </button>
-        <button type="button" className="btn ghost" title="Xuất thành tệp HTML hoàn chỉnh" onClick={onExportHtml}>
-          <Icon name="code" size={14} />
-          Xuất HTML
-        </button>
-        <input
-          ref={fileRef}
-          type="file"
-          accept="application/json,.json"
-          hidden
-          onChange={(e) => {
-            const f = e.target.files?.[0]
-            e.target.value = ''
-            if (f) onImport(f)
-          }}
-        />
-      </div>
+      )}
 
       <button type="button" className="btn primary" onClick={onPreview}>
         <Icon name="play" size={14} />
         Xem trước
       </button>
 
-      <div className="user-chip" title={[user.displayName, user.email].filter(Boolean).join('\n')}>
-        {user.photoURL ? (
-          <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
-        ) : (
-          <span className="user-initial">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>
-        )}
-        <button type="button" className="btn ghost" onClick={onSignOut}>
-          Đăng xuất
-        </button>
-      </div>
+      <UserChip user={user} onSignOut={onSignOut} />
     </header>
   )
 }

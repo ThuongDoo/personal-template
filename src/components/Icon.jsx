@@ -60,7 +60,9 @@ const ICONS = {
   ),
   play: <path d="M7 4.5v15l12-7.5z" />,
   download: <path d="M12 3v12M7 10l5 5 5-5M5 21h14" />,
+  home: <path d="M3 10.5 12 3l9 7.5M5 9v11h5v-6h4v6h5V9" />,
   upload: <path d="M12 16V4M7 9l5-5 5 5M5 20h14" />,
+  cloud: <path d="M7 18a4.5 4.5 0 0 1-.6-9A6 6 0 0 1 18 9a4.5 4.5 0 0 1 0 9M12 21v-8M9 16l3-3 3 3" />,
   code: <path d="m16 18 6-6-6-6M8 6l-6 6 6 6" />,
   grid: (
     <>

@@ -4,11 +4,13 @@ import Inspector from './components/Inspector.jsx'
 import Layers from './components/Layers.jsx'
 import Palette from './components/Palette.jsx'
 import Preview from './components/Preview.jsx'
+import TemplateDialog from './components/TemplateDialog.jsx'
 import Toolbar from './components/Toolbar.jsx'
-import { DesignTooLargeError, saveDesign, saveExport, signOut, uploadImage, uploadInlineImages } from './lib/cloud.js'
-import { applyPatch, clamp, createElement, createFromKey, normalizeDoc, uid } from './lib/elements.js'
-import { download, exportHtml } from './lib/exportHtml.js'
+import { DesignTooLargeError, saveDesign, signOut, uploadImage } from './lib/cloud.js'
+import { applyPatch, clamp, createElement, createFromKey, uid } from './lib/elements.js'
+import { exportHtml } from './lib/exportHtml.js'
 import { shapeImageProps } from './lib/shapes.js'
+import { goHome } from './lib/route.js'
 import { useHistory } from './lib/useHistory.js'
 
 const SIDE_PANELS_WIDTH = 248 + 300
@@ -16,7 +18,7 @@ const AUTOSAVE_DELAY = 1500
 
 const fitZoom = (available, pageWidth) => clamp(Math.floor((available / pageWidth) * 20) / 20, 0.25, 1)
 
-export default function App({ user, initialDoc }) {
+export default function App({ user, designId, initialDoc, isAdmin = false }) {
   const { doc, set, checkpoint, undo, redo, canUndo, canRedo } = useHistory(() => initialDoc)
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
@@ -27,6 +29,7 @@ export default function App({ user, initialDoc }) {
   // 'saved' | 'pending' (waiting for the debounce) | 'saving' | 'error' | 'too-large'
   const [saveState, setSaveState] = useState('saved')
   const [notice, setNotice] = useState(null)
+  const [makingTemplate, setMakingTemplate] = useState(false)
   const [tab, setTab] = useState('props')
   const workspaceRef = useRef(null)
   const canvasRef = useRef(null)
@@ -48,7 +51,7 @@ export default function App({ user, initialDoc }) {
     if (d === savedDoc.current) return true
     setSaveState('saving')
     try {
-      await saveDesign(user.uid, d)
+      await saveDesign(user.uid, designId, d)
       savedDoc.current = d
       // If the doc changed meanwhile, the autosave effect already moved the state back to 'pending'.
       setSaveState((s) => (s === 'saving' ? 'saved' : s))
@@ -68,6 +71,10 @@ export default function App({ user, initialDoc }) {
     const t = setTimeout(autosave, AUTOSAVE_DELAY)
     return () => clearTimeout(t)
   }, [doc])
+
+  // Leaving the editor another way (browser back button, editing the URL) still saves pending changes.
+  const flushOnUnmount = useEffectEvent(() => persist(doc))
+  useEffect(() => () => flushOnUnmount(), [])
 
   // Warn before closing the tab while changes haven't reached Firestore yet.
   useEffect(() => {
@@ -232,64 +239,18 @@ export default function App({ user, initialDoc }) {
     setZoom(fitZoom(available - 80, doc.page.width))
   }
 
-  const loadTemplate = (t) => {
-    if (doc.elements.length && !confirm(`Thay trang hiện tại bằng mẫu "${t.name}"?\n(Bạn có thể hoàn tác bằng Ctrl+Z)`)) return
-    set(t.create())
-    setSelectedId(null)
-    setEditingId(null)
+  /** "Lưu" button / Ctrl+S: writes the design to Firestore right away instead of waiting for autosave. */
+  const saveNow = async () => {
+    if (await persist(doc)) showNotice('Đã lưu thiết kế lên đám mây')
   }
 
-  const importJson = async (file) => {
-    let imported
-    try {
-      imported = normalizeDoc(JSON.parse(await file.text()))
-    } catch {
-      alert('Tệp không hợp lệ. Hãy chọn tệp JSON được lưu từ trình tạo trang này.')
-      return
-    }
-    try {
-      // Older exports embed images as data URLs, which would overflow the Firestore document.
-      showNotice('Đang mở tệp…', { sticky: true })
-      set(await uploadInlineImages(imported))
-      setSelectedId(null)
-      showNotice(null)
-    } catch (e) {
-      console.error(e)
-      showNotice('Không tải được ảnh trong tệp lên.', { error: true })
-    }
+  /** Saves pending changes before leaving the editor; asks first if that failed. */
+  const leave = async (action, question) => {
+    if (!(await persist(doc)) && !confirm(`Chưa lưu được thay đổi gần nhất lên đám mây. ${question}`)) return
+    await action()
   }
-
-  /** Downloads an export and also keeps a copy in the user's Firebase Storage. */
-  const exportFile = async (kind) => {
-    const name = `${fileBase()}.${kind}`
-    const [content, type] =
-      kind === 'json' ? [JSON.stringify(doc, null, 2), 'application/json'] : [exportHtml(doc), 'text/html']
-    download(name, content, type)
-    showNotice('Đang lưu bản xuất lên đám mây…', { sticky: true })
-    try {
-      persist(doc)
-      await saveExport(name, content, type)
-      showNotice(`Đã lưu "${name}" lên đám mây`)
-    } catch (e) {
-      console.error(e)
-      showNotice('Đã tải về máy, nhưng không lưu được lên đám mây.', { error: true })
-    }
-  }
-
-  const logout = async () => {
-    const saved = await persist(doc)
-    if (!saved && !confirm('Chưa lưu được thay đổi gần nhất lên đám mây. Vẫn đăng xuất?')) return
-    await signOut()
-  }
-
-  const fileBase = () =>
-    (doc.page.title || 'trang-web')
-      .normalize('NFD')
-      .replace(/[̀-ͯ]/g, '')
-      .replace(/đ/gi, 'd')
-      .replace(/[^\w]+/g, '-')
-      .replace(/^-|-$/g, '')
-      .toLowerCase() || 'trang-web'
+  const logout = () => leave(signOut, 'Vẫn đăng xuất?')
+  const backHome = () => leave(goHome, 'Vẫn về trang chủ?')
 
   const openPreview = () => {
     document.activeElement?.blur?.()
@@ -311,11 +272,17 @@ export default function App({ user, initialDoc }) {
 
   const onKeyDown = useEffectEvent((e) => {
     if (previewing) return
+    const mod = e.ctrlKey || e.metaKey
+    const key = e.key.toLowerCase()
+    // Works while typing in the inspector too, and keeps the browser's "Save page" dialog away.
+    if (mod && key === 's') {
+      e.preventDefault()
+      saveNow()
+      return
+    }
     const t = e.target
     const typing = t.isContentEditable || ['INPUT', 'TEXTAREA', 'SELECT'].includes(t.tagName)
     if (typing) return
-    const mod = e.ctrlKey || e.metaKey
-    const key = e.key.toLowerCase()
 
     if (mod && key === 'z') {
       e.preventDefault()
@@ -383,19 +350,19 @@ export default function App({ user, initialDoc }) {
         onToggleGrid={() => setShowGrid((v) => !v)}
         snap={snap}
         onToggleSnap={() => setSnap((v) => !v)}
-        onImport={importJson}
-        onExportJson={() => exportFile('json')}
-        onExportHtml={() => exportFile('html')}
         onPreview={openPreview}
+        onSave={saveNow}
         saveState={saveState}
         notice={notice}
         user={user}
         onSignOut={logout}
+        onHome={backHome}
+        onMakeTemplate={isAdmin ? () => setMakingTemplate(true) : null}
       />
 
       <div className="main">
         <aside className="panel panel-left">
-          <Palette onAdd={(type) => addElement(type)} onTemplate={loadTemplate} />
+          <Palette onAdd={(type) => addElement(type)} />
         </aside>
 
         <Canvas
@@ -442,6 +409,17 @@ export default function App({ user, initialDoc }) {
       </div>
 
       {previewing && <Preview doc={doc} onClose={closePreview} onOpenTab={openInNewTab} />}
+      {makingTemplate && (
+        <TemplateDialog
+          design={doc}
+          source={{ uid: user.uid, designId }}
+          onClose={() => setMakingTemplate(false)}
+          onDone={(message) => {
+            setMakingTemplate(false)
+            showNotice(message)
+          }}
+        />
+      )}
     </div>
   )
 }

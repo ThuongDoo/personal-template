@@ -472,6 +472,8 @@ function PageSettings({ page, onChange }) {
           <dd>Giữ tỉ lệ khi đổi cỡ</dd>
           <dt>Alt + kéo</dt>
           <dd>Tắt hít nam châm</dd>
+          <dt>Ctrl + S</dt>
+          <dd>Lưu lên đám mây</dd>
           <dt>Ctrl + Z / Y</dt>
           <dd>Hoàn tác / Làm lại</dd>
           <dt>Ctrl + C / V / D</dt>

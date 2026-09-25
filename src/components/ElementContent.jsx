@@ -44,7 +44,9 @@ function TextBlock({ text, style, editing, onCommit }) {
       onBlur={(e) => onCommit?.(e.currentTarget.innerText.replace(/\n$/, ''))}
       onKeyDown={(e) => {
         e.stopPropagation()
-        if (e.key === 'Escape' || (e.key === 'Enter' && (e.ctrlKey || e.metaKey))) {
+        // Ctrl+S finishes the edit; autosave then picks up the committed text.
+        const mod = e.ctrlKey || e.metaKey
+        if (e.key === 'Escape' || (mod && (e.key === 'Enter' || e.key.toLowerCase() === 's'))) {
           e.preventDefault()
           e.currentTarget.blur()
         }

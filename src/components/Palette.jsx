@@ -1,7 +1,6 @@
 import Icon from './Icon.jsx'
 import { DND_TYPE, ELEMENT_TYPES, PALETTE_ORDER } from '../lib/elements.js'
 import { SHAPES, SHAPE_ORDER, shapePaths } from '../lib/shapes.js'
-import { TEMPLATES } from '../lib/templates.js'
 
 // Small, fixed tear so the torn-paper tile icon reads at 20px.
 const ICON_PROPS = { edge: 'diagonal', depth: 1.2, tooth: 2.5, rim: 0, seed: 7 }
@@ -38,7 +37,7 @@ function Tile({ dragKey, onAdd, children }) {
   )
 }
 
-export default function Palette({ onAdd, onTemplate }) {
+export default function Palette({ onAdd }) {
   return (
     <div className="palette">
       <section className="section">
@@ -64,21 +63,6 @@ export default function Palette({ onAdd, onTemplate }) {
               <ShapeIcon shape={shape} />
               <span>{SHAPES[shape].label}</span>
             </Tile>
-          ))}
-        </div>
-      </section>
-
-      <section className="section">
-        <h4>Mẫu trang</h4>
-        <div className="templates">
-          {TEMPLATES.map((t) => (
-            <button key={t.id} type="button" className="template" onClick={() => onTemplate(t)}>
-              <span className="template-thumb" style={{ background: t.thumb }} />
-              <span className="template-text">
-                <strong>{t.name}</strong>
-                <small>{t.description}</small>
-              </span>
-            </button>
           ))}
         </div>
       </section>
