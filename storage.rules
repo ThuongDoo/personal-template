@@ -1,0 +1,22 @@
+rules_version = '2';
+
+// Only the owner can list or upload. Images placed on a page and exported files are still viewable
+// by anyone holding their download URL (the token in it bypasses these rules), which is what lets
+// exported HTML pages show their images.
+service firebase.storage {
+  match /b/{bucket}/o {
+    match /users/{uid}/images/{file} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 10 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*');
+    }
+
+    match /users/{uid}/exports/{file} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('application/json|text/html');
+    }
+  }
+}

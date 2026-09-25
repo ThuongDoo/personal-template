@@ -2,7 +2,8 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
-import { loadImageSize, readImageFile } from '../lib/image.js'
+import { isUploadedImage, uploadImage } from '../lib/cloud.js'
+import { loadImageSize } from '../lib/image.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
@@ -46,7 +47,7 @@ function ImageSection({ el, setProps, setGeom }) {
   const latestSrc = useRef(el.props.src)
   const [busy, setBusy] = useState(false)
   const { src, alt, fit } = el.props
-  const uploaded = src.startsWith('data:')
+  const uploaded = isUploadedImage(src)
   const isShape = el.type === 'shape'
 
   const onFile = async (e) => {
@@ -55,12 +56,13 @@ function ImageSection({ el, setProps, setGeom }) {
     if (!file) return
     setBusy(true)
     try {
-      const img = await readImageFile(file)
+      const img = await uploadImage(file)
       latestSrc.current = img.src
       const props = isShape ? shapeImageProps(img, file.name) : { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') }
       setProps({ ...props, alt: alt || props.alt })
-    } catch {
-      alert('Không đọc được tệp ảnh này.')
+    } catch (err) {
+      console.error(err)
+      alert('Không tải được ảnh này lên.')
     } finally {
       setBusy(false)
     }
@@ -94,7 +96,7 @@ function ImageSection({ el, setProps, setGeom }) {
       <div className="row">
         <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
           <Icon name="upload" size={14} />
-          {busy ? 'Đang xử lý…' : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
+          {busy ? 'Đang tải lên…' : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
         </button>
         {isShape ? (
           <button type="button" className="btn" onClick={() => onUrl('')} disabled={!src} title="Bỏ ảnh, dùng màu nền">

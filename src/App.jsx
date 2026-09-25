@@ -5,57 +5,77 @@ import Layers from './components/Layers.jsx'
 import Palette from './components/Palette.jsx'
 import Preview from './components/Preview.jsx'
 import Toolbar from './components/Toolbar.jsx'
+import { DesignTooLargeError, saveDesign, saveExport, signOut, uploadImage, uploadInlineImages } from './lib/cloud.js'
 import { applyPatch, clamp, createElement, createFromKey, normalizeDoc, uid } from './lib/elements.js'
 import { download, exportHtml } from './lib/exportHtml.js'
-import { readImageFile } from './lib/image.js'
 import { shapeImageProps } from './lib/shapes.js'
-import { TEMPLATES } from './lib/templates.js'
 import { useHistory } from './lib/useHistory.js'
-import './App.css'
 
-const STORAGE_KEY = 'keo-tha-web:doc'
 const SIDE_PANELS_WIDTH = 248 + 300
-
-function loadDoc() {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return normalizeDoc(JSON.parse(raw))
-  } catch {
-    // Corrupt or unavailable storage: fall back to the starter template.
-  }
-  return TEMPLATES[0].create()
-}
+const AUTOSAVE_DELAY = 1500
 
 const fitZoom = (available, pageWidth) => clamp(Math.floor((available / pageWidth) * 20) / 20, 0.25, 1)
 
-export default function App() {
-  const { doc, set, checkpoint, undo, redo, canUndo, canRedo } = useHistory(loadDoc)
+export default function App({ user, initialDoc }) {
+  const { doc, set, checkpoint, undo, redo, canUndo, canRedo } = useHistory(() => initialDoc)
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
   const [zoom, setZoom] = useState(() => fitZoom(window.innerWidth - SIDE_PANELS_WIDTH - 80, doc.page.width))
   const [showGrid, setShowGrid] = useState(false)
   const [snap, setSnap] = useState(true)
   const [previewing, setPreviewing] = useState(false)
-  const [saveError, setSaveError] = useState(false)
+  // 'saved' | 'pending' (waiting for the debounce) | 'saving' | 'error' | 'too-large'
+  const [saveState, setSaveState] = useState('saved')
+  const [notice, setNotice] = useState(null)
   const [tab, setTab] = useState('props')
   const workspaceRef = useRef(null)
   const canvasRef = useRef(null)
   const clipboard = useRef(null)
+  const savedDoc = useRef(initialDoc)
+  const noticeTimer = useRef(0)
 
   const selected = doc.elements.find((el) => el.id === selectedId) ?? null
 
-  // Autosave (debounced).
+  /** Shows a short status message in the toolbar; `sticky` keeps it until the next one. */
+  const showNotice = (text, { error = false, sticky = false } = {}) => {
+    clearTimeout(noticeTimer.current)
+    setNotice(text && { text, error })
+    if (text && !sticky) noticeTimer.current = setTimeout(() => setNotice(null), 4000)
+  }
+
+  /** Writes the design to Firestore; resolves to false (and shows the error state) if that failed. */
+  const persist = async (d) => {
+    if (d === savedDoc.current) return true
+    setSaveState('saving')
+    try {
+      await saveDesign(user.uid, d)
+      savedDoc.current = d
+      // If the doc changed meanwhile, the autosave effect already moved the state back to 'pending'.
+      setSaveState((s) => (s === 'saving' ? 'saved' : s))
+      return true
+    } catch (e) {
+      console.error('Không lưu được thiết kế', e)
+      setSaveState(e instanceof DesignTooLargeError ? 'too-large' : 'error')
+      return false
+    }
+  }
+
+  // Autosave to Firestore, debounced so a drag or a burst of typing is a single write.
+  const autosave = useEffectEvent(() => persist(doc))
   useEffect(() => {
-    const t = setTimeout(() => {
-      try {
-        localStorage.setItem(STORAGE_KEY, JSON.stringify(doc))
-        setSaveError(false)
-      } catch {
-        setSaveError(true)
-      }
-    }, 400)
+    if (doc === savedDoc.current) return
+    setSaveState('pending')
+    const t = setTimeout(autosave, AUTOSAVE_DELAY)
     return () => clearTimeout(t)
   }, [doc])
+
+  // Warn before closing the tab while changes haven't reached Firestore yet.
+  useEffect(() => {
+    if (saveState === 'saved') return
+    const onBeforeUnload = (e) => e.preventDefault()
+    window.addEventListener('beforeunload', onBeforeUnload)
+    return () => window.removeEventListener('beforeunload', onBeforeUnload)
+  }, [saveState])
 
   const mutateElements = (fn, opts) => set((d) => ({ ...d, elements: fn(d.elements) }), opts)
 
@@ -112,28 +132,35 @@ export default function App() {
           pos.y >= el.y &&
           pos.y <= el.y + el.h,
       )
+    if (!images.length) return
+    showNotice(images.length > 1 ? `Đang tải ${images.length} ảnh lên…` : 'Đang tải ảnh lên…', { sticky: true })
     if (target) {
       try {
-        const img = await readImageFile(images[0])
+        const img = await uploadImage(images[0])
         updateElement(target.id, { props: shapeImageProps(img, images[0].name) })
         setSelectedId(target.id)
         setTab('props')
-      } catch {
-        alert(`Không đọc được ảnh "${images[0].name}".`)
+        showNotice(null)
+      } catch (e) {
+        console.error(e)
+        showNotice(`Không tải được ảnh "${images[0].name}" lên.`, { error: true })
       }
       return
     }
+    let failed = 0
     for (const [i, file] of images.entries()) {
       try {
-        const img = await readImageFile(file)
+        const img = await uploadImage(file)
         const w = Math.min(480, img.width)
         const h = Math.round((w * img.height) / img.width)
         const at = placeAt(w, h, { x: pos.x + i * 24, y: pos.y + i * 24 })
         insertElement(createElement('image', { ...at, w, h, props: { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') } }))
-      } catch {
-        alert(`Không đọc được ảnh "${file.name}".`)
+      } catch (e) {
+        console.error(e)
+        failed++
       }
     }
+    showNotice(failed ? `Không tải được ${failed} ảnh lên.` : null, { error: true })
   }
 
   const removeElement = (id) => {
@@ -213,12 +240,46 @@ export default function App() {
   }
 
   const importJson = async (file) => {
+    let imported
     try {
-      set(normalizeDoc(JSON.parse(await file.text())))
-      setSelectedId(null)
+      imported = normalizeDoc(JSON.parse(await file.text()))
     } catch {
       alert('Tệp không hợp lệ. Hãy chọn tệp JSON được lưu từ trình tạo trang này.')
+      return
     }
+    try {
+      // Older exports embed images as data URLs, which would overflow the Firestore document.
+      showNotice('Đang mở tệp…', { sticky: true })
+      set(await uploadInlineImages(imported))
+      setSelectedId(null)
+      showNotice(null)
+    } catch (e) {
+      console.error(e)
+      showNotice('Không tải được ảnh trong tệp lên.', { error: true })
+    }
+  }
+
+  /** Downloads an export and also keeps a copy in the user's Firebase Storage. */
+  const exportFile = async (kind) => {
+    const name = `${fileBase()}.${kind}`
+    const [content, type] =
+      kind === 'json' ? [JSON.stringify(doc, null, 2), 'application/json'] : [exportHtml(doc), 'text/html']
+    download(name, content, type)
+    showNotice('Đang lưu bản xuất lên đám mây…', { sticky: true })
+    try {
+      persist(doc)
+      await saveExport(name, content, type)
+      showNotice(`Đã lưu "${name}" lên đám mây`)
+    } catch (e) {
+      console.error(e)
+      showNotice('Đã tải về máy, nhưng không lưu được lên đám mây.', { error: true })
+    }
+  }
+
+  const logout = async () => {
+    const saved = await persist(doc)
+    if (!saved && !confirm('Chưa lưu được thay đổi gần nhất lên đám mây. Vẫn đăng xuất?')) return
+    await signOut()
   }
 
   const fileBase = () =>
@@ -323,10 +384,13 @@ export default function App() {
         snap={snap}
         onToggleSnap={() => setSnap((v) => !v)}
         onImport={importJson}
-        onExportJson={() => download(`${fileBase()}.json`, JSON.stringify(doc, null, 2), 'application/json')}
-        onExportHtml={() => download(`${fileBase()}.html`, exportHtml(doc), 'text/html')}
+        onExportJson={() => exportFile('json')}
+        onExportHtml={() => exportFile('html')}
         onPreview={openPreview}
-        saveError={saveError}
+        saveState={saveState}
+        notice={notice}
+        user={user}
+        onSignOut={logout}
       />
 
       <div className="main">

@@ -3,6 +3,14 @@ import Icon from './Icon.jsx'
 
 const ZOOMS = [0.25, 0.33, 0.5, 0.67, 0.75, 0.9, 1, 1.25, 1.5, 2]
 
+const SAVE_LABELS = {
+  saved: 'Đã lưu lên đám mây',
+  pending: 'Có thay đổi chưa lưu…',
+  saving: 'Đang lưu…',
+  error: 'Không lưu được — kiểm tra kết nối mạng',
+  'too-large': 'Trang quá lớn để lưu (giới hạn 1MB) — hãy bớt phần tử',
+}
+
 export default function Toolbar({
   canUndo,
   canRedo,
@@ -19,8 +27,13 @@ export default function Toolbar({
   onExportJson,
   onExportHtml,
   onPreview,
-  saveError,
+  saveState,
+  notice,
+  user,
+  onSignOut,
 }) {
+  const saveError = saveState === 'error' || saveState === 'too-large'
+  const status = notice ?? { text: SAVE_LABELS[saveState], error: saveError }
   const fileRef = useRef(null)
   const zoomStep = (dir) => {
     const next = dir > 0 ? ZOOMS.find((z) => z > zoom + 0.001) : [...ZOOMS].reverse().find((z) => z < zoom - 0.001)
@@ -71,8 +84,8 @@ export default function Toolbar({
 
       <div className="spacer" />
 
-      <span className={`save-state${saveError ? ' error' : ''}`}>
-        {saveError ? 'Không lưu được — ảnh quá lớn? Hãy xuất JSON' : 'Đã tự động lưu'}
+      <span className={`save-state${status.error ? ' error' : ''}`} title={status.text}>
+        {status.text}
       </span>
 
       <div className="tool-group">
@@ -105,6 +118,17 @@ export default function Toolbar({
         <Icon name="play" size={14} />
         Xem trước
       </button>
+
+      <div className="user-chip" title={[user.displayName, user.email].filter(Boolean).join('\n')}>
+        {user.photoURL ? (
+          <img src={user.photoURL} alt="" referrerPolicy="no-referrer" />
+        ) : (
+          <span className="user-initial">{(user.displayName || user.email || '?')[0].toUpperCase()}</span>
+        )}
+        <button type="button" className="btn ghost" onClick={onSignOut}>
+          Đăng xuất
+        </button>
+      </div>
     </header>
   )
 }
