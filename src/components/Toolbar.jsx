@@ -31,6 +31,7 @@ export default function Toolbar({
   onSignOut,
   onHome,
   onMakeTemplate,
+  onPublish,
 }) {
   const saveError = saveState === 'error' || saveState === 'too-large'
   const status = notice ?? { text: SAVE_LABELS[saveState], error: saveError }
@@ -105,9 +106,14 @@ export default function Toolbar({
         </button>
       )}
 
-      <button type="button" className="btn primary" onClick={onPreview}>
+      <button type="button" className="btn ghost" onClick={onPreview}>
         <Icon name="play" size={14} />
         Xem trước
+      </button>
+
+      <button type="button" className="btn primary" title="Gửi trang cho quản trị viên duyệt để xuất bản" onClick={onPublish}>
+        <Icon name="external" size={14} />
+        Xuất bản
       </button>
 
       <UserChip user={user} onSignOut={onSignOut} />

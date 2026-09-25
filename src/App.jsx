@@ -4,6 +4,7 @@ import Inspector from './components/Inspector.jsx'
 import Layers from './components/Layers.jsx'
 import Palette from './components/Palette.jsx'
 import Preview from './components/Preview.jsx'
+import PublishDialog from './components/PublishDialog.jsx'
 import TemplateDialog from './components/TemplateDialog.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { DesignTooLargeError, saveDesign, signOut, uploadImage } from './lib/cloud.js'
@@ -30,6 +31,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
   const [saveState, setSaveState] = useState('saved')
   const [notice, setNotice] = useState(null)
   const [makingTemplate, setMakingTemplate] = useState(false)
+  const [publishing, setPublishing] = useState(false)
   const [tab, setTab] = useState('props')
   const workspaceRef = useRef(null)
   const canvasRef = useRef(null)
@@ -271,7 +273,8 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
   }
 
   const onKeyDown = useEffectEvent((e) => {
-    if (previewing) return
+    // Shortcuts belong to the dialog while one is open.
+    if (previewing || publishing || makingTemplate) return
     const mod = e.ctrlKey || e.metaKey
     const key = e.key.toLowerCase()
     // Works while typing in the inspector too, and keeps the browser's "Save page" dialog away.
@@ -358,6 +361,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
         onSignOut={logout}
         onHome={backHome}
         onMakeTemplate={isAdmin ? () => setMakingTemplate(true) : null}
+        onPublish={() => setPublishing(true)}
       />
 
       <div className="main">
@@ -409,6 +413,9 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
       </div>
 
       {previewing && <Preview doc={doc} onClose={closePreview} onOpenTab={openInNewTab} />}
+      {publishing && (
+        <PublishDialog designId={designId} page={doc.page} save={() => persist(doc)} onClose={() => setPublishing(false)} />
+      )}
       {makingTemplate && (
         <TemplateDialog
           design={doc}

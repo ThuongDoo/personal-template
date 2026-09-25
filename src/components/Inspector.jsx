@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
-import { isUploadedImage, uploadImage } from '../lib/cloud.js'
+import { isUploadedImage, uploadIcon, uploadImage } from '../lib/cloud.js'
 import { loadImageSize } from '../lib/image.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
@@ -430,6 +430,59 @@ function OpacitySlider({ value, onChange }) {
   )
 }
 
+function SiteSection({ page, onChange }) {
+  const fileRef = useRef(null)
+  const [busy, setBusy] = useState(false)
+
+  const onFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    try {
+      onChange({ favicon: await uploadIcon(file) })
+    } catch (err) {
+      console.error(err)
+      alert('Không tải được icon lên.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Section title="Website">
+      <Field label="Tiêu đề web (hiện trên tab trình duyệt)">
+        <input
+          className="input"
+          value={page.title}
+          maxLength={70}
+          placeholder="VD: Tiệm bánh Mây"
+          onChange={(e) => onChange({ title: e.target.value }, 'title')}
+        />
+      </Field>
+      <div className="field">
+        <span className="field-label">Icon web (favicon)</span>
+        <div className="favicon-row">
+          <span className="favicon-preview">
+            {page.favicon ? <img src={page.favicon} alt="" /> : <Icon name="image" size={16} />}
+          </span>
+          <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+            <Icon name="upload" size={14} />
+            {busy ? 'Đang tải lên…' : page.favicon ? 'Đổi icon' : 'Tải icon lên'}
+          </button>
+          {page.favicon && (
+            <button type="button" className="btn" onClick={() => onChange({ favicon: '' })} disabled={busy}>
+              Bỏ
+            </button>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" hidden onChange={onFile} />
+        <p className="hint">Nên dùng ảnh vuông, tối thiểu 64×64px.</p>
+      </div>
+    </Section>
+  )
+}
+
 function PageSettings({ page, onChange }) {
   return (
     <div className="inspector">
@@ -439,10 +492,8 @@ function PageSettings({ page, onChange }) {
           <small>Chọn một phần tử để chỉnh sửa nó</small>
         </div>
       </div>
+      <SiteSection page={page} onChange={onChange} />
       <Section title="Trang">
-        <Field label="Tiêu đề trang">
-          <input className="input" value={page.title} onChange={(e) => onChange({ title: e.target.value }, 'title')} />
-        </Field>
         <Field label="Chiều rộng thiết kế">
           <Segmented
             value={page.width}

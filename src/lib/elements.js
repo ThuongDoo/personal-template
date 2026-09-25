@@ -182,7 +182,7 @@ export function applyPatch(el, patch) {
   }
 }
 
-export const DEFAULT_PAGE = { title: 'Trang web của tôi', width: 1200, height: 1000, background: '#ffffff' }
+export const DEFAULT_PAGE = { title: 'Trang web của tôi', favicon: '', width: 1200, height: 1000, background: '#ffffff' }
 
 /** Validates a loaded/imported document and fills in any missing defaults. */
 export function normalizeDoc(raw) {

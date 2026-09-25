@@ -170,6 +170,13 @@ export async function uploadImage(file) {
   return { src: await uploadImageBlob(userImages(uid), blob), width, height }
 }
 
+/** Uploads a site icon (favicon), downscaled to 256px, and returns its Storage URL. */
+export async function uploadIcon(file) {
+  const uid = currentUid()
+  const { blob } = await readImageFile(file, 256)
+  return uploadImageBlob(userImages(uid), blob)
+}
+
 /** True for images stored in Firebase Storage (as opposed to a link the user pasted). */
 export const isUploadedImage = (src = '') =>
   src.startsWith('data:') || /^https:\/\/firebasestorage\.googleapis\.com\//.test(src)

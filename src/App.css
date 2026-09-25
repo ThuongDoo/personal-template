@@ -1357,3 +1357,265 @@ button.card:disabled {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* ---------------------------------------------------------------- publishing */
+
+.publish-state {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 12px 14px;
+  border-radius: var(--radius);
+  border: 1px solid var(--line);
+  background: var(--bg);
+}
+
+.publish-state small {
+  color: var(--muted);
+}
+
+.publish-state.pending {
+  border-color: #fcd34d;
+  background: #fffbeb;
+}
+
+.publish-state.rejected {
+  border-color: #fecaca;
+  background: #fef2f2;
+}
+
+.publish-state.live {
+  border-color: #bbf7d0;
+  background: #f0fdf4;
+}
+
+.publish-state a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent);
+  word-break: break-all;
+}
+
+.request-filter {
+  max-width: 360px;
+  margin-bottom: 16px;
+}
+
+.requests {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.request {
+  display: flex;
+  align-items: flex-start;
+  gap: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.request-main {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.request-main strong {
+  font-size: 14px;
+}
+
+.request-main small {
+  color: var(--muted);
+  overflow-wrap: anywhere;
+}
+
+.request-main small.warn {
+  color: var(--danger);
+}
+
+.request-actions {
+  display: flex;
+  gap: 8px;
+  flex: none;
+}
+
+.request-reject {
+  display: flex;
+  gap: 8px;
+  margin-top: 6px;
+}
+
+.request-reject .input {
+  flex: 1;
+}
+
+.btn.danger-btn {
+  background: var(--danger);
+  border-color: var(--danger);
+  color: #fff;
+}
+
+@media (max-width: 640px) {
+  .request {
+    flex-direction: column;
+  }
+  .request-reject {
+    flex-wrap: wrap;
+  }
+}
+
+.favicon-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.favicon-preview {
+  width: 32px;
+  height: 32px;
+  flex: none;
+  display: grid;
+  place-items: center;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--bg);
+  color: var(--subtle);
+  overflow: hidden;
+}
+
+.favicon-preview img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+/* ---------------------------------------------------------------- domain */
+
+.modal.modal-wide {
+  width: min(560px, 100%);
+  max-height: calc(100vh - 32px);
+  overflow-y: auto;
+}
+
+.publish-section {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--line);
+}
+
+.publish-section h4 {
+  margin: 0;
+  font-size: 13px;
+}
+
+.publish-section .hint {
+  margin: 0;
+}
+
+.domain-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.domain-input {
+  display: flex;
+  align-items: stretch;
+  border: 1px solid var(--line-strong);
+  border-radius: var(--radius);
+  overflow: hidden;
+  background: var(--panel);
+}
+
+.domain-input:focus-within {
+  border-color: var(--accent);
+}
+
+.domain-input .input {
+  flex: 1;
+  min-width: 0;
+  border: none;
+  border-radius: 0;
+}
+
+.domain-suffix {
+  display: flex;
+  align-items: center;
+  padding: 0 10px;
+  background: var(--bg);
+  color: var(--muted);
+  white-space: nowrap;
+  max-width: 55%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.domain-check {
+  margin: 0;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.domain-check.ok {
+  color: #15803d;
+}
+
+.domain-check.bad {
+  color: var(--danger);
+}
+
+.domain-current {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.domain-current strong {
+  overflow-wrap: anywhere;
+}
+
+.site-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border: 1px solid var(--line);
+  border-radius: var(--radius);
+}
+
+.site-card-text {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+
+.site-card-text strong,
+.site-card-text small {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.site-card-text small {
+  color: var(--muted);
+}
+
+.publish-state .btn {
+  align-self: flex-start;
+  margin-top: 4px;
+}

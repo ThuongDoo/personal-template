@@ -4,7 +4,18 @@ import Icon from './Icon.jsx'
 import Preview from './Preview.jsx'
 import TemplateDialog from './TemplateDialog.jsx'
 import UserChip from './UserChip.jsx'
+import { Segmented } from './fields.jsx'
+import {
+  approveDomainRequest,
+  approvePublishRequest,
+  getPublishRequest,
+  listDomainRequests,
+  listPublishRequests,
+  rejectDomainRequest,
+  rejectPublishRequest,
+} from '../lib/api.js'
 import { ROLES, deleteTemplate, listDesigns, listTemplates, listUsers, signOut } from '../lib/cloud.js'
+import { normalizeDoc } from '../lib/elements.js'
 import { exportHtml } from '../lib/exportHtml.js'
 import { formatTime } from '../lib/format.js'
 import { goHome } from '../lib/route.js'
@@ -205,8 +216,257 @@ function TemplatesTab({ onPreview, version }) {
   )
 }
 
+const REQUEST_FILTERS = [
+  { value: 'pending', label: 'Chờ duyệt' },
+  { value: 'approved', label: 'Đã duyệt' },
+  { value: 'rejected', label: 'Đã từ chối' },
+]
+
+function RequestRow({ request: r, onPreview, onDone }) {
+  const [busy, setBusy] = useState(null)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+
+  const run = async (kind, action) => {
+    setBusy(kind)
+    setError('')
+    try {
+      onDone(await action())
+    } catch (e) {
+      setError(e.message)
+      setBusy(null)
+    }
+  }
+
+  const preview = () =>
+    run('preview', async () => {
+      const full = await getPublishRequest(r.id)
+      onPreview(normalizeDoc(full.design))
+      setBusy(null)
+      return null
+    })
+
+  const approve = () => {
+    if (!confirm(`Duyệt và xuất bản công khai trang "${r.title}"?`)) return
+    run('approve', async () => {
+      const res = await approvePublishRequest(r.id)
+      return `Đã duyệt "${r.title}". ${res.deployment?.url ? `Trang ở ${res.deployment.url}` : 'Vercel đang triển khai trang.'}`
+    })
+  }
+
+  const reject = (e) => {
+    e.preventDefault()
+    run('reject', async () => {
+      await rejectPublishRequest(r.id, reason.trim())
+      return `Đã từ chối "${r.title}".`
+    })
+  }
+
+  const who = r.user?.name || r.user?.email || r.uid
+  return (
+    <li className="request">
+      <div className="request-main">
+        <strong>{r.title}</strong>
+        <small>
+          {who}
+          {r.user?.name && r.user?.email ? ` · ${r.user.email}` : ''} · gửi lúc {formatTime(r.submittedAt && new Date(r.submittedAt))}
+        </small>
+        {r.domain && <small>Tên miền: {r.domain}</small>}
+        {r.status === 'rejected' && <small className="warn">Lý do từ chối: {r.rejectReason}</small>}
+        {r.status === 'approved' && <small>Duyệt lúc {formatTime(r.reviewedAt && new Date(r.reviewedAt))}</small>}
+        {r.lastError && r.status === 'pending' && <small className="warn">Lần duyệt trước bị lỗi: {r.lastError}</small>}
+        {error && <small className="warn">{error}</small>}
+        {rejecting && (
+          <form className="request-reject" onSubmit={reject}>
+            <input
+              className="input"
+              autoFocus
+              required
+              maxLength={500}
+              placeholder="Lý do từ chối (người dùng sẽ thấy)"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <button type="submit" className="btn danger-btn" disabled={!!busy || !reason.trim()}>
+              {busy === 'reject' ? 'Đang gửi…' : 'Từ chối'}
+            </button>
+            <button type="button" className="btn" onClick={() => setRejecting(false)} disabled={!!busy}>
+              Huỷ
+            </button>
+          </form>
+        )}
+      </div>
+      <div className="request-actions">
+        <button type="button" className="btn" onClick={preview} disabled={!!busy}>
+          <Icon name="play" size={14} />
+          {busy === 'preview' ? 'Đang tải…' : 'Xem'}
+        </button>
+        {r.status === 'pending' && !rejecting && (
+          <>
+            <button type="button" className="btn" onClick={() => setRejecting(true)} disabled={!!busy}>
+              Từ chối
+            </button>
+            <button type="button" className="btn primary" onClick={approve} disabled={!!busy}>
+              {busy === 'approve' ? 'Đang xuất bản…' : 'Duyệt'}
+            </button>
+          </>
+        )}
+      </div>
+    </li>
+  )
+}
+
+function PublishRequestsTab({ onPreview, onNotice }) {
+  const [filter, setFilter] = useState('pending')
+  const requests = useLoad(() => listPublishRequests(filter), [filter])
+
+  return (
+    <section>
+      <div className="request-filter">
+        <Segmented value={filter} options={REQUEST_FILTERS} onChange={setFilter} />
+      </div>
+      {!requests.data?.length ? (
+        <Status
+          error={requests.error}
+          loading={!requests.data}
+          empty={filter === 'pending' ? 'Không có yêu cầu nào đang chờ duyệt.' : 'Chưa có yêu cầu nào.'}
+          onRetry={requests.reload}
+        />
+      ) : (
+        <ul className="requests">
+          {requests.data.map((r) => (
+            <RequestRow
+              key={r.id}
+              request={r}
+              onPreview={onPreview}
+              onDone={(message) => {
+                if (!message) return
+                onNotice(message)
+                requests.reload()
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+function DomainRequestRow({ request: r, onDone }) {
+  const [busy, setBusy] = useState(null)
+  const [rejecting, setRejecting] = useState(false)
+  const [reason, setReason] = useState('')
+  const [error, setError] = useState('')
+
+  const run = async (kind, action, message) => {
+    setBusy(kind)
+    setError('')
+    try {
+      await action()
+      onDone(message)
+    } catch (e) {
+      setError(e.message)
+      setBusy(null)
+    }
+  }
+
+  const approve = () => {
+    if (!confirm(`Đổi tên miền của ${who} từ ${r.domain} sang ${r.pendingDomain}?`)) return
+    run('approve', () => approveDomainRequest(r.uid), `Đã đổi tên miền sang ${r.pendingDomain}.`)
+  }
+
+  const reject = (e) => {
+    e.preventDefault()
+    run('reject', () => rejectDomainRequest(r.uid, reason.trim()), `Đã từ chối đổi sang ${r.pendingDomain}.`)
+  }
+
+  const who = r.user?.name || r.user?.email || r.uid
+  return (
+    <li className="request">
+      <div className="request-main">
+        <strong>
+          {r.status === 'approved' ? r.domain : `${r.domain} → ${r.pendingDomain ?? '—'}`}
+        </strong>
+        <small>
+          {who}
+          {r.user?.name && r.user?.email ? ` · ${r.user.email}` : ''}
+          {r.submittedAt && ` · gửi lúc ${formatTime(new Date(r.submittedAt))}`}
+        </small>
+        {r.status === 'rejected' && <small className="warn">Lý do từ chối: {r.rejectReason}</small>}
+        {r.status === 'approved' && r.reviewedAt && <small>Duyệt lúc {formatTime(new Date(r.reviewedAt))}</small>}
+        {r.lastError && r.status === 'pending' && <small className="warn">Lần duyệt trước bị lỗi: {r.lastError}</small>}
+        {error && <small className="warn">{error}</small>}
+        {rejecting && (
+          <form className="request-reject" onSubmit={reject}>
+            <input
+              className="input"
+              autoFocus
+              required
+              maxLength={500}
+              placeholder="Lý do từ chối (người dùng sẽ thấy)"
+              value={reason}
+              onChange={(e) => setReason(e.target.value)}
+            />
+            <button type="submit" className="btn danger-btn" disabled={!!busy || !reason.trim()}>
+              {busy === 'reject' ? 'Đang gửi…' : 'Từ chối'}
+            </button>
+            <button type="button" className="btn" onClick={() => setRejecting(false)} disabled={!!busy}>
+              Huỷ
+            </button>
+          </form>
+        )}
+      </div>
+      {r.status === 'pending' && !rejecting && (
+        <div className="request-actions">
+          <button type="button" className="btn" onClick={() => setRejecting(true)} disabled={!!busy}>
+            Từ chối
+          </button>
+          <button type="button" className="btn primary" onClick={approve} disabled={!!busy}>
+            {busy === 'approve' ? 'Đang đổi…' : 'Duyệt'}
+          </button>
+        </div>
+      )}
+    </li>
+  )
+}
+
+function DomainRequestsTab({ onNotice }) {
+  const [filter, setFilter] = useState('pending')
+  const requests = useLoad(() => listDomainRequests(filter), [filter])
+
+  return (
+    <section>
+      <div className="request-filter">
+        <Segmented value={filter} options={REQUEST_FILTERS} onChange={setFilter} />
+      </div>
+      {!requests.data?.length ? (
+        <Status
+          error={requests.error}
+          loading={!requests.data}
+          empty={filter === 'pending' ? 'Không có yêu cầu đổi tên miền nào đang chờ.' : 'Chưa có yêu cầu nào.'}
+          onRetry={requests.reload}
+        />
+      ) : (
+        <ul className="requests">
+          {requests.data.map((r) => (
+            <DomainRequestRow
+              key={r.uid}
+              request={r}
+              onDone={(message) => {
+                onNotice(message)
+                requests.reload()
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 export default function AdminPage({ user }) {
-  const [tab, setTab] = useState('users')
+  const [tab, setTab] = useState('requests')
   const [previewing, setPreviewing] = useState(null)
   const [making, setMaking] = useState(null)
   const [notice, setNotice] = useState('')
@@ -222,13 +482,19 @@ export default function AdminPage({ user }) {
           </span>
           <span>Trang chủ</span>
         </button>
-        <strong className="admin-title">Quản trị mẫu trang</strong>
+        <strong className="admin-title">Quản trị</strong>
         <div className="spacer" />
         {notice && <span className="save-state">{notice}</span>}
         <UserChip user={user} onSignOut={signOut} />
       </header>
 
       <div className="tabs admin-tabs">
+        <button type="button" className={`tab${tab === 'requests' ? ' active' : ''}`} onClick={() => setTab('requests')}>
+          Duyệt xuất bản
+        </button>
+        <button type="button" className={`tab${tab === 'domains' ? ' active' : ''}`} onClick={() => setTab('domains')}>
+          Đổi tên miền
+        </button>
         <button type="button" className={`tab${tab === 'users' ? ' active' : ''}`} onClick={() => setTab('users')}>
           Người dùng
         </button>
@@ -238,7 +504,11 @@ export default function AdminPage({ user }) {
       </div>
 
       <main className="home-main">
-        {tab === 'users' ? (
+        {tab === 'requests' ? (
+          <PublishRequestsTab onPreview={setPreviewing} onNotice={setNotice} />
+        ) : tab === 'domains' ? (
+          <DomainRequestsTab onNotice={setNotice} />
+        ) : tab === 'users' ? (
           <UsersTab onPreview={setPreviewing} onMakeTemplate={(design, source) => setMaking({ design, source })} />
         ) : (
           <section>
