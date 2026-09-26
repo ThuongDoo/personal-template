@@ -451,3 +451,25 @@ Cần deploy: backend + Storage rules (thư mục `users/{uid}/videos`).
 - [ ] Trên điện thoại (iOS Safari): video tự phát trong hình (vì đã tắt tiếng + playsinline)
 - [ ] Dọn tệp thừa (mục 33) cũng xoá video không còn dùng sau 24 giờ
 - [ ] Admin "Lưu làm mẫu" trang có video trong hình → mẫu vẫn phát video
+
+## 40. Mẫu portfolio đầy đủ (nhiều phần, cuộn dọc)
+
+Đã ghi vào Firestore bằng `npm run seed:templates` ở backend (chạy lại chỉ cập nhật, không tạo trùng; `-- --preview <thư mục>` để xem trước HTML mà không ghi). Hai mẫu một-màn-hình cũ ("Tối giản", "Link in bio") đã được gỡ.
+
+- [ ] Trang chủ → "Tạo trang mới" có 4 mẫu: **Portfolio – Nhà thiết kế** (nền tối), **Portfolio – Lập trình viên** (nền sáng), **Portfolio – Nhiếp ảnh**, **Portfolio – Sáng tạo nội dung** (tông cam)
+- [ ] Mỗi mẫu có đủ các phần: thanh menu, phần mở đầu, giới thiệu/con số, dịch vụ hoặc kỹ năng, dự án/tác phẩm, kinh nghiệm hoặc bảng giá, cảm nhận khách hàng, liên hệ, chân trang
+- [ ] Tạo trang từ từng mẫu → mở đúng bố cục, cuộn hết trang không có chỗ chồng chéo
+- [ ] Sửa được mọi thứ: chữ, màu/gradient, ảnh (ảnh thường và ảnh trong hình khối), nút + đường dẫn, icon mạng xã hội
+- [ ] Các nút liên hệ mở đúng `mailto:` / `tel:`; nút GitHub mở tab mới
+- [ ] Ảnh minh hoạ là ảnh mẫu từ picsum.photos → thay bằng ảnh của mình; tên/email/số điện thoại là dữ liệu giả
+- [ ] Xuất bản một trang tạo từ mẫu → hiển thị giống trong trình soạn thảo, thu nhỏ vừa màn hình điện thoại
+- [ ] Admin xoá được các mẫu này ở tab "Mẫu đã tạo"
+
+## 41. Duyệt xuất bản báo "Vercel: Not authorized"
+
+Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel trả `invalidToken: true` cho mọi lệnh gọi).
+
+- [ ] Đã tạo token mới trên Vercel (Account Settings → Tokens), đúng phạm vi team chứa các project, hạn dùng đủ dài
+- [ ] Đã cập nhật `VERCEL_TOKEN` (và `VERCEL_TEAM_ID` nếu project thuộc team) ở `.env` **và** ở biến môi trường nơi backend đang chạy, rồi deploy lại backend
+- [ ] Bấm "Duyệt" lại yêu cầu đang chờ → xuất bản thành công
+- [ ] Khi token hỏng, dòng lỗi trong tab duyệt ghi rõ "Token Vercel (VERCEL_TOKEN) không hợp lệ hoặc đã hết hạn…" thay vì "Not authorized"
