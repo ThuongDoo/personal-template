@@ -54,6 +54,12 @@ export const getPublishStatus = (designId) => api(`/designs/${enc(designId)}/pub
 /** Sends the design (as saved in Firestore) for admin review. */
 export const requestPublish = (designId) => api(`/designs/${enc(designId)}/publish`, { method: 'POST' })
 
+/**
+ * `{ requests: { [designId]: request }, site }`: every design's latest publish request, and the live site
+ * (or null; `site.designId` is the design being shown). Used for the badges on the home screen.
+ */
+export const getPublishOverview = () => api('/me/publish-overview')
+
 export const cancelPublish = (designId) => api(`/designs/${enc(designId)}/publish`, { method: 'DELETE' })
 
 // ---------------------------------------------------------------- publishing (admin)

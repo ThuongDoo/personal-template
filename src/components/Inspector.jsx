@@ -4,6 +4,7 @@ import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fi
 import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
 import { isUploadedImage, uploadIcon, uploadImage } from '../lib/cloud.js'
 import { loadImageSize } from '../lib/image.js'
+import { useMissingImage } from '../lib/useMissingImage.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
@@ -49,6 +50,7 @@ function ImageSection({ el, setProps, setGeom }) {
   const { src, alt, fit } = el.props
   const uploaded = isUploadedImage(src)
   const isShape = el.type === 'shape'
+  const missing = useMissingImage(src)
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
@@ -92,7 +94,10 @@ function ImageSection({ el, setProps, setGeom }) {
 
   return (
     <Section title="Hình ảnh">
-      <div className="img-preview">{src ? <img src={src} alt="" /> : <span>Chưa có ảnh</span>}</div>
+      <div className="img-preview">
+        {!src ? <span>Chưa có ảnh</span> : missing ? <span className="warn">Ảnh không còn tồn tại</span> : <img src={src} alt="" />}
+      </div>
+      {missing && <p className="warn">Ảnh này đã bị xoá khỏi kho lưu trữ. Hãy tải ảnh khác lên.</p>}
       <div className="row">
         <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
           <Icon name="upload" size={14} />
@@ -433,6 +438,7 @@ function OpacitySlider({ value, onChange }) {
 function SiteSection({ page, onChange }) {
   const fileRef = useRef(null)
   const [busy, setBusy] = useState(false)
+  const faviconMissing = useMissingImage(page.favicon)
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
@@ -464,7 +470,7 @@ function SiteSection({ page, onChange }) {
         <span className="field-label">Icon web (favicon)</span>
         <div className="favicon-row">
           <span className="favicon-preview">
-            {page.favicon ? <img src={page.favicon} alt="" /> : <Icon name="image" size={16} />}
+            {page.favicon && !faviconMissing ? <img src={page.favicon} alt="" /> : <Icon name="image" size={16} />}
           </span>
           <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
             <Icon name="upload" size={14} />
@@ -477,6 +483,7 @@ function SiteSection({ page, onChange }) {
           )}
         </div>
         <input ref={fileRef} type="file" accept="image/png,image/jpeg,image/webp,image/svg+xml,image/x-icon" hidden onChange={onFile} />
+        {faviconMissing && <p className="warn">Icon đã bị xoá khỏi kho lưu trữ. Hãy tải icon khác lên.</p>}
         <p className="hint">Nên dùng ảnh vuông, tối thiểu 64×64px.</p>
       </div>
     </Section>

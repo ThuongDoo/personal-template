@@ -247,13 +247,15 @@ function RequestRow({ request: r, onPreview, onDone }) {
       return null
     })
 
-  const approve = () => {
-    if (!confirm(`Duyệt và xuất bản công khai trang "${r.title}"?`)) return
+  // No confirmation: the user was already warned that approving replaces (and deletes) their old site.
+  const approve = () =>
     run('approve', async () => {
       const res = await approvePublishRequest(r.id)
-      return `Đã duyệt "${r.title}". ${res.deployment?.url ? `Trang ở ${res.deployment.url}` : 'Vercel đang triển khai trang.'}`
+      const missing = res.deployment?.missingImages
+        ? ` ${res.deployment.missingImages} ảnh không còn trong Storage nên đã bị bỏ trống.`
+        : ''
+      return `Đã duyệt "${r.title}". ${res.deployment?.url ? `Trang ở ${res.deployment.url}` : 'Vercel đang triển khai trang.'}${missing}`
     })
-  }
 
   const reject = (e) => {
     e.preventDefault()

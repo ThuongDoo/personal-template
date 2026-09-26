@@ -1619,3 +1619,73 @@ button.card:disabled {
   align-self: flex-start;
   margin-top: 4px;
 }
+
+/* ---------------------------------------------------------------- publish badges on cards */
+
+.card-live {
+  border-color: #86efac;
+  box-shadow: 0 0 0 1px #86efac;
+}
+
+.card-badges {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  right: 48px; /* keeps clear of the delete button */
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  pointer-events: none;
+}
+
+.badge {
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 1.5;
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.15);
+  pointer-events: auto;
+}
+
+.badge-live {
+  background: #16a34a;
+  color: #fff;
+}
+
+.badge-live::before {
+  content: '● ';
+}
+
+.badge-wait {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.badge-bad {
+  background: #fee2e2;
+  color: #b91c1c;
+}
+
+.card-link {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin: -6px 12px 12px;
+  color: #15803d;
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+/* Image deleted from Storage (editor only). */
+.placeholder.missing {
+  color: #b91c1c;
+  background-color: #fef2f2 !important;
+  background-image: repeating-linear-gradient(45deg, rgba(185, 28, 28, 0.05) 0 10px, transparent 10px 20px);
+}
+
+.placeholder.missing.overlay {
+  position: absolute;
+  inset: 0;
+  opacity: 0.92;
+}

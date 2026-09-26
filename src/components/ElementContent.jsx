@@ -1,12 +1,44 @@
 import { useEffect, useId, useMemo, useRef } from 'react'
 import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
 import { shapeSvg } from '../lib/shapes.js'
+import { useMissingImage } from '../lib/useMissingImage.js'
 
-function Shape({ el, style, ghost }) {
+/** Shown in the editor where an image used to be but can no longer be loaded. */
+function MissingImage({ style, overlay = false }) {
+  return (
+    <div style={style} className={`placeholder missing${overlay ? ' overlay' : ''}`}>
+      <span>Ảnh không còn tồn tại</span>
+      <small>Chọn ảnh khác ở bảng bên phải</small>
+    </div>
+  )
+}
+
+function Shape({ el, style, ghost, isEditor }) {
   // useId keeps SVG ids unique when the same element renders in both the editor and preview.
   const id = 'shape' + useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const html = useMemo(() => shapeSvg(el, id, { ghost }), [el, id, ghost])
-  return <div style={style} dangerouslySetInnerHTML={{ __html: html }} />
+  const missing = useMissingImage(el.props.src)
+  return (
+    <div style={{ ...style, position: 'relative' }}>
+      <div style={{ width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: html }} />
+      {isEditor && missing && <MissingImage overlay />}
+    </div>
+  )
+}
+
+function ImageBlock({ p, css, isEditor }) {
+  const missing = useMissingImage(p.src)
+  if (missing) return isEditor ? <MissingImage style={css} /> : <div style={css} />
+  return (
+    <div style={css}>
+      <img
+        src={p.src}
+        alt={p.alt}
+        draggable={false}
+        style={{ width: '100%', height: '100%', objectFit: p.fit, display: 'block' }}
+      />
+    </div>
+  )
 }
 
 function TextBlock({ text, style, editing, onCommit }) {
@@ -93,19 +125,10 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
           <div style={css} />
         )
       }
-      return (
-        <div style={css}>
-          <img
-            src={p.src}
-            alt={p.alt}
-            draggable={false}
-            style={{ width: '100%', height: '100%', objectFit: p.fit, display: 'block' }}
-          />
-        </div>
-      )
+      return <ImageBlock p={p} css={css} isEditor={isEditor} />
 
     case 'shape':
-      return <Shape el={el} style={css} ghost={editing} />
+      return <Shape el={el} style={css} ghost={editing} isEditor={isEditor} />
 
     case 'divider':
       return (

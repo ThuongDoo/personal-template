@@ -13,6 +13,7 @@ import {
   uploadInlineImages,
 } from '../lib/cloud.js'
 import { normalizeDoc } from '../lib/elements.js'
+import { getPublishOverview } from '../lib/api.js'
 import { goAdmin, openDesignRoute } from '../lib/route.js'
 import { formatTime } from '../lib/format.js'
 import { BLANK_TEMPLATE } from '../lib/templates.js'
@@ -48,6 +49,38 @@ function migrateLegacyDesign(uid) {
     )
   }
   return legacyMigrations.get(uid)
+}
+
+const OVERVIEW_POLL_MS = 20_000
+const WAITING = ['pending', 'deploying']
+const FAILED_BUILDS = ['ERROR', 'CANCELED']
+const siteBuilding = (site) => !!site && !site.url && !FAILED_BUILDS.includes(site.status)
+
+/**
+ * Badges for one design card: whether it is the live site, and the state of its latest publish request.
+ * A live design can also carry a pending/rejected badge when an update of it is under review.
+ */
+function publishBadges(designId, overview) {
+  if (!overview) return []
+  const badges = []
+  const { site } = overview
+  if (site?.designId === designId) {
+    if (site.url) badges.push({ tone: 'live', label: 'Đang xuất bản', title: site.url })
+    else if (siteBuilding(site)) badges.push({ tone: 'wait', label: 'Đang triển khai' })
+  }
+  const r = overview.requests[designId]
+  if (r?.status === 'pending') {
+    badges.push({
+      tone: 'wait',
+      label: site?.designId === designId ? 'Bản cập nhật chờ duyệt' : 'Chờ duyệt',
+      title: `Gửi lúc ${formatTime(r.submittedAt && new Date(r.submittedAt))}`,
+    })
+  } else if (r?.status === 'deploying' && !badges.some((b) => b.label === 'Đang triển khai')) {
+    badges.push({ tone: 'wait', label: 'Đang triển khai' })
+  } else if (r?.status === 'rejected') {
+    badges.push({ tone: 'bad', label: 'Bị từ chối', title: `Lý do: ${r.rejectReason}` })
+  }
+  return badges
 }
 
 export default function Home({ user, isAdmin }) {
@@ -96,6 +129,28 @@ export default function Home({ user, isAdmin }) {
     }
   }, [user.uid, attempt])
 
+  // Publish badges. Optional: if the backend is unreachable the cards simply show none.
+  const [overview, setOverview] = useState(null)
+  const [overviewTick, setOverviewTick] = useState(0)
+  useEffect(() => {
+    let cancelled = false
+    getPublishOverview().then(
+      (o) => !cancelled && setOverview(o),
+      (e) => console.error('Không tải được trạng thái xuất bản', e),
+    )
+    return () => {
+      cancelled = true
+    }
+  }, [user.uid, attempt, overviewTick])
+
+  // While something waits for an admin or is building, check again now and then so the badge updates.
+  const waiting = !!overview && (Object.values(overview.requests).some((r) => WAITING.includes(r.status)) || siteBuilding(overview.site))
+  useEffect(() => {
+    if (!waiting) return
+    const t = setTimeout(() => setOverviewTick((n) => n + 1), OVERVIEW_POLL_MS)
+    return () => clearTimeout(t)
+  }, [waiting, overview])
+
   const create = async (template) => {
     setCreating(template.id)
     try {
@@ -117,7 +172,9 @@ export default function Home({ user, isAdmin }) {
   const canCreate = !!designs && !full && !creating
 
   const remove = async (design) => {
-    if (!confirm(`Xoá trang "${design.page.title}"? Không thể hoàn tác.`)) return
+    const live = overview?.site?.designId === design.id
+    const warning = live ? '\n\nTrang này đang được xuất bản: bản công khai vẫn chạy cho tới khi bạn xuất bản trang khác.' : ''
+    if (!confirm(`Xoá trang "${design.page.title}"? Không thể hoàn tác.${warning}`)) return
     setDesigns((list) => list.filter((d) => d.id !== design.id))
     try {
       await deleteDesign(user.uid, design.id)
@@ -151,20 +208,39 @@ export default function Home({ user, isAdmin }) {
   } else {
     saved = (
       <div className="card-grid">
-        {designs.map((d) => (
-          <div key={d.id} className="card">
-            <button type="button" className="card-open" onClick={() => openDesignRoute(d.id)}>
-              <DesignThumb design={d} />
-              <span className="card-text">
-                <strong>{d.page.title || 'Chưa đặt tên'}</strong>
-                <small>Sửa lần cuối: {formatTime(d.updatedAt)}</small>
-              </span>
-            </button>
-            <button type="button" className="icon-btn danger card-delete" title="Xoá trang" onClick={() => remove(d)}>
-              <Icon name="trash" />
-            </button>
-          </div>
-        ))}
+        {designs.map((d) => {
+          const badges = publishBadges(d.id, overview)
+          const liveUrl = overview?.site?.designId === d.id ? overview.site.url : null
+          return (
+            <div key={d.id} className={`card${liveUrl ? ' card-live' : ''}`}>
+              <button type="button" className="card-open" onClick={() => openDesignRoute(d.id)}>
+                <DesignThumb design={d} />
+                <span className="card-text">
+                  <strong>{d.page.title || 'Chưa đặt tên'}</strong>
+                  <small>Sửa lần cuối: {formatTime(d.updatedAt)}</small>
+                </span>
+              </button>
+              {badges.length > 0 && (
+                <span className="card-badges">
+                  {badges.map((b) => (
+                    <span key={b.label} className={`badge badge-${b.tone}`} title={b.title}>
+                      {b.label}
+                    </span>
+                  ))}
+                </span>
+              )}
+              {liveUrl && (
+                <a className="card-link" href={liveUrl} target="_blank" rel="noopener noreferrer">
+                  {liveUrl.replace(/^https:\/\//, '')}
+                  <Icon name="external" size={12} />
+                </a>
+              )}
+              <button type="button" className="icon-btn danger card-delete" title="Xoá trang" onClick={() => remove(d)}>
+                <Icon name="trash" />
+              </button>
+            </div>
+          )
+        })}
       </div>
     )
   }

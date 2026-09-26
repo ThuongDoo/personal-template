@@ -123,16 +123,29 @@ export default function PublishDialog({ designId, page, save, onClose }) {
     }
   }
 
-  const submit = () =>
-    run(async () => {
-      if (!(await save())) throw new Error('Chưa lưu được thay đổi lên đám mây, nên chưa thể gửi duyệt.')
-      await requestPublish(designId)
-    })
-
   const { request, site, domain } = status ?? {}
   const state = request?.status
   const hasDomain = !!domain?.name
   const liveHere = site?.designId === designId
+
+  const submit = () => {
+    // Asked here, not when the admin approves: approval replaces the live site without further questions.
+    if (
+      site &&
+      !liveHere &&
+      !confirm(
+        `Tên miền ${domain.domain} đang hiển thị trang “${site.title || 'khác'}”.\n\n` +
+          'Mỗi tài khoản chỉ được xuất bản một trang web. Khi yêu cầu này được duyệt, trang cũ sẽ bị XOÁ HẲN ' +
+          'và tên miền chuyển sang trang này.\n\nVẫn gửi yêu cầu?',
+      )
+    ) {
+      return
+    }
+    run(async () => {
+      if (!(await save())) throw new Error('Chưa lưu được thay đổi lên đám mây, nên chưa thể gửi duyệt.')
+      await requestPublish(designId)
+    })
+  }
   const canSubmit = hasDomain && state !== 'pending' && state !== 'deploying'
 
   let requestState = null
@@ -182,7 +195,10 @@ export default function PublishDialog({ designId, page, save, onClose }) {
     siteState = (
       <div className="publish-state pending">
         <strong>Tên miền đang hiển thị trang “{site.title || 'khác'}”</strong>
-        <span>Xuất bản trang này sẽ thay thế trang đó, vì mỗi tài khoản chỉ có một trang web công khai.</span>
+        <span>
+          Mỗi tài khoản chỉ được xuất bản một trang web. Khi yêu cầu này được duyệt, trang cũ sẽ bị xoá hẳn khỏi máy chủ và
+          tên miền chuyển sang trang này.
+        </span>
       </div>
     )
   }
