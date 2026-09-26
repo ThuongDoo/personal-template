@@ -1,4 +1,5 @@
 import { AUDIO_PRESETS } from './audioViz.js'
+import { firstColor, isGradient } from './gradient.js'
 import { SHAPES, randomSeed } from './shapes.js'
 
 export const GRID = 10
@@ -150,16 +151,146 @@ export const ELEMENT_TYPES = {
     props: { src: '', name: '', viz: 'bars', color: '#a78bfa', color2: '#f472b6', bars: 32, loop: false, autoplay: true },
     style: { radius: 16, background: 'transparent' },
   },
+  icon: {
+    label: 'Nút icon',
+    w: 56,
+    h: 56,
+    // icon: a key of ICON_LIBRARY (iconLibrary.js); iconSize is a % of the box.
+    props: { icon: 'phone', iconColor: '#ffffff', iconSize: 50, strokeWidth: 2, href: '#', newTab: false, label: '' },
+    style: { background: '#4f46e5', radius: 999 },
+  },
 }
 
-export const PALETTE_ORDER = ['heading', 'text', 'button', 'image', 'box', 'divider', 'video']
+export const PALETTE_ORDER = ['image', 'box', 'divider', 'video']
+
+/**
+ * The text group in the palette (`text:<preset>`): ready-made heading/paragraph elements that only
+ * differ in their starting size, content and style, so they need nothing new to render or publish.
+ */
+export const TEXT_PRESETS = {
+  title: {
+    label: 'Tiêu đề lớn',
+    type: 'heading',
+    w: 680,
+    h: 72,
+    props: { text: 'Tiêu đề lớn của bạn' },
+    style: { fontSize: 54, fontWeight: 800, lineHeight: 1.15, letterSpacing: -1 },
+  },
+  heading: { label: 'Tiêu đề', type: 'heading' },
+  subheading: {
+    label: 'Tiêu đề phụ',
+    type: 'heading',
+    w: 480,
+    h: 40,
+    props: { text: 'Tiêu đề phụ' },
+    style: { fontSize: 24, fontWeight: 600, lineHeight: 1.3, color: '#374151' },
+  },
+  paragraph: { label: 'Đoạn văn', type: 'text' },
+  quote: {
+    label: 'Trích dẫn',
+    type: 'text',
+    w: 460,
+    h: 104,
+    props: { text: '“Một câu nói truyền cảm hứng đặt ở đây.”\n— Tên tác giả' },
+    style: { fontSize: 20, italic: true, lineHeight: 1.5, color: '#374151', background: '#f5f3ff', padding: 20, radius: 12 },
+  },
+  list: {
+    label: 'Danh sách',
+    type: 'text',
+    w: 360,
+    h: 110,
+    props: { text: '•  Mục thứ nhất\n•  Mục thứ hai\n•  Mục thứ ba' },
+    style: { lineHeight: 1.8, color: '#374151' },
+  },
+  caption: {
+    label: 'Chú thích',
+    type: 'text',
+    w: 320,
+    h: 24,
+    props: { text: 'Chú thích nhỏ cho ảnh hoặc nội dung' },
+    style: { fontSize: 13, color: '#9ca3af', lineHeight: 1.4 },
+  },
+  label: {
+    label: 'Nhãn',
+    type: 'text',
+    w: 220,
+    h: 22,
+    props: { text: 'NHÃN NỔI BẬT' },
+    style: { fontSize: 12, fontWeight: 700, letterSpacing: 2, color: '#4f46e5' },
+  },
+}
+export const TEXT_ORDER = Object.keys(TEXT_PRESETS)
+
+/** The button group in the palette (`button:<preset>`), built the same way as TEXT_PRESETS. */
+export const BUTTON_PRESETS = {
+  primary: { label: 'Nút chính', type: 'button' },
+  outline: {
+    label: 'Viền',
+    type: 'button',
+    style: { background: 'transparent', color: '#4f46e5', borderWidth: 2, borderColor: '#4f46e5' },
+  },
+  pill: { label: 'Bo tròn', type: 'button', style: { background: '#111827', radius: 999 } },
+  soft: { label: 'Nhạt', type: 'button', style: { background: '#eef2ff', color: '#4f46e5' } },
+  gradient: {
+    label: 'Chuyển màu',
+    type: 'button',
+    style: { background: 'linear-gradient(135deg, #6366f1, #ec4899)', radius: 999 },
+  },
+  raised: {
+    label: 'Nổi',
+    type: 'button',
+    style: { background: '#ffffff', color: '#111827', shadow: 'lg', radius: 12 },
+  },
+  link: {
+    label: 'Liên kết',
+    type: 'button',
+    w: 140,
+    h: 32,
+    props: { text: 'Xem thêm →' },
+    style: { background: 'transparent', color: '#4f46e5', underline: true, padding: 0 },
+  },
+  large: {
+    label: 'Nút lớn',
+    type: 'button',
+    w: 280,
+    h: 68,
+    props: { text: 'Bắt đầu ngay' },
+    style: { fontSize: 20, fontWeight: 700, radius: 14, shadow: 'md' },
+  },
+  icon: { label: 'Nút icon', type: 'icon' },
+  iconPlain: {
+    label: 'Icon',
+    type: 'icon',
+    w: 44,
+    h: 44,
+    props: { icon: 'facebook', iconColor: '#4f46e5', iconSize: 80 },
+    style: { background: 'transparent' },
+  },
+}
+export const BUTTON_ORDER = Object.keys(BUTTON_PRESETS)
+
+/** Palette groups whose presets are plain elements with a different starting style. */
+const STYLE_PRESETS = { text: TEXT_PRESETS, button: BUTTON_PRESETS }
 
 /**
  * Palette/drag key → new element. Keys are element types, `shape:<name>` for a shape preset (size and
- * props from the SHAPES catalog) or `audio:<viz>` for an audio effect (from AUDIO_PRESETS).
+ * props from the SHAPES catalog), `audio:<viz>` for an audio effect (from AUDIO_PRESETS), or
+ * `text:<preset>` / `button:<preset>` for a text or button style (TEXT_PRESETS, BUTTON_PRESETS).
  */
 export function createFromKey(key, rest = {}) {
   const [type, preset] = key.split(':')
+  const styled = STYLE_PRESETS[type]?.[preset]
+  if (styled) {
+    const { type: kind, w, h, props, style } = styled
+    const base = ELEMENT_TYPES[kind]
+    return createElement(kind, {
+      w: w ?? base.w,
+      h: h ?? base.h,
+      ...rest,
+      props: { ...props, ...rest.props },
+      style: { ...style, ...rest.style },
+    })
+  }
   if (type === 'shape' && SHAPES[preset]) {
     const s = SHAPES[preset]
     return createElement('shape', { w: s.w, h: s.h, ...rest, props: { ...s.props, shape: preset, ...rest.props } })
@@ -242,7 +373,11 @@ export function contentStyle(el) {
     borderRadius: s.radius,
     opacity: s.opacity,
     boxShadow: SHADOWS[s.shadow] ?? 'none',
-    border: s.borderWidth > 0 ? `${s.borderWidth}px ${s.borderStyle} ${s.borderColor}` : 'none',
+    // A gradient border is drawn by an overlay (gradientBorderStyle); this transparent one keeps the layout.
+    border:
+      s.borderWidth > 0
+        ? `${s.borderWidth}px ${s.borderStyle} ${isGradient(s.borderColor) ? 'transparent' : s.borderColor}`
+        : 'none',
     padding: s.padding,
     overflow: 'hidden',
   }
@@ -251,7 +386,8 @@ export function contentStyle(el) {
       display: 'flex',
       flexDirection: 'column',
       justifyContent: VALIGN[s.verticalAlign] ?? 'flex-start',
-      color: s.color,
+      // Gradient text is painted by an inner span (textGradientStyle); this is the fallback colour.
+      color: firstColor(s.color),
       fontFamily: fontStack(s.fontFamily),
       fontSize: s.fontSize,
       fontWeight: s.fontWeight,
@@ -267,6 +403,9 @@ export function contentStyle(el) {
   if (el.type === 'divider') {
     Object.assign(css, { display: 'flex', alignItems: 'center' })
   }
+  if (el.type === 'icon') {
+    Object.assign(css, { display: 'flex', alignItems: 'center', justifyContent: 'center' })
+  }
   if (el.type === 'shape') {
     // The SVG draws its own fill, rim and shadow, and the shadow must spill past the box.
     Object.assign(css, { background: 'none', border: 'none', boxShadow: 'none', borderRadius: 0, padding: 0, overflow: 'visible' })
@@ -275,5 +414,14 @@ export function contentStyle(el) {
 }
 
 export function dividerLineStyle(el) {
-  return { width: '100%', borderTop: `${el.style.lineWidth}px ${el.style.lineStyle} ${el.style.color}` }
+  const { lineWidth: w, lineStyle, color } = el.style
+  if (!isGradient(color)) return { width: '100%', borderTop: `${w}px ${lineStyle} ${color}` }
+  // Borders can't be gradients: draw a gradient bar and cut dashes/dots out of it with a mask.
+  const css = { width: '100%', height: w, background: color }
+  if (lineStyle !== 'solid') {
+    const [on, off] = lineStyle === 'dotted' ? [w, w] : [w * 3, w * 2]
+    const mask = `repeating-linear-gradient(90deg, #000 0 ${on}px, transparent ${on}px ${on + off}px)`
+    Object.assign(css, { WebkitMask: mask, mask })
+  }
+  return css
 }

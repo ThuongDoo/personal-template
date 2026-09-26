@@ -82,3 +82,14 @@ export const approveDomainRequest = (uid) => api(`/admin/domain-requests/${enc(u
 
 export const rejectDomainRequest = (uid, reason) =>
   api(`/admin/domain-requests/${enc(uid)}/reject`, { method: 'POST', body: { reason } })
+
+// ---------------------------------------------------------------- storage cleanup
+
+/**
+ * Asks the backend to delete this user's uploads that no design uses any more (after a 24h grace
+ * period). Fire-and-forget: it is rate-limited server side and failures don't matter to the user.
+ */
+export const cleanupMyStorage = () => api('/me/storage/cleanup', { method: 'POST' })
+
+/** Admin: sweep every user's uploads and the template images. */
+export const cleanupAllStorage = () => api('/admin/storage/cleanup', { method: 'POST' })

@@ -275,3 +275,128 @@ Cần deploy lại Storage rules (thêm thư mục `audio`). Để hiệu ứng 
 - [ ] Khi tự phát trước lúc người xem tương tác: nhạc có tiếng, hiệu ứng chạy theo mẫu; sau lần chạm đầu tiên hiệu ứng bám đúng theo nhạc
 - [ ] Điện thoại (iOS Safari / Android Chrome): chạm lần đầu vào trang thì nhạc bắt đầu
 - [ ] Phần tử âm thanh tạo trước thay đổi này cũng mặc định tự phát
+
+## 27. Nhóm "Chữ" riêng trong cột trái
+
+- [ ] Cột trái: nhóm **"Chữ"** ở trên cùng; mục "Thành phần" không còn Tiêu đề / Đoạn văn (còn Nút bấm, Hình ảnh, Khối màu, Đường kẻ, Video)
+- [ ] Nhóm Chữ có 8 kiểu, mỗi kiểu có icon: Tiêu đề lớn, Tiêu đề, Tiêu đề phụ, Đoạn văn, Trích dẫn, Danh sách, Chú thích, Nhãn
+- [ ] Kéo thả **và** nhấp từng kiểu → tạo chữ đúng cỡ, độ đậm, màu và nội dung mẫu
+  - Trích dẫn: chữ nghiêng, nền tím nhạt, bo góc
+  - Danh sách: 3 dòng có dấu •
+  - Nhãn: chữ nhỏ, in hoa, giãn chữ, màu tím
+- [ ] Nhấp đúp để sửa chữ trực tiếp; mọi chỉnh sửa chữ/màu/phông ở bảng bên phải hoạt động như trước
+- [ ] Bảng "Lớp" hiện nội dung chữ; bảng thuộc tính hiện "Tiêu đề" hoặc "Đoạn văn"
+- [ ] Trang cũ có tiêu đề/đoạn văn vẫn mở và xuất bản bình thường
+- [ ] Trang đã xuất bản hiện đúng các kiểu chữ
+
+## 28. Nhóm "Nút bấm" riêng trong cột trái
+
+- [ ] Cột trái: nhóm **"Nút bấm"** ngay dưới nhóm Chữ; mục "Thành phần" không còn ô Nút bấm
+- [ ] Nhóm có 8 kiểu, mỗi ô có **nút mẫu thu nhỏ** đúng màu/viền/bo góc: Nút chính, Viền, Bo tròn, Nhạt, Chuyển màu, Nổi, Liên kết, Nút lớn
+- [ ] Kéo thả **và** nhấp từng kiểu → tạo nút đúng kiểu
+  - Chuyển màu: nền chuyển tím → hồng, bo tròn
+  - Nổi: nền trắng, có bóng đổ
+  - Liên kết: chữ gạch chân "Xem thêm →", không nền
+  - Nút lớn: to hơn, chữ "Bắt đầu ngay"
+- [ ] Sửa chữ, liên kết khi nhấn, "Mở trong tab mới", màu nền, viền, bo góc ở bảng bên phải hoạt động như trước
+- [ ] Nút "Chuyển màu": ô Màu nền hiện chuỗi `linear-gradient(...)`, sửa được hoặc chọn màu trơn thay thế
+- [ ] Xem trước / trang đã xuất bản: nút bấm được, mở đúng liên kết
+- [ ] Trang cũ có nút bấm vẫn hiển thị và xuất bản bình thường
+
+## 29. Nút icon trong nhóm Nút bấm
+
+- [ ] Nhóm Nút bấm có thêm 2 ô: **"Nút icon"** (nền tím tròn, icon trắng) và **"Icon"** (không nền, icon tím); ô mẫu hiện đúng icon
+- [ ] Kéo thả / nhấp để thêm → nút icon trên trang
+- [ ] Bảng thuộc tính → "Icon": lưới chọn icon chia theo nhóm (xem mục 30); icon đang chọn được tô sáng
+- [ ] Chọn icon khác → đổi ngay trên trang
+- [ ] "Màu icon" đổi màu; "Cỡ icon" (20–100%) và "Độ dày nét" hoạt động
+- [ ] Nền, bo góc, viền, bóng, độ mờ, xoay, đổi cỡ dùng như phần tử khác
+- [ ] "Khi bấm": nhập đường dẫn (https://, `tel:`, `mailto:`), "Mở trong tab mới", "Mô tả"
+- [ ] Trang chỉnh sửa: bấm vào nút icon chỉ chọn phần tử, không mở liên kết
+- [ ] Xem trước / trang đã xuất bản: bấm vào icon mở đúng đường dẫn (tab mới nếu bật); `tel:` gọi điện trên điện thoại
+- [ ] Rê chuột lên icon ở trang đã xuất bản → hiện tên (Mô tả, hoặc tên icon nếu để trống)
+- [ ] Bảng "Lớp" hiện "Nút icon" với biểu tượng ngôi sao
+
+## 30. Thêm nhiều icon (99 icon, 7 nhóm) + tìm icon
+
+- [ ] Bảng chọn icon có 7 nhóm: Mạng xã hội (12), Liên hệ (14), Mua sắm (12), Đời sống (13), Đa phương tiện (8), Chung (30), Mũi tên (10)
+- [ ] Icon mạng xã hội mới: Zalo, Messenger, WhatsApp, Telegram, Pinterest, GitHub
+- [ ] Ô "Tìm trong 99 icon…": gõ có dấu hoặc không dấu đều tìm được (VD "dien thoai", "giao hang", "zalo")
+- [ ] Đang tìm: chỉ hiện các nhóm có kết quả; không có kết quả → "Không tìm thấy icon nào"
+- [ ] Chọn một icon mới → đổi ngay trên trang; trang đã xuất bản hiện đúng icon đó
+- [ ] Nút icon tạo trước khi thêm icon mới vẫn giữ nguyên icon cũ
+
+## 31. Mọi ô màu chọn được Đơn sắc hoặc Chuyển màu (gradient)
+
+Ô màu nào cũng có 2 nút **Đơn sắc / Chuyển màu** (trừ Màu 1/Màu 2 của Âm thanh, vốn đã là chuyển màu giữa 2 màu).
+
+- [ ] Chuyển màu: thanh xem trước, 8 mẫu có sẵn, Tuyến tính / Toả tròn, thanh chỉnh góc (tuyến tính), 2–5 điểm màu (đổi màu, kéo vị trí, xoá, "Thêm điểm màu")
+- [ ] Bấm "Đơn sắc" khi đang chuyển màu → giữ màu của điểm đầu tiên
+- [ ] Kéo thanh góc / vị trí liên tục rồi Ctrl+Z → hoàn tác cả lần kéo, không phải từng bước nhỏ
+- [ ] Áp dụng và hiển thị đúng (trang chỉnh sửa, Xem trước, ảnh thu nhỏ trang chủ, trang **đã xuất bản**) cho:
+  - [ ] Màu nền trang
+  - [ ] Màu nền phần tử (chữ, nút, ảnh, khối màu, video, nút icon, âm thanh)
+  - [ ] Màu chữ (tiêu đề, đoạn văn, nút) — gạch chân vẫn thấy được
+  - [ ] Màu viền — viền gradient vẫn bo góc đúng, kể cả nút bo tròn
+  - [ ] Đường kẻ — cả nét liền, nét đứt, chấm
+  - [ ] Hình khối: màu nền (khi không có ảnh) và màu viền/viền giấy
+  - [ ] Màu icon của nút icon (kể cả icon có chấm nhỏ như Instagram)
+- [ ] Đang sửa chữ trực tiếp (nhấp đúp) trên chữ gradient → tạm hiện màu đầu tiên; sửa xong hiện lại gradient
+- [ ] Nút "Chuyển màu" có sẵn trong nhóm Nút bấm mở ra đúng chế độ Chuyển màu
+- [ ] Trang cũ (màu đơn sắc) không bị thay đổi gì
+
+## 32. Các nhóm ở cột trái thu gọn, có nút phóng to xem đủ
+
+- [ ] Mặc định mỗi nhóm (Chữ, Nút bấm, Thành phần, Hình khối, Âm thanh) chỉ hiện **2 phần tử đầu**, cạnh tên nhóm có số lượng (VD "NÚT BẤM 10")
+- [ ] Nút ⛶ cạnh tên nhóm **hoặc** liên kết "Xem tất cả n" → mở rộng nhóm, hiện đủ phần tử (lưới 3 cột) và dòng gợi ý của nhóm
+- [ ] Bấm lại nút (đổi thành biểu tượng thu gọn) → thu về 2 phần tử
+- [ ] Mở/thu từng nhóm độc lập với nhau
+- [ ] Tải lại trang / mở trang khác → các nhóm vẫn giữ trạng thái mở/thu như lần trước (trên cùng trình duyệt)
+- [ ] Kéo thả và nhấp để thêm vẫn hoạt động ở cả 2 trạng thái
+
+## 33. Tự dọn ảnh/âm thanh không còn dùng trong Storage
+
+Tệp "thừa" = tệp trong `users/{uid}/images` hoặc `users/{uid}/audio` mà không thiết kế nào của user, không yêu cầu xuất bản đang chờ/đang triển khai nào, và không mẫu trang nào dùng. Tệp chỉ bị xoá khi đã thừa **liên tục hơn 24 giờ**.
+
+- [ ] Tải ảnh lên thiết kế rồi xoá phần tử ảnh → về trang chủ: ảnh **chưa** bị xoá ngay (Firestore có `storageCleanups/user_<uid>` ghi nhận tệp chờ)
+- [ ] Sau hơn 24 giờ, về trang chủ lần nữa (hoặc admin bấm "Dọn dung lượng") → ảnh bị xoá khỏi Storage
+- [ ] Xoá ảnh rồi Ctrl+Z trong vòng 24 giờ → ảnh vẫn còn, không bị xoá (vì lại được dùng)
+- [ ] Ảnh/âm thanh vẫn còn trong **bất kỳ** thiết kế nào của user → không bị xoá
+- [ ] Ảnh nằm trong yêu cầu xuất bản đang chờ duyệt (dù đã bị xoá khỏi thiết kế) → không bị xoá; admin duyệt vẫn đủ ảnh
+- [ ] Xoá cả một trang → sau 24 giờ các ảnh chỉ trang đó dùng bị dọn
+- [ ] Favicon và ảnh trong hình khối cũng được tính là "đang dùng"
+- [ ] Trang đã xuất bản (sau mục 20) vẫn đủ ảnh sau khi ảnh gốc bị dọn
+- [ ] Trang quản trị → nút **"Dọn dung lượng"** → hỏi xác nhận → báo số tệp đã xoá, dung lượng giải phóng, số tệp còn chờ
+- [ ] Xoá một mẫu trang → sau 24 giờ, "Dọn dung lượng" xoá ảnh trong `templates/images` mà không mẫu nào dùng
+- [ ] Về trang chủ liên tục → backend chỉ dọn tối đa 1 lần/phút cho mỗi user
+- [ ] Tắt backend → trang chủ vẫn dùng bình thường (chỉ ghi cảnh báo trong console)
+
+## 34. Hiệu ứng khi đang tải ảnh / âm thanh lên
+
+- [ ] Kéo thả tệp ảnh vào chỗ trống trên trang → ngay tại chỗ thả hiện **khung chờ** (nền tím, viền đứt, ánh sáng chạy qua) với vòng xoay "Đang xử lý…" rồi "Đang tải lên x%"; xong thì khung được thay bằng ảnh
+- [ ] Thả nhiều ảnh một lúc → mỗi ảnh có khung chờ riêng (xếp lệch nhau), tải song song, ảnh nào xong trước hiện trước
+- [ ] Thả ảnh lên hình khối → lớp phủ tối + vòng tiến trình **trên chính hình khối** đó
+- [ ] Bảng thuộc tính: "Tải ảnh lên / Đổi ảnh" (ảnh, hình khối), "Tải tệp lên" (âm thanh), "Tải icon lên" (favicon) → chữ nút đổi thành "Đang xử lý…" / "Đang tải lên x%", thanh tiến trình chạy dưới đáy nút, nút bị khoá trong lúc tải
+- [ ] Tải ảnh/âm thanh qua bảng thuộc tính → phần tử tương ứng trên trang cũng hiện lớp phủ tiến trình
+- [ ] Vòng tiến trình và chữ giữ nguyên kích thước dù phóng to/thu nhỏ trang
+- [ ] Phần tử đang tải đã xoay → lớp phủ xoay theo
+- [ ] Tải lỗi (VD mất mạng) → khung chờ / lớp phủ biến mất, có thông báo lỗi
+- [ ] Tệp lớn (âm thanh ~10–20MB): phần trăm tăng dần, không đứng yên
+
+## 35. Hiệu ứng âm thanh nhảy theo nhịp nhạc thật
+
+Nguyên nhân cũ: bucket Storage chưa bật CORS nên trong trang chỉnh sửa/xem trước trình duyệt không đọc được dữ liệu nhạc → hiệu ứng chạy giả lập. **Đã bật** CORS (chỉ đọc, mọi nguồn) cho bucket `nayva-e79e1.firebasestorage.app` bằng `npm run setup:cors` ở backend; project Firebase mới cần chạy lại lệnh này một lần.
+
+- [ ] Đã chạy `npm run setup:cors`; lệnh in ra cấu hình CORS của bucket với đúng tên miền frontend
+- [ ] Trang chỉnh sửa: phát nhạc có trống rõ → các thanh nảy lên **đúng mỗi phách**, hạ nhanh giữa các phách; không có nhãn "Mô phỏng"
+- [ ] Nhạc nhỏ tiếng vẫn nhảy cao (tự cân độ lớn)
+- [ ] Vòng tròn: vòng phình theo phách; Nhịp đập: khối giữa đập theo tiếng trống
+- [ ] Đoạn nhạc lặng → các thanh hạ thấp, không nhảy loạn
+- [ ] Chưa bật CORS (hoặc tệp ở máy chủ khác chặn): nhạc vẫn phát, hiệu ứng chạy nhịp giả lập 120 bpm, và **trong trang chỉnh sửa** có nhãn "Mô phỏng" ở góc (rê chuột thấy giải thích); trang đã xuất bản không có nhãn này
+- [ ] Trang đã xuất bản: nhảy đúng nhịp nhạc (tệp nằm cùng tên miền nên không cần CORS)
+
+## 36. Sóng âm khác nhau theo nhạc thật (đã bật CORS cho bucket)
+
+- [ ] Tải lại hẳn trang chỉnh sửa (Ctrl+F5) → phát nhạc: hình sóng **khác nhau theo từng đoạn** của bài (đoạn lặng thấp, đoạn trống/điệp khúc cao), không lặp lại một mẫu
+- [ ] Hai bài nhạc khác nhau cho hình sóng khác nhau
+- [ ] Web đã xuất bản từ trước (còn dùng link Storage) cũng nhảy theo nhạc thật

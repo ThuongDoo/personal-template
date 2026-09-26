@@ -1755,3 +1755,270 @@ button.card:disabled {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+
+/* Miniature button on the button-group tiles. */
+.button-sample {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 46px;
+  height: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 1;
+}
+
+/* Icon picker for icon buttons. */
+.icon-group {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.icon-grid {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 4px;
+}
+
+.icon-pick {
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  padding: 6px;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--text);
+}
+
+.icon-pick:hover {
+  border-color: var(--line-strong);
+  background: var(--bg);
+}
+
+.icon-pick.active {
+  border-color: var(--accent);
+  background: var(--accent-soft);
+  color: var(--accent);
+}
+
+.section-body code {
+  font-size: 11px;
+  background: var(--bg);
+  padding: 0 3px;
+  border-radius: 3px;
+}
+
+/* ---------------------------------------------------------------- colour field: solid / gradient */
+
+.color-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.seg.seg-sm button {
+  padding: 3px 6px;
+  font-size: 11.5px;
+}
+
+.gradient-editor {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.gradient-bar {
+  height: 28px;
+  border-radius: 6px;
+  border: 1px solid var(--line);
+}
+
+.gradient-presets {
+  display: grid;
+  grid-template-columns: repeat(8, 1fr);
+  gap: 4px;
+}
+
+.gradient-presets button {
+  aspect-ratio: 1;
+  padding: 0;
+  border: 1px solid var(--line);
+  border-radius: 50%;
+}
+
+.gradient-presets button:hover {
+  outline: 2px solid var(--accent);
+  outline-offset: 1px;
+}
+
+.gradient-stop {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.gradient-stop input[type='range'] {
+  flex: 1;
+  min-width: 0;
+}
+
+.gradient-pos {
+  width: 34px;
+  text-align: right;
+  font-size: 11.5px;
+  color: var(--muted);
+}
+
+/* ---------------------------------------------------------------- collapsible palette groups */
+
+.group-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.group-count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
+.group-more {
+  align-self: flex-start;
+  padding: 2px 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.group-more:hover {
+  text-decoration: underline;
+}
+
+/* ---------------------------------------------------------------- upload progress */
+
+.upload-ring {
+  width: 40px;
+  height: 40px;
+  flex: none;
+  transform: rotate(-90deg);
+}
+
+.upload-ring.spinning {
+  animation: upload-spin 0.9s linear infinite;
+}
+
+@keyframes upload-spin {
+  from {
+    transform: rotate(-90deg);
+  }
+  to {
+    transform: rotate(270deg);
+  }
+}
+
+.upload-ring-track {
+  fill: none;
+  stroke: rgba(255, 255, 255, 0.35);
+  stroke-width: 4;
+}
+
+.upload-ring-fill {
+  fill: none;
+  stroke: #fff;
+  stroke-width: 4;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.2s ease;
+}
+
+/* On the page: covers the element (or a placeholder box) while its file uploads. */
+.upload-overlay {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+  border-radius: calc(6px / var(--z));
+  background: rgba(15, 23, 42, 0.45);
+  backdrop-filter: blur(2px);
+  pointer-events: none;
+  animation: upload-fade 0.2s ease;
+}
+
+.upload-overlay.placeholder-box {
+  background-color: rgba(79, 70, 229, 0.55);
+  background-image: linear-gradient(110deg, transparent 30%, rgba(255, 255, 255, 0.25) 50%, transparent 70%);
+  background-size: 250% 100%;
+  animation: upload-fade 0.2s ease, upload-shimmer 1.4s linear infinite;
+  outline: calc(2px / var(--z)) dashed rgba(255, 255, 255, 0.8);
+  outline-offset: calc(-6px / var(--z));
+}
+
+@keyframes upload-fade {
+  from {
+    opacity: 0;
+  }
+}
+
+@keyframes upload-shimmer {
+  from {
+    background-position: 125% 0;
+  }
+  to {
+    background-position: -125% 0;
+  }
+}
+
+/* Stays the same size on screen whatever the zoom. */
+.upload-indicator {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  color: #fff;
+  font: 600 12px/1.2 'Be Vietnam Pro', system-ui, sans-serif;
+  white-space: nowrap;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.35);
+  transform: scale(calc(1 / var(--z)));
+}
+
+/* In the side panel: the upload button fills with a bar as the file goes up. */
+.btn.upload-btn {
+  position: relative;
+  overflow: hidden;
+}
+
+.upload-bar {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  height: 3px;
+  width: calc(var(--p) * 100%);
+  background: var(--accent);
+  transition: width 0.2s ease;
+}
+
+.upload-bar.preparing {
+  /* Preparing (no progress yet): a sweeping bar. */
+  width: 40%;
+  animation: upload-sweep 1s ease-in-out infinite;
+}
+
+@keyframes upload-sweep {
+  from {
+    transform: translateX(-100%);
+  }
+  to {
+    transform: translateX(250%);
+  }
+}

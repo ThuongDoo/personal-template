@@ -1,9 +1,12 @@
 import { useEffect, useEffectEvent, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
+import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
+import UploadIndicator from './UploadIndicator.jsx'
 import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp } from '../lib/elements.js'
 import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
 import { imageRect, zoomImageAt } from '../lib/shapes.js'
+import { useUploads } from '../lib/uploadProgress.js'
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
 const MIN_SIZE = 16
@@ -66,6 +69,7 @@ export default function Canvas({
     })
 
   const cropping = elements.find((el) => el.id === editingId && el.type === 'shape')
+  const uploads = useUploads()
 
   /** Zooms a shape's image, keeping the point (px, py) in element coordinates fixed. One undo step per burst. */
   const zoomImage = (el, zoomTo, px, py) =>
@@ -407,6 +411,7 @@ export default function Canvas({
                   editing={editingId === el.id}
                   onCommitText={(text) => onCommitText(el.id, text)}
                 />
+                <GradientBorder el={el} />
               </div>
             ),
           )}
@@ -420,6 +425,19 @@ export default function Canvas({
 
         {/* Overlay sits outside the clipped canvas so handles stay visible at the page edges. */}
         <div className="canvas-overlay" style={{ width: page.width, height: page.height, transform: `scale(${zoom})` }}>
+          {uploads.map((u) => {
+            // On the element receiving the file, or a placeholder box where a dropped image will appear.
+            const el = u.elementId && elements.find((e) => e.id === u.elementId && !e.hidden)
+            const box = el
+              ? { left: el.x, top: el.y, width: el.w, height: el.h, transform: rotationTransform(el) }
+              : u.rect && { left: u.rect.x, top: u.rect.y, width: u.rect.w, height: u.rect.h }
+            if (!box) return null
+            return (
+              <div key={u.id} className={`upload-overlay${el ? '' : ' placeholder-box'}`} style={box}>
+                <UploadIndicator progress={u.progress} label={u.label} />
+              </div>
+            )
+          })}
           {guides.map((g, i) => (
             <div
               key={i}

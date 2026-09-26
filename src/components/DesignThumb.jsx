@@ -1,4 +1,5 @@
 import ElementContent from './ElementContent.jsx'
+import GradientBorder from './GradientBorder.jsx'
 import { rotationTransform } from '../lib/geometry.js'
 
 /** Thumbnails are drawn at this width; the card grid uses fixed-width columns to match. */
@@ -31,6 +32,7 @@ export default function DesignThumb({ design }) {
               ) : (
                 <ElementContent el={el} mode="editor" />
               )}
+              <GradientBorder el={el} />
             </div>
           ),
         )}

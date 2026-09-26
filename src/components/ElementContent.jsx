@@ -2,6 +2,8 @@ import { useEffect, useId, useMemo, useRef } from 'react'
 import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
 import { shapeSvg } from '../lib/shapes.js'
 import { audioAttrs, mountAudio } from '../lib/audioViz.js'
+import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
+import { textGradientStyle } from '../lib/gradient.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 
 /** Shown in the editor where an image used to be but can no longer be loaded. */
@@ -37,6 +39,25 @@ function AudioBlock({ p, css, isEditor }) {
   return <div ref={ref} style={css} {...audioAttrs(p, { autoplay: !isEditor })} />
 }
 
+function IconBlock({ p, css, isEditor }) {
+  // Unique per rendered icon, since a gradient colour is an SVG definition referenced by id.
+  const id = 'icon' + useId().replace(/[^a-zA-Z0-9_-]/g, '')
+  const svg = { __html: iconSvg(p, id) }
+  if (isEditor) return <div style={css} dangerouslySetInnerHTML={svg} />
+  const name = p.label || ICON_LIBRARY[p.icon]?.label || 'Liên kết'
+  return (
+    <a
+      href={p.href || '#'}
+      target={p.newTab ? '_blank' : undefined}
+      rel={p.newTab ? 'noopener noreferrer' : undefined}
+      aria-label={name}
+      title={name}
+      style={{ ...css, cursor: 'pointer' }}
+      dangerouslySetInnerHTML={svg}
+    />
+  )
+}
+
 function ImageBlock({ p, css, isEditor }) {
   const missing = useMissingImage(p.src)
   if (missing) return isEditor ? <MissingImage style={css} /> : <div style={css} />
@@ -52,7 +73,10 @@ function ImageBlock({ p, css, isEditor }) {
   )
 }
 
-function TextBlock({ text, style, editing, onCommit }) {
+/** Text, painted with the gradient `fill` (textGradientStyle) when there is one. */
+const Painted = ({ text, fill }) => (fill ? <span style={fill}>{text}</span> : text)
+
+function TextBlock({ text, style, fill, editing, onCommit }) {
   const ref = useRef(null)
 
   useEffect(() => {
@@ -69,7 +93,7 @@ function TextBlock({ text, style, editing, onCommit }) {
   if (!editing) {
     return (
       <div key="view" style={style}>
-        {text}
+        <Painted text={text} fill={fill} />
       </div>
     )
   }
@@ -105,15 +129,16 @@ function TextBlock({ text, style, editing, onCommit }) {
 export default function ElementContent({ el, mode, editing = false, onCommitText }) {
   const css = contentStyle(el)
   const p = el.props
+  const textFill = textGradientStyle(el.style.color)
   const isEditor = mode === 'editor'
 
   switch (el.type) {
     case 'heading':
     case 'text':
-      return <TextBlock text={p.text} style={css} editing={editing} onCommit={onCommitText} />
+      return <TextBlock text={p.text} style={css} fill={textFill} editing={editing} onCommit={onCommitText} />
 
     case 'button':
-      if (isEditor) return <TextBlock text={p.text} style={css} editing={editing} onCommit={onCommitText} />
+      if (isEditor) return <TextBlock text={p.text} style={css} fill={textFill} editing={editing} onCommit={onCommitText} />
       return (
         <a
           href={p.href || '#'}
@@ -121,7 +146,7 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
           rel={p.newTab ? 'noopener noreferrer' : undefined}
           style={{ ...css, cursor: 'pointer' }}
         >
-          {p.text}
+          <Painted text={p.text} fill={textFill} />
         </a>
       )
 
@@ -147,6 +172,9 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
           <div style={dividerLineStyle(el)} />
         </div>
       )
+
+    case 'icon':
+      return <IconBlock p={p} css={css} isEditor={isEditor} />
 
     case 'audio':
       if (!p.src) {

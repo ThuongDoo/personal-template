@@ -6,7 +6,8 @@
  * all three behave the same. Keep it plain ES2017 and free of outside references.
  *
  * The box it mounts on carries the settings as data attributes:
- *   data-src, data-viz (see AUDIO_PRESETS), data-color, data-color2, data-bars, data-loop, data-autoplay
+ *   data-src, data-viz (see AUDIO_PRESETS), data-color, data-color2, data-bars, data-loop, data-autoplay,
+ *   data-editor (in the editor: never autoplays, may show a note when the effect is simulated)
  * It returns a cleanup function.
  */
 export function mountAudio(box) {
@@ -54,39 +55,89 @@ export function mountAudio(box) {
   var freq = null
   var fake = false // no audio data available: animate from a pattern instead
   var silentSince = 0
+  // Rhythm tracking: `beat` jumps to 1 on each kick/bass hit and decays, pushing the whole effect.
+  var beat = 0
+  var lastBeat = 0
+  var bassAvg = 0
+  // Loudest recent bar, so quiet recordings still use the full height.
+  var peak = 0.3
+  var raw = []
   var raf = 0
   var settleUntil = 0
   var disposed = false
   var dpr = 1 // canvas pixels per CSS pixel, set by resize()
+
+  // Switches to the simulated animation (no audio data readable). In the editor a small note says so,
+  // since the effect then keeps a steady beat instead of following the music.
+  var note = null
+  function simulate() {
+    fake = true
+    if (note || !box.hasAttribute('data-editor')) return
+    note = document.createElement('span')
+    note.textContent = 'Mô phỏng'
+    note.title =
+      'Chưa đọc được dữ liệu nhạc (kho lưu trữ chưa bật CORS), hiệu ứng đang chạy theo nhịp giả lập. ' +
+      'Trang đã xuất bản vẫn nhảy theo nhạc thật.'
+    note.style.cssText =
+      'position:absolute;z-index:1;top:6px;right:6px;padding:1px 6px;border-radius:999px;' +
+      'background:rgba(0,0,0,.55);color:#fff;font:600 10px/1.6 system-ui,sans-serif;pointer-events:auto;cursor:help'
+    box.appendChild(note)
+  }
 
   function idle(i) {
     return 0.1 + 0.08 * Math.abs(Math.sin(i * 0.9 + 1))
   }
 
   function update(now) {
+    beat *= 0.86
     if (!audio.paused && analyser && !fake) {
       analyser.getByteFrequencyData(freq)
+
+      // Beat: the bass band jumping well above its recent average (kick drums, bass notes).
+      var bassBins = Math.max(2, Math.round(freq.length * 0.06))
+      var bass = 0
+      for (var q = 0; q < bassBins; q++) bass += freq[q]
+      bass /= bassBins * 255
+      if (bass > 0.3 && bass > bassAvg * 1.2 && now - lastBeat > 220) {
+        beat = 1
+        lastBeat = now
+      }
+      bassAvg = bassAvg * 0.93 + bass * 0.07
+
       // Spread the bins over the bars on a curve, so the bass doesn't take up half of them.
       var n = freq.length * 0.72
       var total = 0
+      var loudest = 0
       for (var i = 0; i < count; i++) {
         var a = Math.floor(Math.pow(i / count, 1.7) * n)
         var b = Math.max(a + 1, Math.floor(Math.pow((i + 1) / count, 1.7) * n))
         var sum = 0
         for (var j = a; j < b; j++) sum += freq[j]
-        var v = sum / (b - a) / 255
-        total += v
-        levels[i] = Math.max(v, levels[i] * 0.86)
+        raw[i] = sum / (b - a) / 255
+        total += raw[i]
+        if (raw[i] > loudest) loudest = raw[i]
+      }
+      peak = Math.max(peak * 0.996, loudest, 0.3)
+      for (var k2 = 0; k2 < count; k2++) {
+        // Normalised, with a little extra contrast, and pushed up on every beat.
+        var v = Math.min(1, Math.pow(raw[k2] / peak, 1.25) * (0.82 + 0.38 * beat))
+        // Rise at once, fall quickly: bars snap to the rhythm instead of floating.
+        levels[k2] = v > levels[k2] ? v : levels[k2] * 0.72 + v * 0.28
       }
       // All zeros for a while although playing: the data is blocked, so animate instead.
       if (total === 0 && audio.currentTime > 0.5) {
         if (!silentSince) silentSince = now
-        else if (now - silentSince > 2000) fake = true
+        else if (now - silentSince > 2000) simulate()
       } else silentSince = 0
     } else if (!audio.paused) {
+      // No audio data (e.g. the file's server blocks cross-origin reads): a steady 120 bpm pattern.
+      if (now - lastBeat > 500) {
+        beat = 1
+        lastBeat = now
+      }
       var t = now / 1000
       for (var k = 0; k < count; k++) {
-        var target = 0.32 + 0.3 * Math.sin(t * 5.3 + k * 0.7) * Math.sin(t * 1.9 + k * 0.23) + Math.random() * 0.18
+        var target = (0.28 + 0.26 * Math.sin(t * 5.3 + k * 0.7) * Math.sin(t * 1.9 + k * 0.23) + Math.random() * 0.14) * (0.8 + 0.4 * beat)
         levels[k] += (Math.max(0.05, Math.min(1, target)) - levels[k]) * 0.35
       }
     } else {
@@ -113,7 +164,7 @@ export function mountAudio(box) {
     if (viz === 'circle') {
       var cx = W / 2
       var cy = H / 2
-      var R = s * 0.2
+      var R = s * 0.2 * (1 + beat * 0.08) // the ring swells on each beat
       var maxLen = s / 2 - R - pad / 2
       ctx.lineCap = 'round'
       ctx.lineWidth = Math.max(2, ((2 * Math.PI * R) / count) * 0.55)
@@ -157,7 +208,7 @@ export function mountAudio(box) {
       ctx.lineWidth = Math.max(2, s * 0.015)
       ctx.stroke()
       ctx.beginPath()
-      ctx.arc(pcx, pcy, base * (0.75 + bass * 0.45), 0, Math.PI * 2)
+      ctx.arc(pcx, pcy, base * (0.72 + bass * 0.3 + beat * 0.28), 0, Math.PI * 2)
       ctx.fill()
       return
     }
@@ -273,12 +324,12 @@ export function mountAudio(box) {
       var source = actx.createMediaElementSource(audio)
       analyser = actx.createAnalyser()
       analyser.fftSize = 256
-      analyser.smoothingTimeConstant = 0.72
+      analyser.smoothingTimeConstant = 0.5 // lower = snappier; beats need to show within a frame or two
       source.connect(analyser)
       analyser.connect(actx.destination)
       freq = new Uint8Array(analyser.frequencyBinCount)
     } catch {
-      fake = true
+      simulate()
     }
   }
 
@@ -288,7 +339,7 @@ export function mountAudio(box) {
     // Most likely the server refused cross-origin access: play it plainly, with the pattern animation.
     if (!retried && audio.crossOrigin && !analyser) {
       retried = true
-      fake = true
+      simulate()
       audio.removeAttribute('crossorigin')
       audio.src = src
       audio.play().catch(function () {})
@@ -393,6 +444,7 @@ export function mountAudio(box) {
     audio.load()
     if (analyser) analyser.disconnect()
     canvas.remove()
+    if (note) note.remove()
     btn.remove()
   }
 }
@@ -433,5 +485,7 @@ export function audioAttrs(p, { autoplay = true } = {}) {
   }
   if (p.loop) attrs['data-loop'] = ''
   if (p.autoplay && autoplay) attrs['data-autoplay'] = ''
+  // The editor never autoplays, and is where the "simulated" note may show.
+  if (!autoplay) attrs['data-editor'] = ''
   return attrs
 }

@@ -13,7 +13,7 @@ import {
   uploadInlineImages,
 } from '../lib/cloud.js'
 import { normalizeDoc } from '../lib/elements.js'
-import { getPublishOverview } from '../lib/api.js'
+import { cleanupMyStorage, getPublishOverview } from '../lib/api.js'
 import { goAdmin, openDesignRoute } from '../lib/route.js'
 import { formatTime } from '../lib/format.js'
 import { BLANK_TEMPLATE } from '../lib/templates.js'
@@ -83,6 +83,9 @@ function publishBadges(designId, overview) {
   return badges
 }
 
+/** Removal of unused uploads; a background chore, so failures (e.g. backend offline) are only logged. */
+const tidyStorage = () => cleanupMyStorage().catch((e) => console.warn('Không dọn được tệp thừa', e))
+
 export default function Home({ user, isAdmin }) {
   const [designs, setDesigns] = useState(null)
   const [loadError, setLoadError] = useState(null)
@@ -99,6 +102,11 @@ export default function Home({ user, isAdmin }) {
       })),
     [cloudTemplates],
   )
+
+  // Coming home usually follows editing: let the backend clear out uploads that are no longer used.
+  useEffect(() => {
+    tidyStorage()
+  }, [user.uid])
 
   useEffect(() => {
     let cancelled = false
@@ -178,6 +186,7 @@ export default function Home({ user, isAdmin }) {
     setDesigns((list) => list.filter((d) => d.id !== design.id))
     try {
       await deleteDesign(user.uid, design.id)
+      tidyStorage()
     } catch (e) {
       console.error(e)
       alert('Không xoá được trang.')

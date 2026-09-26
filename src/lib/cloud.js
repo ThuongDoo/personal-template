@@ -28,7 +28,7 @@ import {
   serverTimestamp,
   setDoc,
 } from 'firebase/firestore'
-import { getDownloadURL, ref, uploadBytes } from 'firebase/storage'
+import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage'
 import { normalizeDoc, uid as randomId } from './elements.js'
 import { auth, db, facebookProvider, googleProvider, storage } from './firebase.js'
 import { readImageFile } from './image.js'
@@ -166,39 +166,55 @@ export async function saveDesign(uid, id, design) {
 
 const userImages = (uid) => `users/${uid}/images`
 
-async function uploadImageBlob(folder, blob) {
-  const ext = IMAGE_EXT[blob.type] ?? 'img'
-  const fileRef = ref(storage, `${folder}/${Date.now()}-${randomId()}.${ext}`)
-  await uploadBytes(fileRef, blob, { contentType: blob.type, cacheControl: 'public, max-age=31536000' })
-  return getDownloadURL(fileRef)
+/**
+ * Uploads to `path` and resolves to the download URL. `onProgress(fraction)` reports 0…1 as bytes go
+ * out, for progress indicators.
+ */
+function uploadWithProgress(path, data, contentType, onProgress) {
+  const fileRef = ref(storage, path)
+  const task = uploadBytesResumable(fileRef, data, { contentType, cacheControl: 'public, max-age=31536000' })
+  return new Promise((resolve, reject) => {
+    task.on(
+      'state_changed',
+      (snap) => onProgress?.(snap.totalBytes ? snap.bytesTransferred / snap.totalBytes : 0),
+      reject,
+      () => resolve(getDownloadURL(fileRef)),
+    )
+  })
 }
 
-/** Reads (and downscales) an image file, uploads it, and returns `{ src, width, height }` with a Storage URL. */
-export async function uploadImage(file) {
+function uploadImageBlob(folder, blob, onProgress) {
+  const ext = IMAGE_EXT[blob.type] ?? 'img'
+  return uploadWithProgress(`${folder}/${Date.now()}-${randomId()}.${ext}`, blob, blob.type, onProgress)
+}
+
+/**
+ * Reads (and downscales) an image file, uploads it, and returns `{ src, width, height }` with a Storage
+ * URL. `onProgress` receives the upload fraction (0…1).
+ */
+export async function uploadImage(file, { onProgress } = {}) {
   const uid = currentUid()
   const { blob, width, height } = await readImageFile(file)
-  return { src: await uploadImageBlob(userImages(uid), blob), width, height }
+  return { src: await uploadImageBlob(userImages(uid), blob, onProgress), width, height }
 }
 
 /** Largest audio file accepted; the Storage rules enforce the same limit. */
 export const MAX_AUDIO_BYTES = 20 * 1024 * 1024
 
-/** Uploads an audio file as-is and returns its Storage URL. */
-export async function uploadAudio(file) {
+/** Uploads an audio file as-is and returns its Storage URL. `onProgress` receives 0…1. */
+export async function uploadAudio(file, { onProgress } = {}) {
   const uid = currentUid()
   if (!file.type.startsWith('audio/')) throw new Error('Tệp này không phải âm thanh')
   if (file.size > MAX_AUDIO_BYTES) throw new Error('Tệp âm thanh tối đa 20MB')
   const ext = file.name.match(/\.([a-z0-9]{1,5})$/i)?.[1]?.toLowerCase() ?? 'audio'
-  const fileRef = ref(storage, `users/${uid}/audio/${Date.now()}-${randomId()}.${ext}`)
-  await uploadBytes(fileRef, file, { contentType: file.type, cacheControl: 'public, max-age=31536000' })
-  return getDownloadURL(fileRef)
+  return uploadWithProgress(`users/${uid}/audio/${Date.now()}-${randomId()}.${ext}`, file, file.type, onProgress)
 }
 
 /** Uploads a site icon (favicon), downscaled to 256px, and returns its Storage URL. */
-export async function uploadIcon(file) {
+export async function uploadIcon(file, { onProgress } = {}) {
   const uid = currentUid()
   const { blob } = await readImageFile(file, 256)
-  return uploadImageBlob(userImages(uid), blob)
+  return uploadImageBlob(userImages(uid), blob, onProgress)
 }
 
 /** True for images stored in Firebase Storage (as opposed to a link the user pasted). */

@@ -1,5 +1,7 @@
 /** Shape elements (torn paper, diamond, circle…): an outline that can be filled with a color or an image, drawn as inline SVG. */
 
+import { svgGradientDef, svgPaint } from './gradient.js'
+
 const esc = (s = '') =>
   String(s).replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
 
@@ -224,9 +226,14 @@ export function shapeSvg(el, id, { ghost = false } = {}) {
     )
   }
 
+  // Fill and rim may be gradients: define them once and paint with url(#…).
+  const fillId = `${id}-fill`
+  const rimId = `${id}-rim`
+  defs.push(svgGradientDef(el.style.background, fillId))
   let rim = ''
   if (p.rim > 0) {
-    const color = esc(p.rimColor)
+    defs.push(svgGradientDef(p.rimColor, rimId))
+    const color = esc(svgPaint(p.rimColor, rimId))
     rim = paths.rim
       ? `<path d="${paths.rim}" fill="${color}"/>`
       : `<path d="${paths.fill}" fill="${color}" stroke="${color}" stroke-width="${p.rim * 2}" stroke-linejoin="round"/>`
@@ -239,7 +246,7 @@ export function shapeSvg(el, id, { ghost = false } = {}) {
     (ghost && p.src ? imageTag(w, h, p, ' opacity="0.3"') : '') +
     `<g${p.shadow ? ` filter="url(#${shadow})"` : ''}><g${p.texture ? ` filter="url(#${tex})"` : ''}>` +
     rim +
-    `<path d="${paths.fill}" fill="${esc(el.style.background)}"/>` +
+    `<path d="${paths.fill}" fill="${esc(svgPaint(el.style.background, fillId))}"/>` +
     (p.src ? imageTag(w, h, p, ` clip-path="url(#${clip})"`) : '') +
     `</g></g></svg>`
   )

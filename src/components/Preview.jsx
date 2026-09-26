@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
+import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
 import { rotationTransform } from '../lib/geometry.js'
 
@@ -72,6 +73,7 @@ export default function Preview({ doc, onClose, onOpenTab }) {
                   }}
                 >
                   <ElementContent el={el} mode="preview" />
+                  <GradientBorder el={el} />
                 </div>
               ),
             )}

@@ -5,8 +5,11 @@ import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.j
 import { isUploadedImage, uploadAudio, uploadIcon, uploadImage } from '../lib/cloud.js'
 import { loadImageSize } from '../lib/image.js'
 import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
+import { ICON_GROUPS, ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
+import { stripDiacritics } from '../lib/slug.js'
 import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
+import { startUpload } from '../lib/uploadProgress.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
@@ -45,10 +48,42 @@ const FITS = [
   { value: 'fill', label: 'Kéo giãn', title: 'Kéo giãn theo khung' },
 ]
 
+/**
+ * State for an upload button: `run(start, elementId)` calls `start(onProgress)` and mirrors its progress
+ * both on the button (`label`, `bar`) and, when `elementId` is given, over that element on the page.
+ */
+function useUpload() {
+  // undefined: idle; null: preparing the file; 0…1: uploading.
+  const [progress, setProgress] = useState(undefined)
+  const run = async (start, elementId) => {
+    const onPage = startUpload({ elementId })
+    setProgress(null)
+    try {
+      return await start((fraction) => {
+        setProgress(fraction)
+        onPage.progress(fraction)
+      })
+    } finally {
+      onPage.done()
+      setProgress(undefined)
+    }
+  }
+  const busy = progress !== undefined
+  return {
+    busy,
+    run,
+    label: progress === null ? 'Đang xử lý…' : `Đang tải lên ${Math.round((progress ?? 0) * 100)}%`,
+    bar: busy && (
+      <span className={`upload-bar${progress === null ? ' preparing' : ''}`} style={{ '--p': progress ?? 0 }} aria-hidden="true" />
+    ),
+  }
+}
+
 function ImageSection({ el, setProps, setGeom }) {
   const fileRef = useRef(null)
   const latestSrc = useRef(el.props.src)
-  const [busy, setBusy] = useState(false)
+  const upload = useUpload()
+  const busy = upload.busy
   const { src, alt, fit } = el.props
   const uploaded = isUploadedImage(src)
   const isShape = el.type === 'shape'
@@ -58,17 +93,14 @@ function ImageSection({ el, setProps, setGeom }) {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    setBusy(true)
     try {
-      const img = await uploadImage(file)
+      const img = await upload.run((onProgress) => uploadImage(file, { onProgress }), el.id)
       latestSrc.current = img.src
       const props = isShape ? shapeImageProps(img, file.name) : { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') }
       setProps({ ...props, alt: alt || props.alt })
     } catch (err) {
       console.error(err)
       alert('Không tải được ảnh này lên.')
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -101,9 +133,10 @@ function ImageSection({ el, setProps, setGeom }) {
       </div>
       {missing && <p className="warn">Ảnh này đã bị xoá khỏi kho lưu trữ. Hãy tải ảnh khác lên.</p>}
       <div className="row">
-        <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+        <button type="button" className="btn upload-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
           <Icon name="upload" size={14} />
-          {busy ? 'Đang tải lên…' : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
+          {busy ? upload.label : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
+          {upload.bar}
         </button>
         {isShape ? (
           <button type="button" className="btn" onClick={() => onUrl('')} disabled={!src} title="Bỏ ảnh, dùng màu nền">
@@ -243,23 +276,110 @@ function ShapeSection({ el, setProps }) {
   )
 }
 
+/** Lowercase without Vietnamese accents, so "dien thoai" finds "Điện thoại". */
+const searchable = (text) => stripDiacritics(text).toLowerCase()
+
+function IconSection({ el, setProps }) {
+  const p = el.props
+  const [query, setQuery] = useState('')
+  const q = searchable(query.trim())
+  const matches = (name, icon) => !q || searchable(icon.label).includes(q) || name.toLowerCase().includes(q)
+  // Grouped as usual; while searching, groups without a match are left out.
+  const groups = ICON_GROUPS.map(([group, title]) => [
+    title,
+    Object.entries(ICON_LIBRARY).filter(([name, icon]) => icon.group === group && matches(name, icon)),
+  ]).filter(([, icons]) => icons.length)
+
+  return (
+    <>
+      <Section title="Icon">
+        <input
+          className="input"
+          type="search"
+          value={query}
+          placeholder={`Tìm trong ${Object.keys(ICON_LIBRARY).length} icon…`}
+          onChange={(e) => setQuery(e.target.value)}
+        />
+        {!groups.length && <p className="hint">Không tìm thấy icon nào.</p>}
+        {groups.map(([title, icons]) => (
+          <div key={title} className="icon-group">
+            <span className="field-label">{title}</span>
+            <div className="icon-grid">
+              {icons.map(([name, icon]) => (
+                <button
+                  key={name}
+                  type="button"
+                  className={`icon-pick${p.icon === name ? ' active' : ''}`}
+                  title={icon.label}
+                  aria-label={icon.label}
+                  aria-pressed={p.icon === name}
+                  onClick={() => setProps({ icon: name })}
+                  dangerouslySetInnerHTML={{ __html: iconSvg({ icon: name, iconColor: 'currentColor', iconSize: 100 }) }}
+                />
+              ))}
+            </div>
+          </div>
+        ))}
+        <Field label="Màu icon">
+          <ColorInput value={p.iconColor} onChange={(v) => setProps({ iconColor: v }, 'iconColor')} />
+        </Field>
+        <Field label="Cỡ icon">
+          <RangeInput value={p.iconSize} min={20} max={100} format={(v) => `${v}%`} onChange={(v) => setProps({ iconSize: v }, 'iconSize')} />
+        </Field>
+        <Field label="Độ dày nét">
+          <RangeInput
+            value={p.strokeWidth}
+            min={1}
+            max={3.5}
+            step={0.25}
+            format={(v) => String(v)}
+            onChange={(v) => setProps({ strokeWidth: v }, 'strokeWidth')}
+          />
+        </Field>
+      </Section>
+      <Section title="Khi bấm">
+        <Field label="Đường dẫn">
+          <input
+            className="input"
+            value={p.href}
+            placeholder="https://..., tel:09..., mailto:..."
+            onChange={(e) => setProps({ href: e.target.value }, 'href')}
+          />
+        </Field>
+        <label className="check">
+          <input type="checkbox" checked={p.newTab} onChange={(e) => setProps({ newTab: e.target.checked })} />
+          Mở trong tab mới
+        </label>
+        <Field label="Mô tả (cho trình đọc màn hình)">
+          <input
+            className="input"
+            value={p.label}
+            placeholder={ICON_LIBRARY[p.icon]?.label}
+            onChange={(e) => setProps({ label: e.target.value }, 'label')}
+          />
+        </Field>
+        <p className="hint">Gợi ý: điện thoại dùng <code>tel:0901234567</code>, email dùng <code>mailto:ban@vidu.com</code>.</p>
+      </Section>
+    </>
+  )
+}
+
 function AudioSection({ el, setProps }) {
   const fileRef = useRef(null)
-  const [busy, setBusy] = useState(false)
+  const upload = useUpload()
+  const busy = upload.busy
   const p = el.props
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    setBusy(true)
     try {
-      setProps({ src: await uploadAudio(file), name: file.name })
+      const src = await upload.run((onProgress) => uploadAudio(file, { onProgress }), el.id)
+      setProps({ src, name: file.name })
     } catch (err) {
       console.error(err)
       alert(err.message || 'Không tải được tệp âm thanh lên.')
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -271,9 +391,10 @@ function AudioSection({ el, setProps }) {
           <span>{p.src ? p.name || 'Tệp âm thanh' : 'Chưa có tệp'}</span>
         </div>
         <div className="row">
-          <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+          <button type="button" className="btn upload-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
             <Icon name="upload" size={14} />
-            {busy ? 'Đang tải lên…' : p.src ? 'Đổi tệp' : 'Tải tệp lên'}
+            {busy ? upload.label : p.src ? 'Đổi tệp' : 'Tải tệp lên'}
+            {upload.bar}
           </button>
           {p.src && (
             <button type="button" className="btn" onClick={() => setProps({ src: '', name: '' })} disabled={busy}>
@@ -304,10 +425,10 @@ function AudioSection({ el, setProps }) {
         </Field>
         <div className="grid2">
           <Field label="Màu 1">
-            <ColorInput value={p.color} onChange={(v) => setProps({ color: v }, 'color')} />
+            <ColorInput value={p.color} allowGradient={false} onChange={(v) => setProps({ color: v }, 'color')} />
           </Field>
           <Field label="Màu 2">
-            <ColorInput value={p.color2} onChange={(v) => setProps({ color2: v }, 'color2')} />
+            <ColorInput value={p.color2} allowGradient={false} onChange={(v) => setProps({ color2: v }, 'color2')} />
           </Field>
         </div>
         <Field label="Số thanh">
@@ -322,6 +443,7 @@ function ContentSection({ el, editing, setProps, setGeom, onAction }) {
   const p = el.props
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
   if (el.type === 'audio') return <AudioSection el={el} setProps={setProps} />
+  if (el.type === 'icon') return <IconSection el={el} setProps={setProps} />
   if (el.type === 'shape') {
     return (
       <>
@@ -515,21 +637,19 @@ function OpacitySlider({ value, onChange }) {
 
 function SiteSection({ page, onChange }) {
   const fileRef = useRef(null)
-  const [busy, setBusy] = useState(false)
+  const upload = useUpload()
+  const busy = upload.busy
   const faviconMissing = useMissingImage(page.favicon)
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
-    setBusy(true)
     try {
-      onChange({ favicon: await uploadIcon(file) })
+      onChange({ favicon: await upload.run((onProgress) => uploadIcon(file, { onProgress })) })
     } catch (err) {
       console.error(err)
       alert('Không tải được icon lên.')
-    } finally {
-      setBusy(false)
     }
   }
 
@@ -550,9 +670,10 @@ function SiteSection({ page, onChange }) {
           <span className="favicon-preview">
             {page.favicon && !faviconMissing ? <img src={page.favicon} alt="" /> : <Icon name="image" size={16} />}
           </span>
-          <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+          <button type="button" className="btn upload-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
             <Icon name="upload" size={14} />
-            {busy ? 'Đang tải lên…' : page.favicon ? 'Đổi icon' : 'Tải icon lên'}
+            {busy ? upload.label : page.favicon ? 'Đổi icon' : 'Tải icon lên'}
+            {upload.bar}
           </button>
           {page.favicon && (
             <button type="button" className="btn" onClick={() => onChange({ favicon: '' })} disabled={busy}>

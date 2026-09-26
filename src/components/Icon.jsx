@@ -1,5 +1,11 @@
 const ICONS = {
   heading: <path d="M6 4v16M18 4v16M6 12h12" />,
+  icon: (
+    <>
+      <circle cx="12" cy="12" r="10" />
+      <path d="m12 7 1.5 3.1 3.4.5-2.5 2.4.6 3.4-3-1.6-3 1.6.6-3.4-2.5-2.4 3.4-.5z" />
+    </>
+  ),
   text: <path d="M4 6h16M4 12h16M4 18h10" />,
   button: (
     <>
@@ -37,6 +43,8 @@ const ICONS = {
   ),
   undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
   redo: <path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />,
+  maximize: <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />,
+  minimize: <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M16 21v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />,
   rotate: <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />,
   rotateLeft: <path d="M3 12a9 9 0 1 0 2.6-6.4M3 3v6h6" />,
   eye: (

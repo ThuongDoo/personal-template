@@ -8,6 +8,7 @@ import { Segmented } from './fields.jsx'
 import {
   approveDomainRequest,
   approvePublishRequest,
+  cleanupAllStorage,
   getPublishRequest,
   listDomainRequests,
   listPublishRequests,
@@ -467,6 +468,37 @@ function DomainRequestsTab({ onNotice }) {
   )
 }
 
+const formatBytes = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1e3)} KB`)
+
+/** Sweeps every user's unused uploads (and template images) now, instead of waiting for them to visit. */
+function CleanupButton({ onNotice }) {
+  const [busy, setBusy] = useState(false)
+  const run = async () => {
+    const question =
+      'Dọn tệp thừa của mọi người dùng?\n\n' +
+      'Chỉ xoá ảnh/âm thanh không còn thiết kế, mẫu hay yêu cầu xuất bản nào dùng, và đã như vậy hơn 24 giờ.'
+    if (!confirm(question)) return
+    setBusy(true)
+    try {
+      const r = await cleanupAllStorage()
+      onNotice(
+        `Đã xoá ${r.deleted} tệp (${formatBytes(r.freedBytes)}) của ${r.users} người dùng. ` +
+          (r.waiting ? `${r.waiting} tệp thừa sẽ được xoá sau 24 giờ.` : ''),
+      )
+    } catch (e) {
+      onNotice(`Không dọn được: ${e.message}`)
+    } finally {
+      setBusy(false)
+    }
+  }
+  return (
+    <button type="button" className="btn ghost" onClick={run} disabled={busy} title="Xoá ảnh/âm thanh không còn được dùng">
+      <Icon name="trash" size={14} />
+      {busy ? 'Đang dọn…' : 'Dọn dung lượng'}
+    </button>
+  )
+}
+
 export default function AdminPage({ user }) {
   const [tab, setTab] = useState('requests')
   const [previewing, setPreviewing] = useState(null)
@@ -487,6 +519,7 @@ export default function AdminPage({ user }) {
         <strong className="admin-title">Quản trị</strong>
         <div className="spacer" />
         {notice && <span className="save-state">{notice}</span>}
+        <CleanupButton onNotice={setNotice} />
         <UserChip user={user} onSignOut={signOut} />
       </header>
 

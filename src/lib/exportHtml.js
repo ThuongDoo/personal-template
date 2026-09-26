@@ -1,6 +1,8 @@
 import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, youtubeEmbed } from './elements.js'
 import { shapeSvg } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
+import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
+import { gradientBorderStyle, textGradientStyle } from './gradient.js'
 
 const UNITLESS = new Set(['opacity', 'fontWeight', 'lineHeight', 'zIndex'])
 
@@ -21,14 +23,17 @@ export function toCssText(obj) {
 function renderInner(el) {
   const css = attr(toCssText(contentStyle(el)))
   const p = el.props
+  // Gradient text colour: the text sits in a span painted with the gradient.
+  const fill = textGradientStyle(el.style.color)
+  const text = fill ? `<span style="${attr(toCssText(fill))}">${esc(p.text)}</span>` : esc(p.text)
   switch (el.type) {
     case 'heading':
-      return `<h2 style="${css}">${esc(p.text)}</h2>`
+      return `<h2 style="${css}">${text}</h2>`
     case 'text':
-      return `<p style="${css}">${esc(p.text)}</p>`
+      return `<p style="${css}">${text}</p>`
     case 'button': {
       const target = p.newTab ? ' target="_blank" rel="noopener noreferrer"' : ''
-      return `<a href="${attr(p.href || '#')}"${target} style="${css}">${esc(p.text)}</a>`
+      return `<a href="${attr(p.href || '#')}"${target} style="${css}">${text}</a>`
     }
     case 'image':
       return p.src
@@ -38,6 +43,12 @@ function renderInner(el) {
       return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}</div>`
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
+    case 'icon': {
+      const target = p.newTab ? ' target="_blank" rel="noopener noreferrer"' : ''
+      // Icon-only links need a text name for screen readers; the icon's own name is the fallback.
+      const name = p.label || ICON_LIBRARY[p.icon]?.label || 'Liên kết'
+      return `<a href="${attr(p.href || '#')}"${target} aria-label="${attr(name)}" title="${attr(name)}" style="${css}">${iconSvg(p, `icon-${el.id}`)}</a>`
+    }
     case 'audio': {
       if (!p.src) return `<div style="${css}"></div>`
       const data = Object.entries(audioAttrs(p))
@@ -73,7 +84,10 @@ export function exportHtml(doc) {
         // Rotated around the element's centre (the CSS default), matching the editor.
         transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
       })
-      return `    <div style="${wrap}">${renderInner(el)}</div>`
+      // A gradient border is an overlay on top of the element (see gradientBorderStyle).
+      const border = gradientBorderStyle(el.style)
+      const overlay = border ? `<span aria-hidden="true" style="${attr(toCssText(border))}"></span>` : ''
+      return `    <div style="${wrap}">${renderInner(el)}${overlay}</div>`
     })
     .join('\n')
 

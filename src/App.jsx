@@ -13,9 +13,12 @@ import { exportHtml } from './lib/exportHtml.js'
 import { containsPoint } from './lib/geometry.js'
 import { shapeImageProps } from './lib/shapes.js'
 import { goHome } from './lib/route.js'
+import { startUpload } from './lib/uploadProgress.js'
 import { useHistory } from './lib/useHistory.js'
 
 const SIDE_PANELS_WIDTH = 248 + 300
+/** Size of the placeholder shown on the page while a dropped image uploads. */
+const UPLOAD_BOX = { w: 240, h: 160 }
 const AUTOSAVE_DELAY = 1500
 
 const fitZoom = (available, pageWidth) => clamp(Math.floor((available / pageWidth) * 20) / 20, 0.25, 1)
@@ -140,34 +143,45 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           containsPoint(el, pos.x, pos.y),
       )
     if (!images.length) return
-    showNotice(images.length > 1 ? `Đang tải ${images.length} ảnh lên…` : 'Đang tải ảnh lên…', { sticky: true })
     if (target) {
+      // Progress is shown on the shape itself.
+      const upload = startUpload({ elementId: target.id })
       try {
-        const img = await uploadImage(images[0])
+        const img = await uploadImage(images[0], { onProgress: upload.progress })
         updateElement(target.id, { props: shapeImageProps(img, images[0].name) })
         setSelectedId(target.id)
         setTab('props')
-        showNotice(null)
       } catch (e) {
         console.error(e)
         showNotice(`Không tải được ảnh "${images[0].name}" lên.`, { error: true })
+      } finally {
+        upload.done()
       }
       return
     }
-    let failed = 0
-    for (const [i, file] of images.entries()) {
-      try {
-        const img = await uploadImage(file)
-        const w = Math.min(480, img.width)
-        const h = Math.round((w * img.height) / img.width)
-        const at = placeAt(w, h, { x: pos.x + i * 24, y: pos.y + i * 24 })
-        insertElement(createElement('image', { ...at, w, h, props: { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') } }))
-      } catch (e) {
-        console.error(e)
-        failed++
-      }
-    }
-    showNotice(failed ? `Không tải được ${failed} ảnh lên.` : null, { error: true })
+    // Each image gets a placeholder box where it was dropped, replaced by the image once uploaded.
+    const results = await Promise.all(
+      images.map(async (file, i) => {
+        const spot = { x: pos.x + i * 24, y: pos.y + i * 24 }
+        const upload = startUpload({ rect: { ...placeAt(UPLOAD_BOX.w, UPLOAD_BOX.h, spot), ...UPLOAD_BOX } })
+        try {
+          const img = await uploadImage(file, { onProgress: upload.progress })
+          const w = Math.min(480, img.width)
+          const h = Math.round((w * img.height) / img.width)
+          insertElement(
+            createElement('image', { ...placeAt(w, h, spot), w, h, props: { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') } }),
+          )
+          return true
+        } catch (e) {
+          console.error(e)
+          return false
+        } finally {
+          upload.done()
+        }
+      }),
+    )
+    const failed = results.filter((ok) => !ok).length
+    if (failed) showNotice(`Không tải được ${failed} ảnh lên.`, { error: true })
   }
 
   const removeElement = (id) => {
