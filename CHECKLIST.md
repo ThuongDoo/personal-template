@@ -100,7 +100,7 @@ Chỉ giải thích, không có gì để test.
 - [ ] Gửi yêu cầu → thay đổi đang dở được lưu trước; trạng thái "Đang chờ duyệt"
 - [ ] Sửa trang sau khi gửi → admin xem/duyệt vẫn là **bản lúc gửi**
 - [ ] Đang chờ duyệt → không gửi thêm được; "Huỷ yêu cầu" hoạt động
-- [ ] Gửi quá 3 yêu cầu đang chờ (tính cả trang đã xoá) → bị chặn
+- [ ] Đang có 1 yêu cầu chờ duyệt (kể cả của trang khác) → không gửi thêm được (xem mục 21)
 - [ ] Admin tab "Duyệt xuất bản": lọc Chờ duyệt / Đã duyệt / Đã từ chối
 - [ ] "Xem" hiện đúng bản đã chụp
 - [ ] "Từ chối" bắt buộc lý do → user thấy lý do trong hộp thoại xuất bản
@@ -186,3 +186,14 @@ Video hiện chỉ là link YouTube (không nằm trong Storage) nên không b�
 - [ ] Admin duyệt trang có ảnh đã bị xoá → vẫn xuất bản được, thông báo "x ảnh không còn trong Storage nên đã bị bỏ trống"
 - [ ] Đang có web cũ, duyệt trang mới mà tải ảnh lỗi (VD mất mạng) → web cũ **không** bị xoá
 - [ ] Web xuất bản **trước** bản sửa này vẫn còn dùng link Storage → xuất bản lại để được đóng gói ảnh
+
+## 21. Chặn nhiều yêu cầu xuất bản cùng lúc (mỗi user chỉ 1 web)
+
+- [ ] Trang A đang chờ duyệt → mở trang B, hộp thoại xuất bản báo "Trang A đang chờ duyệt xuất bản", nút gửi bị khoá
+- [ ] Huỷ yêu cầu của A → gửi được yêu cầu cho B
+- [ ] Gửi yêu cầu cho A và B gần như cùng lúc (2 tab) → chỉ một yêu cầu được nhận, tab kia báo lỗi
+- [ ] Gọi thẳng API gửi yêu cầu cho B khi A đang chờ → 409
+- [ ] Trang A đang triển khai (admin vừa duyệt) → B cũng bị chặn cho tới khi xong
+- [ ] Hai admin duyệt 2 thao tác của **cùng một user** cùng lúc (VD: xuất bản + đổi tên miền) → một bên chạy, bên kia báo "Trang web của người dùng này đang được cập nhật", thử lại sau thì được
+- [ ] Sau các thao tác trên: Vercel chỉ có **1 project** cho user đó, tên miền trỏ đúng trang, nhãn "Đang xuất bản" ở trang chủ đúng trang
+- [ ] Admin duyệt thao tác của 2 user **khác nhau** cùng lúc → cả hai chạy bình thường

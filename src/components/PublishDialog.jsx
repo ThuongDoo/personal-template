@@ -123,7 +123,7 @@ export default function PublishDialog({ designId, page, save, onClose }) {
     }
   }
 
-  const { request, site, domain } = status ?? {}
+  const { request, site, domain, otherOpen } = status ?? {}
   const state = request?.status
   const hasDomain = !!domain?.name
   const liveHere = site?.designId === designId
@@ -146,7 +146,9 @@ export default function PublishDialog({ designId, page, save, onClose }) {
       await requestPublish(designId)
     })
   }
-  const canSubmit = hasDomain && state !== 'pending' && state !== 'deploying'
+
+  // One site per account, so only one request may wait at a time (the backend enforces this too).
+  const canSubmit = hasDomain && !otherOpen && state !== 'pending' && state !== 'deploying'
 
   let requestState = null
   if (state === 'pending') {
@@ -236,6 +238,17 @@ export default function PublishDialog({ designId, page, save, onClose }) {
               </p>
               {siteState}
               {requestState}
+              {otherOpen && (
+                <div className="publish-state pending">
+                  <strong>
+                    Trang “{otherOpen.title}” đang {otherOpen.status === 'deploying' ? 'được triển khai' : 'chờ duyệt xuất bản'}
+                  </strong>
+                  <span>
+                    Mỗi tài khoản chỉ có một trang web nên chỉ gửi được một yêu cầu mỗi lần. Hãy mở trang đó và huỷ yêu cầu,
+                    hoặc đợi quản trị viên xử lý xong.
+                  </span>
+                </div>
+              )}
             </section>
           </>
         )}
