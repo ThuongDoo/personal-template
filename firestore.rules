@@ -38,6 +38,12 @@ service cloud.firestore {
       }
     }
 
+    // Upload quota usage, computed by the backend and read by storage.rules; owners may only look.
+    match /quotas/{uid} {
+      allow read: if isOwner(uid);
+      allow write: if false;
+    }
+
     // Templates are shown to every signed-in user; only admins publish or remove them.
     match /templates/{templateId} {
       allow read: if signedIn();

@@ -400,3 +400,54 @@ Nguyên nhân cũ: bucket Storage chưa bật CORS nên trong trang chỉnh sử
 - [ ] Tải lại hẳn trang chỉnh sửa (Ctrl+F5) → phát nhạc: hình sóng **khác nhau theo từng đoạn** của bài (đoạn lặng thấp, đoạn trống/điệp khúc cao), không lặp lại một mẫu
 - [ ] Hai bài nhạc khác nhau cho hình sóng khác nhau
 - [ ] Web đã xuất bản từ trước (còn dùng link Storage) cũng nhảy theo nhạc thật
+
+## 37. Hạn mức 100MB tải lên mỗi user + thanh dung lượng + quản lý tệp
+
+Cần deploy: backend, **Storage rules** và **Firestore rules** (`firebase deploy --only firestore:rules,storage`).
+
+- [ ] Trang chỉnh sửa: cuối cột trái có thanh "x MB / 100 MB" (luôn dính ở đáy); trang chủ: thanh nổi ở góc trái dưới
+- [ ] Thanh chuyển màu cam khi dùng ≥ 70%, đỏ khi ≥ 90%
+- [ ] Tải ảnh/âm thanh/favicon lên → con số tăng ngay
+- [ ] Bấm thanh → bảng "Dung lượng đã dùng": tổng dung lượng, % và số tệp; danh sách tệp có ảnh thu nhỏ / icon âm thanh, **tên tệp gốc** (tệp tải trước khi có tính năng này hiện tên tự sinh), dung lượng, ngày tải lên
+- [ ] Mỗi tệp ghi rõ "Đang dùng: <tên trang>", "Trong yêu cầu xuất bản đang chờ duyệt" hoặc "Không dùng ở trang nào"
+- [ ] Lọc Tất cả / Ảnh / Âm thanh / Không dùng; sắp xếp Mới nhất / Lớn nhất; nút mở tệp
+- [ ] Xoá một tệp không dùng → biến mất khỏi danh sách, dung lượng giảm, tệp mất khỏi Storage
+- [ ] Xoá tệp đang dùng → hỏi xác nhận, nêu tên các trang dùng nó; sau khi xoá trang đó báo "Ảnh không còn tồn tại"
+- [ ] "Xoá n tệp không dùng" xoá hết tệp không dùng một lần (không đụng tệp trong yêu cầu xuất bản đang chờ)
+- [ ] Dùng gần hết 100MB → tải thêm tệp làm vượt hạn mức bị chặn với thông báo "Bạn đã dùng hết 100 MB…" (ở bảng thuộc tính và khi thả tệp vào trang)
+- [ ] Cố tải thẳng lên Storage bằng SDK khi đã vượt hạn mức → bị Storage rules từ chối
+- [ ] Ảnh admin chép sang mẫu trang (`templates/images`) **không** bị tính vào hạn mức của admin
+- [ ] Dọn tệp thừa tự động (mục 33) cũng làm dung lượng giảm tương ứng
+- [ ] Không xoá được tệp của người khác (gọi API với đường dẫn tệp user khác → 403)
+
+## 38. Chọn nhiều tệp để xoá cùng lúc trong bảng dung lượng
+
+- [ ] Mỗi tệp có ô chọn ở đầu; tệp được chọn có viền/nền tím nhạt
+- [ ] "Chọn tất cả" chọn/bỏ chọn **các tệp đang hiển thị** (theo bộ lọc Ảnh / Âm thanh / Không dùng); chọn một phần thì ô hiện dấu "−"
+- [ ] Có tệp được chọn → hiện nút đỏ "Xoá n tệp đã chọn (dung lượng)" và "Bỏ chọn"; nút "Xoá n tệp không dùng" tạm ẩn
+- [ ] Chọn cả tệp đang dùng → hộp xác nhận nêu tên các trang bị ảnh hưởng
+- [ ] Xoá nhiều tệp → chỉ 1 lần gọi máy chủ, danh sách và dung lượng cập nhật ngay, lựa chọn được xoá sạch
+- [ ] Đổi bộ lọc không làm mất các tệp đã chọn trước đó
+- [ ] Không xoá được tệp của người khác / ngoài thư mục ảnh-âm thanh (API trả 403)
+
+## 39. Chèn video vào hình khối (ngoài ảnh)
+
+Cần deploy: backend + Storage rules (thư mục `users/{uid}/videos`).
+
+- [ ] Chọn một hình khối → bảng "Ảnh / video trong hình" có nút chuyển **Ảnh | Video**
+- [ ] Chọn Video → "Tải video lên" (MP4/WebM/MOV, tối đa 30MB): có tiến trình tải lên trên nút và trên hình
+- [ ] Video trong hình: tự phát, **tắt tiếng**, lặp lại, bị cắt đúng theo hình (tim, sao, tròn, giấy rách, …)
+- [ ] Viền hình, vân giấy, đổ bóng vẫn hiện quanh hình có video
+- [ ] Nhấp đúp vào hình có video (hoặc "Kéo video trực tiếp trên trang") → kéo để dời, cuộn chuột để phóng; toàn khung video hiện mờ phía sau khi đang chỉnh; các thanh Ngang / Dọc / Thu phóng và "Đặt lại vị trí video" hoạt động
+- [ ] Hình khối đã xoay chứa video → video xoay theo, vẫn cắt đúng
+- [ ] Dán đường dẫn video (link .mp4 trực tiếp) → phát trong hình
+- [ ] "Bỏ video" → hình trở lại màu nền; chuyển Ảnh ↔ Video làm trống hình (tệp cũ không hợp kiểu mới)
+- [ ] Kéo thả tệp video từ máy **lên một hình khối** → video vào hình đó; thả video ra chỗ trống → thông báo "Thả video vào một hình khối…"
+- [ ] Tệp > 30MB hoặc làm vượt hạn mức 100MB → bị chặn với thông báo rõ ràng
+- [ ] Bảng dung lượng: có bộ lọc "Video", video hiện icon video, tính vào dung lượng, xoá được
+- [ ] Xoá video khỏi Storage → trong trang chỉnh sửa hình báo "Video không còn tồn tại"
+- [ ] Ảnh thu nhỏ ở trang chủ: video đứng yên (không tự phát)
+- [ ] Xem trước và trang **đã xuất bản**: video phát trong hình; tệp video nằm trong `/assets/…` của Vercel (xoá khỏi Storage vẫn phát)
+- [ ] Trên điện thoại (iOS Safari): video tự phát trong hình (vì đã tắt tiếng + playsinline)
+- [ ] Dọn tệp thừa (mục 33) cũng xoá video không còn dùng sau 24 giờ
+- [ ] Admin "Lưu làm mẫu" trang có video trong hình → mẫu vẫn phát video

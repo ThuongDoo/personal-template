@@ -1,5 +1,5 @@
 import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, youtubeEmbed } from './elements.js'
-import { shapeSvg } from './shapes.js'
+import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
 import { gradientBorderStyle, textGradientStyle } from './gradient.js'
@@ -40,7 +40,7 @@ function renderInner(el) {
         ? `<div style="${css}"><img src="${attr(p.src)}" alt="${attr(p.alt)}" style="width:100%;height:100%;object-fit:${attr(p.fit)};display:block"></div>`
         : `<div style="${css}"></div>`
     case 'shape':
-      return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}</div>`
+      return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}${shapeVideoHtml(el)}</div>`
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
     case 'icon': {

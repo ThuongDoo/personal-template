@@ -116,6 +116,8 @@ export const ELEMENT_TYPES = {
     h: 320,
     props: {
       shape: 'diamond',
+      // What fills the shape: 'image' or 'video' (src is either); imgW/imgX/… frame both.
+      mediaType: 'image',
       src: '',
       alt: '',
       imgW: 0,
@@ -408,7 +410,8 @@ export function contentStyle(el) {
   }
   if (el.type === 'shape') {
     // The SVG draws its own fill, rim and shadow, and the shadow must spill past the box.
-    Object.assign(css, { background: 'none', border: 'none', boxShadow: 'none', borderRadius: 0, padding: 0, overflow: 'visible' })
+    // position: relative anchors a video layered over the SVG.
+    Object.assign(css, { position: 'relative', background: 'none', border: 'none', boxShadow: 'none', borderRadius: 0, padding: 0, overflow: 'visible' })
   }
   return css
 }

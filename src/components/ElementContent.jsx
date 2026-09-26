@@ -1,30 +1,58 @@
-import { useEffect, useId, useMemo, useRef } from 'react'
+import { useEffect, useId, useMemo, useRef, useState } from 'react'
 import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
-import { shapeSvg } from '../lib/shapes.js'
+import { isVideo, shapeClipPath, shapeSvg, videoBoxStyle } from '../lib/shapes.js'
 import { audioAttrs, mountAudio } from '../lib/audioViz.js'
 import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
 import { textGradientStyle } from '../lib/gradient.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 
 /** Shown in the editor where an image used to be but can no longer be loaded. */
-function MissingImage({ style, overlay = false }) {
+function MissingImage({ style, overlay = false, what = 'Ảnh' }) {
   return (
     <div style={style} className={`placeholder missing${overlay ? ' overlay' : ''}`}>
-      <span>Ảnh không còn tồn tại</span>
-      <small>Chọn ảnh khác ở bảng bên phải</small>
+      <span>{what} không còn tồn tại</span>
+      <small>Chọn {what.toLowerCase()} khác ở bảng bên phải</small>
     </div>
   )
 }
 
-function Shape({ el, style, ghost, isEditor }) {
+/**
+ * The video filling a shape: muted, looping, cut to the shape's outline. `ghost` (while repositioning)
+ * also shows the whole frame faintly; `still` (thumbnails) doesn't play it.
+ */
+function ShapeVideo({ el, ghost, still, onError }) {
+  const p = el.props
+  const box = { position: 'absolute', display: 'block', ...videoBoxStyle(el.w, el.h, p) }
+  // React doesn't render the muted attribute, which browsers need before they allow autoplay.
+  const mute = (node) => {
+    if (node) node.muted = true
+  }
+  const common = { src: p.src, loop: true, playsInline: true, muted: true, autoPlay: !still, preload: still ? 'metadata' : 'auto', ref: mute }
+  return (
+    <>
+      {ghost && <video {...common} aria-hidden="true" style={{ ...box, opacity: 0.3, pointerEvents: 'none' }} />}
+      <div style={{ position: 'absolute', inset: 0, clipPath: shapeClipPath(el), pointerEvents: 'none' }}>
+        <video {...common} aria-label={p.alt || undefined} onError={onError} style={box} />
+      </div>
+    </>
+  )
+}
+
+function Shape({ el, style, ghost, isEditor, still }) {
   // useId keeps SVG ids unique when the same element renders in both the editor and preview.
   const id = 'shape' + useId().replace(/[^a-zA-Z0-9_-]/g, '')
   const html = useMemo(() => shapeSvg(el, id, { ghost }), [el, id, ghost])
-  const missing = useMissingImage(el.props.src)
+  const video = isVideo(el.props) && !!el.props.src
+  const missingImage = useMissingImage(video ? null : el.props.src)
+  // Tagged with the src that failed, so a new video starts out fine.
+  const [failedVideo, setFailedVideo] = useState(null)
+  const missingVideo = video && failedVideo === el.props.src
   return (
     <div style={{ ...style, position: 'relative' }}>
       <div style={{ width: '100%', height: '100%' }} dangerouslySetInnerHTML={{ __html: html }} />
-      {isEditor && missing && <MissingImage overlay />}
+      {video && !missingVideo && <ShapeVideo el={el} ghost={ghost} still={still} onError={() => setFailedVideo(el.props.src)} />}
+      {isEditor && missingImage && <MissingImage overlay />}
+      {isEditor && missingVideo && <MissingImage overlay what="Video" />}
     </div>
   )
 }
@@ -130,7 +158,9 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
   const css = contentStyle(el)
   const p = el.props
   const textFill = textGradientStyle(el.style.color)
-  const isEditor = mode === 'editor'
+  // 'thumb' (home screen previews) behaves like the editor but keeps videos still.
+  const isEditor = mode !== 'preview'
+  const still = mode === 'thumb'
 
   switch (el.type) {
     case 'heading':
@@ -164,7 +194,7 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
       return <ImageBlock p={p} css={css} isEditor={isEditor} />
 
     case 'shape':
-      return <Shape el={el} style={css} ghost={editing} isEditor={isEditor} />
+      return <Shape el={el} style={css} ghost={editing} isEditor={isEditor} still={still} />
 
     case 'divider':
       return (

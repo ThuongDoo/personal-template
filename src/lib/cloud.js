@@ -31,7 +31,8 @@ import {
 import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage'
 import { normalizeDoc, uid as randomId } from './elements.js'
 import { auth, db, facebookProvider, googleProvider, storage } from './firebase.js'
-import { readImageFile } from './image.js'
+import { MAX_VIDEO_BYTES, readImageFile, readVideoSize } from './image.js'
+import { ensureRoom, noteUploaded } from './storageQuota.js'
 
 /** Firestore documents are capped at 1 MiB; leave room for field names and metadata. */
 const MAX_DESIGN_BYTES = 900_000
@@ -55,6 +56,9 @@ const IMAGE_EXT = {
   'audio/x-wav': 'wav',
   'audio/webm': 'weba',
   'audio/flac': 'flac',
+  'video/mp4': 'mp4',
+  'video/webm': 'webm',
+  'video/quicktime': 'mov',
 }
 
 const currentUid = () => {
@@ -170,22 +174,34 @@ const userImages = (uid) => `users/${uid}/images`
  * Uploads to `path` and resolves to the download URL. `onProgress(fraction)` reports 0…1 as bytes go
  * out, for progress indicators.
  */
-function uploadWithProgress(path, data, contentType, onProgress) {
+async function uploadWithProgress(path, data, contentType, onProgress, originalName = '') {
+  // Only the user's own folders count towards their quota (not template copies). Checked here for a
+  // clear message; the Storage rules enforce the same limit.
+  const counted = path.startsWith('users/')
+  if (counted) await ensureRoom(data.size)
   const fileRef = ref(storage, path)
-  const task = uploadBytesResumable(fileRef, data, { contentType, cacheControl: 'public, max-age=31536000' })
+  const task = uploadBytesResumable(fileRef, data, {
+    contentType,
+    cacheControl: 'public, max-age=31536000',
+    // Shown in the storage panel instead of the generated file name.
+    customMetadata: originalName ? { originalName: originalName.slice(0, 200) } : undefined,
+  })
   return new Promise((resolve, reject) => {
     task.on(
       'state_changed',
       (snap) => onProgress?.(snap.totalBytes ? snap.bytesTransferred / snap.totalBytes : 0),
       reject,
-      () => resolve(getDownloadURL(fileRef)),
+      () => {
+        if (counted) noteUploaded(data.size)
+        resolve(getDownloadURL(fileRef))
+      },
     )
   })
 }
 
-function uploadImageBlob(folder, blob, onProgress) {
+function uploadImageBlob(folder, blob, onProgress, originalName) {
   const ext = IMAGE_EXT[blob.type] ?? 'img'
-  return uploadWithProgress(`${folder}/${Date.now()}-${randomId()}.${ext}`, blob, blob.type, onProgress)
+  return uploadWithProgress(`${folder}/${Date.now()}-${randomId()}.${ext}`, blob, blob.type, onProgress, originalName)
 }
 
 /**
@@ -195,7 +211,7 @@ function uploadImageBlob(folder, blob, onProgress) {
 export async function uploadImage(file, { onProgress } = {}) {
   const uid = currentUid()
   const { blob, width, height } = await readImageFile(file)
-  return { src: await uploadImageBlob(userImages(uid), blob, onProgress), width, height }
+  return { src: await uploadImageBlob(userImages(uid), blob, onProgress, file.name), width, height }
 }
 
 /** Largest audio file accepted; the Storage rules enforce the same limit. */
@@ -207,14 +223,30 @@ export async function uploadAudio(file, { onProgress } = {}) {
   if (!file.type.startsWith('audio/')) throw new Error('Tệp này không phải âm thanh')
   if (file.size > MAX_AUDIO_BYTES) throw new Error('Tệp âm thanh tối đa 20MB')
   const ext = file.name.match(/\.([a-z0-9]{1,5})$/i)?.[1]?.toLowerCase() ?? 'audio'
-  return uploadWithProgress(`users/${uid}/audio/${Date.now()}-${randomId()}.${ext}`, file, file.type, onProgress)
+  return uploadWithProgress(`users/${uid}/audio/${Date.now()}-${randomId()}.${ext}`, file, file.type, onProgress, file.name)
+}
+
+const VIDEO_EXT = { 'video/mp4': 'mp4', 'video/webm': 'webm', 'video/quicktime': 'mov', 'video/ogg': 'ogv' }
+
+/**
+ * Uploads a video to fill a shape. Resolves to `{ src, width, height, mediaType: 'video' }`, ready for
+ * shapeImageProps. `onProgress` receives 0…1.
+ */
+export async function uploadVideo(file, { onProgress } = {}) {
+  const uid = currentUid()
+  if (!file.type.startsWith('video/')) throw new Error('Tệp này không phải video')
+  if (file.size > MAX_VIDEO_BYTES) throw new Error(`Video tối đa ${MAX_VIDEO_BYTES / 1048576}MB`)
+  const { width, height } = await readVideoSize(file)
+  const ext = VIDEO_EXT[file.type] ?? file.name.match(/.([a-z0-9]{1,5})$/i)?.[1]?.toLowerCase() ?? 'video'
+  const src = await uploadWithProgress(`users/${uid}/videos/${Date.now()}-${randomId()}.${ext}`, file, file.type, onProgress, file.name)
+  return { src, width, height, mediaType: 'video' }
 }
 
 /** Uploads a site icon (favicon), downscaled to 256px, and returns its Storage URL. */
 export async function uploadIcon(file, { onProgress } = {}) {
   const uid = currentUid()
   const { blob } = await readImageFile(file, 256)
-  return uploadImageBlob(userImages(uid), blob, onProgress)
+  return uploadImageBlob(userImages(uid), blob, onProgress, file.name)
 }
 
 /** True for images stored in Firebase Storage (as opposed to a link the user pasted). */

@@ -30,7 +30,7 @@ export default function DesignThumb({ design }) {
                 // Avoid loading a YouTube iframe per card.
                 <div style={{ width: '100%', height: '100%', background: el.style.background, borderRadius: el.style.radius }} />
               ) : (
-                <ElementContent el={el} mode="editor" />
+                <ElementContent el={el} mode="thumb" />
               )}
               <GradientBorder el={el} />
             </div>

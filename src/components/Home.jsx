@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import DesignThumb from './DesignThumb.jsx'
 import Icon from './Icon.jsx'
 import UserChip from './UserChip.jsx'
+import StorageMeter from './StorageMeter.jsx'
 import {
   DesignLimitError,
   MAX_DESIGNS,
@@ -256,6 +257,7 @@ export default function Home({ user, isAdmin }) {
 
   return (
     <div className="home">
+      <StorageMeter floating />
       <header className="topbar">
         <div className="brand">
           <span className="brand-mark">

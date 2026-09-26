@@ -93,3 +93,17 @@ export const cleanupMyStorage = () => api('/me/storage/cleanup', { method: 'POST
 
 /** Admin: sweep every user's uploads and the template images. */
 export const cleanupAllStorage = () => api('/admin/storage/cleanup', { method: 'POST' })
+
+// ---------------------------------------------------------------- upload quota
+
+/** `{ usedBytes, limitBytes }` for the signed-in user, recomputed from Storage. */
+export const getMyUsage = () => api('/me/storage/usage')
+
+/** Usage plus every uploaded file: `{ usedBytes, limitBytes, files: [{ path, name, kind, size, url, usedIn, … }] }`. */
+export const getMyStorage = () => api('/me/storage')
+
+/** Deletes one uploaded file; resolves to the new `{ usedBytes, limitBytes }`. */
+export const deleteMyFile = (path) => api(`/me/storage/files?path=${enc(path)}`, { method: 'DELETE' })
+
+/** Deletes several uploaded files in one request; resolves to `{ usedBytes, limitBytes, deleted, failed }`. */
+export const deleteMyFiles = (paths) => api('/me/storage/files/delete', { method: 'POST', body: { paths } })

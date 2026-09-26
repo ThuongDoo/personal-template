@@ -2,14 +2,15 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
-import { isUploadedImage, uploadAudio, uploadIcon, uploadImage } from '../lib/cloud.js'
-import { loadImageSize } from '../lib/image.js'
+import { isUploadedImage, uploadAudio, uploadIcon, uploadImage, uploadVideo } from '../lib/cloud.js'
+import { loadImageSize, loadVideoSize } from '../lib/image.js'
 import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
 import { ICON_GROUPS, ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
 import { stripDiacritics } from '../lib/slug.js'
 import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 import { startUpload } from '../lib/uploadProgress.js'
+import { QuotaError } from '../lib/storageQuota.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
@@ -79,6 +80,15 @@ function useUpload() {
   }
 }
 
+const SHAPE_MEDIA = [
+  { value: 'image', label: 'Ảnh' },
+  { value: 'video', label: 'Video' },
+]
+
+/**
+ * What fills an image element or a shape. Shapes can hold an image or a video (muted, looping);
+ * both are framed the same way (ImagePositionSection).
+ */
 function ImageSection({ el, setProps, setGeom }) {
   const fileRef = useRef(null)
   const latestSrc = useRef(el.props.src)
@@ -87,34 +97,43 @@ function ImageSection({ el, setProps, setGeom }) {
   const { src, alt, fit } = el.props
   const uploaded = isUploadedImage(src)
   const isShape = el.type === 'shape'
-  const missing = useMissingImage(src)
+  const video = isShape && el.props.mediaType === 'video'
+  const noun = video ? 'video' : 'ảnh'
+  const missing = useMissingImage(video ? null : src)
+  const [videoFailed, setVideoFailed] = useState(null)
 
   const onFile = async (e) => {
     const file = e.target.files?.[0]
     e.target.value = ''
     if (!file) return
     try {
-      const img = await upload.run((onProgress) => uploadImage(file, { onProgress }), el.id)
-      latestSrc.current = img.src
-      const props = isShape ? shapeImageProps(img, file.name) : { src: img.src, alt: file.name.replace(/\.[^.]+$/, '') }
+      const start = video ? (onProgress) => uploadVideo(file, { onProgress }) : (onProgress) => uploadImage(file, { onProgress })
+      const media = await upload.run(start, el.id)
+      latestSrc.current = media.src
+      const props = isShape ? shapeImageProps(media, file.name) : { src: media.src, alt: file.name.replace(/\.[^.]+$/, '') }
       setProps({ ...props, alt: alt || props.alt })
     } catch (err) {
       console.error(err)
-      alert('Không tải được ảnh này lên.')
+      alert(err instanceof QuotaError || video ? err.message : 'Không tải được ảnh này lên.')
     }
   }
 
-  const onUrl = (url) => {
+  const onUrl = (url, mediaType = el.props.mediaType) => {
     latestSrc.current = url
     if (!isShape) return setProps({ src: url }, 'src')
-    // Shapes position the image from its natural size, measured once the URL loads.
-    setProps({ src: url, imgW: 0, imgH: 0, imgX: 50, imgY: 50, imgZoom: 1 }, 'src')
+    // Shapes frame their media from its natural size, measured once the URL loads.
+    setProps({ src: url, mediaType, imgW: 0, imgH: 0, imgX: 50, imgY: 50, imgZoom: 1 }, 'src')
     if (!url) return
-    loadImageSize(url)
+    ;(mediaType === 'video' ? loadVideoSize : loadImageSize)(url)
       .then(({ width, height }) => {
         if (latestSrc.current === url) setProps({ imgW: width, imgH: height }, 'src')
       })
       .catch(() => {})
+  }
+
+  // Switching between image and video empties the shape: the old file doesn't fit the new kind.
+  const setMedia = (mediaType) => {
+    if (mediaType !== (el.props.mediaType ?? 'image')) onUrl('', mediaType)
   }
 
   const matchRatio = async () => {
@@ -126,21 +145,33 @@ function ImageSection({ el, setProps, setGeom }) {
     }
   }
 
+  let preview
+  if (!src) preview = <span>Chưa có {noun}</span>
+  else if (video) {
+    preview =
+      videoFailed === src ? (
+        <span className="warn">Video không còn tồn tại</span>
+      ) : (
+        <video src={src} muted loop autoPlay playsInline onError={() => setVideoFailed(src)} ref={(n) => n && (n.muted = true)} />
+      )
+  } else preview = missing ? <span className="warn">Ảnh không còn tồn tại</span> : <img src={src} alt="" />
+
   return (
-    <Section title="Hình ảnh">
-      <div className="img-preview">
-        {!src ? <span>Chưa có ảnh</span> : missing ? <span className="warn">Ảnh không còn tồn tại</span> : <img src={src} alt="" />}
-      </div>
-      {missing && <p className="warn">Ảnh này đã bị xoá khỏi kho lưu trữ. Hãy tải ảnh khác lên.</p>}
+    <Section title={isShape ? 'Ảnh / video trong hình' : 'Hình ảnh'}>
+      {isShape && <Segmented value={el.props.mediaType ?? 'image'} options={SHAPE_MEDIA} onChange={setMedia} />}
+      <div className="img-preview">{preview}</div>
+      {(missing || videoFailed === src) && src && (
+        <p className="warn">Tệp này đã bị xoá khỏi kho lưu trữ. Hãy tải {noun} khác lên.</p>
+      )}
       <div className="row">
         <button type="button" className="btn upload-btn" onClick={() => fileRef.current?.click()} disabled={busy}>
           <Icon name="upload" size={14} />
-          {busy ? upload.label : src ? 'Đổi ảnh' : 'Tải ảnh lên'}
+          {busy ? upload.label : src ? `Đổi ${noun}` : `Tải ${noun} lên`}
           {upload.bar}
         </button>
         {isShape ? (
-          <button type="button" className="btn" onClick={() => onUrl('')} disabled={!src} title="Bỏ ảnh, dùng màu nền">
-            Bỏ ảnh
+          <button type="button" className="btn" onClick={() => onUrl('')} disabled={!src} title={`Bỏ ${noun}, dùng màu nền`}>
+            Bỏ {noun}
           </button>
         ) : (
           <button type="button" className="btn" onClick={matchRatio} disabled={!src} title="Đặt chiều cao theo tỉ lệ ảnh gốc">
@@ -148,12 +179,20 @@ function ImageSection({ el, setProps, setGeom }) {
           </button>
         )}
       </div>
-      <input ref={fileRef} type="file" accept="image/*" hidden onChange={onFile} />
-      <Field label="Hoặc dán đường dẫn ảnh">
+      <input
+        key={video ? 'video' : 'image'}
+        ref={fileRef}
+        type="file"
+        accept={video ? 'video/mp4,video/webm,video/quicktime' : 'image/*'}
+        hidden
+        onChange={onFile}
+      />
+      {video && <p className="hint">MP4, WebM hoặc MOV, tối đa 30MB. Video tự phát, tắt tiếng và lặp lại.</p>}
+      <Field label={`Hoặc dán đường dẫn ${noun}`}>
         <input
           className="input"
           value={uploaded ? '' : src}
-          placeholder={uploaded ? '(đang dùng ảnh tải lên)' : 'https://...'}
+          placeholder={uploaded ? `(đang dùng ${noun} tải lên)` : video ? 'https://.../video.mp4' : 'https://...'}
           onChange={(e) => onUrl(e.target.value.trim())}
         />
       </Field>
@@ -162,7 +201,7 @@ function ImageSection({ el, setProps, setGeom }) {
           <Segmented value={fit} options={FITS} onChange={(v) => setProps({ fit: v })} />
         </Field>
       )}
-      <Field label="Mô tả ảnh (alt)">
+      <Field label={`Mô tả ${noun} (alt)`}>
         <input className="input" value={alt} onChange={(e) => setProps({ alt: e.target.value }, 'alt')} />
       </Field>
     </Section>
@@ -173,36 +212,38 @@ function ImagePositionSection({ el, editing, setProps, onAction }) {
   const p = el.props
   const [measuring, setMeasuring] = useState(false)
   if (!p.src) return null
+  const video = p.mediaType === 'video'
+  const noun = video ? 'video' : 'ảnh'
 
   // Images added before positioning existed have no stored size yet.
   if (!p.imgW) {
     const measure = async () => {
       setMeasuring(true)
       try {
-        const { width, height } = await loadImageSize(p.src)
+        const { width, height } = await (video ? loadVideoSize : loadImageSize)(p.src)
         setProps({ imgW: width, imgH: height })
       } catch {
-        alert('Không tải được ảnh.')
+        alert(`Không tải được ${noun}.`)
       } finally {
         setMeasuring(false)
       }
     }
     return (
-      <Section title="Vị trí ảnh trong hình">
+      <Section title={`Vị trí ${noun} trong hình`}>
         <button type="button" className="btn block" onClick={measure} disabled={measuring}>
-          {measuring ? 'Đang tải ảnh…' : 'Bật căn chỉnh vị trí ảnh'}
+          {measuring ? `Đang tải ${noun}…` : `Bật căn chỉnh vị trí ${noun}`}
         </button>
       </Section>
     )
   }
 
   return (
-    <Section title="Vị trí ảnh trong hình">
+    <Section title={`Vị trí ${noun} trong hình`}>
       <button type="button" className={`btn block${editing ? ' primary' : ''}`} onClick={() => onAction('crop')} disabled={el.locked}>
         <Icon name="move" size={14} />
-        {editing ? 'Xong' : 'Kéo ảnh trực tiếp trên trang'}
+        {editing ? 'Xong' : `Kéo ${noun} trực tiếp trên trang`}
       </button>
-      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời ảnh, cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
+      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời {noun}, cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
       <Field label="Ngang">
         <RangeInput value={p.imgX} min={0} max={100} format={(v) => `${Math.round(v)}%`} onChange={(v) => setProps({ imgX: v }, 'imgX')} />
       </Field>
@@ -220,7 +261,7 @@ function ImagePositionSection({ el, editing, setProps, onAction }) {
         />
       </Field>
       <button type="button" className="btn block" onClick={() => setProps({ imgX: 50, imgY: 50, imgZoom: 1 })}>
-        Đặt lại vị trí ảnh
+        Đặt lại vị trí {noun}
       </button>
     </Section>
   )
@@ -649,7 +690,7 @@ function SiteSection({ page, onChange }) {
       onChange({ favicon: await upload.run((onProgress) => uploadIcon(file, { onProgress })) })
     } catch (err) {
       console.error(err)
-      alert('Không tải được icon lên.')
+      alert(err instanceof QuotaError ? err.message : 'Không tải được icon lên.')
     }
   }
 

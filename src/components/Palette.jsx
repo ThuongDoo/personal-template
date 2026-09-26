@@ -260,7 +260,7 @@ export default function Palette({ onAdd }) {
         {...group('shapes')}
         title="Hình khối"
         count={SHAPE_ORDER.length}
-        hint="Chèn ảnh vào hình: thả tệp ảnh lên hình, hoặc chọn ảnh ở bảng bên phải."
+        hint="Chèn ảnh hoặc video vào hình: thả tệp lên hình, hoặc chọn ở bảng bên phải."
       >
         {SHAPE_ORDER.map((shape) => (
           <Tile key={shape} dragKey={`shape:${shape}`} onAdd={onAdd}>

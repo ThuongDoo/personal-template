@@ -3,17 +3,19 @@ import Canvas from './components/Canvas.jsx'
 import Inspector from './components/Inspector.jsx'
 import Layers from './components/Layers.jsx'
 import Palette from './components/Palette.jsx'
+import StorageMeter from './components/StorageMeter.jsx'
 import Preview from './components/Preview.jsx'
 import PublishDialog from './components/PublishDialog.jsx'
 import TemplateDialog from './components/TemplateDialog.jsx'
 import Toolbar from './components/Toolbar.jsx'
-import { DesignTooLargeError, saveDesign, signOut, uploadImage } from './lib/cloud.js'
+import { DesignTooLargeError, saveDesign, signOut, uploadImage, uploadVideo } from './lib/cloud.js'
 import { applyPatch, clamp, createElement, createFromKey, uid } from './lib/elements.js'
 import { exportHtml } from './lib/exportHtml.js'
 import { containsPoint } from './lib/geometry.js'
 import { shapeImageProps } from './lib/shapes.js'
 import { goHome } from './lib/route.js'
 import { startUpload } from './lib/uploadProgress.js'
+import { QuotaError } from './lib/storageQuota.js'
 import { useHistory } from './lib/useHistory.js'
 
 const SIDE_PANELS_WIDTH = 248 + 300
@@ -142,6 +144,30 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           !el.locked &&
           containsPoint(el, pos.x, pos.y),
       )
+    // Videos go into shapes only (there is no stand-alone uploaded video element).
+    const video = !images.length && files.find((f) => f.type.startsWith('video/'))
+    if (video) {
+      const shape = doc.elements.findLast(
+        (el) => el.type === 'shape' && !el.hidden && !el.locked && containsPoint(el, pos.x, pos.y),
+      )
+      if (!shape) {
+        showNotice('Thả video vào một hình khối để chèn video vào hình.', { error: true })
+        return
+      }
+      const upload = startUpload({ elementId: shape.id })
+      try {
+        const media = await uploadVideo(video, { onProgress: upload.progress })
+        updateElement(shape.id, { props: shapeImageProps(media, video.name) })
+        setSelectedId(shape.id)
+        setTab('props')
+      } catch (e) {
+        console.error(e)
+        showNotice(e.message || `Không tải được video "${video.name}" lên.`, { error: true })
+      } finally {
+        upload.done()
+      }
+      return
+    }
     if (!images.length) return
     if (target) {
       // Progress is shown on the shape itself.
@@ -153,7 +179,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
         setTab('props')
       } catch (e) {
         console.error(e)
-        showNotice(`Không tải được ảnh "${images[0].name}" lên.`, { error: true })
+        showNotice(e instanceof QuotaError ? e.message : `Không tải được ảnh "${images[0].name}" lên.`, { error: true })
       } finally {
         upload.done()
       }
@@ -174,14 +200,15 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           return true
         } catch (e) {
           console.error(e)
-          return false
+          return e
         } finally {
           upload.done()
         }
       }),
     )
-    const failed = results.filter((ok) => !ok).length
-    if (failed) showNotice(`Không tải được ${failed} ảnh lên.`, { error: true })
+    const errors = results.filter((r) => r !== true)
+    const quota = errors.find((e) => e instanceof QuotaError)
+    if (errors.length) showNotice(quota ? quota.message : `Không tải được ${errors.length} ảnh lên.`, { error: true })
   }
 
   const removeElement = (id) => {
@@ -379,6 +406,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
       <div className="main">
         <aside className="panel panel-left">
           <Palette onAdd={(type) => addElement(type)} />
+          <StorageMeter />
         </aside>
 
         <Canvas

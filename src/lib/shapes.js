@@ -243,17 +243,51 @@ export function shapeSvg(el, id, { ghost = false } = {}) {
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 ${w} ${h}" style="display:block;overflow:visible"${label}>` +
     `<defs>${defs.join('')}</defs>` +
-    (ghost && p.src ? imageTag(w, h, p, ' opacity="0.3"') : '') +
+    (ghost && p.src && !isVideo(p) ? imageTag(w, h, p, ' opacity="0.3"') : '') +
     `<g${p.shadow ? ` filter="url(#${shadow})"` : ''}><g${p.texture ? ` filter="url(#${tex})"` : ''}>` +
     rim +
     `<path d="${paths.fill}" fill="${esc(svgPaint(el.style.background, fillId))}"/>` +
-    (p.src ? imageTag(w, h, p, ` clip-path="url(#${clip})"`) : '') +
+    // A video is not part of the SVG: it is an HTML <video> layered on top (shapeVideoHtml).
+    (p.src && !isVideo(p) ? imageTag(w, h, p, ` clip-path="url(#${clip})"`) : '') +
     `</g></g></svg>`
   )
 }
 
 /** Props for putting a freshly read image ({ src, width, height }) into a shape, re-centered. */
+/** Whether the shape is filled with a video (props.mediaType), rather than an image or a colour. */
+export const isVideo = (p) => p.mediaType === 'video'
+
+/**
+ * Where the shape's video sits, as CSS for an absolutely positioned <video>: the same framing as an
+ * image (imgX/imgY/imgZoom over the natural size imgW/imgH), or covering the box until that is known.
+ */
+export function videoBoxStyle(w, h, p) {
+  const r = imageRect(w, h, p)
+  return r ? { left: r.x, top: r.y, width: r.w, height: r.h, objectFit: 'fill' } : { left: 0, top: 0, width: w, height: h, objectFit: 'cover' }
+}
+
+/** CSS clip-path cutting the video to the shape's outline (same coordinates as the element box). */
+export const shapeClipPath = (el) => `path('${shapePaths(el.props.shape, el.w, el.h, el.props).fill}')`
+
+/**
+ * HTML for a video-filled shape (exported pages): the clipped, muted, looping video that goes on top
+ * of the shape's SVG. '' when the shape has no video.
+ */
+export function shapeVideoHtml(el, { autoplay = true } = {}) {
+  const p = el.props
+  if (!p.src || !isVideo(p)) return ''
+  const b = videoBoxStyle(el.w, el.h, p)
+  const box = `position:absolute;left:${num(b.left)}px;top:${num(b.top)}px;width:${num(b.width)}px;height:${num(b.height)}px;object-fit:${b.objectFit};display:block`
+  const play = autoplay ? ' autoplay' : ''
+  const label = p.alt ? ` aria-label="${esc(p.alt)}"` : ' aria-hidden="true"'
+  return (
+    `<div style="position:absolute;inset:0;clip-path:${esc(shapeClipPath(el))}">` +
+    `<video src="${esc(p.src)}"${play} muted loop playsinline preload="auto"${label} style="${box}"></video></div>`
+  )
+}
+
 export const shapeImageProps = (img, name = '') => ({
+  mediaType: img.mediaType ?? 'image',
   src: img.src,
   alt: name.replace(/\.[^.]+$/, ''),
   imgW: img.width,
