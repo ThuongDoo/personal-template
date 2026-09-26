@@ -22,6 +22,13 @@ const ICONS = {
   ),
   box: <rect x="4" y="4" width="16" height="16" rx="3" />,
   divider: <path d="M3 12h18M8 7h8M8 17h8" />,
+  audio: (
+    <>
+      <path d="M9 18V5l12-2v13" />
+      <circle cx="6" cy="18" r="3" />
+      <circle cx="18" cy="16" r="3" />
+    </>
+  ),
   video: (
     <>
       <rect x="2" y="5" width="15" height="14" rx="2" />
@@ -30,6 +37,8 @@ const ICONS = {
   ),
   undo: <path d="M9 14 4 9l5-5M4 9h10.5a5.5 5.5 0 0 1 0 11H11" />,
   redo: <path d="m15 14 5-5-5-5M20 9H9.5a5.5 5.5 0 0 0 0 11H13" />,
+  rotate: <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />,
+  rotateLeft: <path d="M3 12a9 9 0 1 0 2.6-6.4M3 3v6h6" />,
   eye: (
     <>
       <path d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12z" />

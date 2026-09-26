@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
 import Icon from './Icon.jsx'
 import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp } from '../lib/elements.js'
+import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
 import { imageRect, zoomImageAt } from '../lib/shapes.js'
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
@@ -12,6 +13,8 @@ const AUTOSCROLL_MAX = 10 // px per frame (~600px/s)
 const AUTOSCROLL_ACCEL = 0.12
 const toGrid = (v) => Math.round(v / GRID) * GRID
 const ZOOM_STEP = 1.2
+/** With snapping on, rotation clicks to multiples of 45° within this many degrees. */
+const ROTATE_SNAP_DEG = 4
 
 /** Closest target line to any of the given edges, within threshold. */
 function findSnap(edges, targets, threshold) {
@@ -81,8 +84,7 @@ export default function Canvas({
   const onWheel = useEffectEvent((e) => {
     if (!cropping?.props.imgW) return
     const r = canvasRef.current.getBoundingClientRect()
-    const px = (e.clientX - r.left) / zoom - cropping.x
-    const py = (e.clientY - r.top) / zoom - cropping.y
+    const { x: px, y: py } = toLocal(cropping, (e.clientX - r.left) / zoom, (e.clientY - r.top) / zoom)
     if (px < 0 || py < 0 || px > cropping.w || py > cropping.h) return
     e.preventDefault()
     const factor = Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015))
@@ -131,9 +133,14 @@ export default function Canvas({
     if (el.type === 'shape' && editingId === el.id) return startPan(e, el)
     e.preventDefault()
 
-    const others = elements.filter((o) => o.id !== el.id && !o.hidden)
-    const tx = [0, page.width / 2, page.width, ...others.flatMap((o) => [o.x, o.x + o.w / 2, o.x + o.w])]
-    const ty = [0, page.height / 2, page.height, ...others.flatMap((o) => [o.y, o.y + o.h / 2, o.y + o.h])]
+    // Guides use what elements visually cover, so rotated ones snap by their outer edges.
+    const others = elements.filter((o) => o.id !== el.id && !o.hidden).map(bounds)
+    const tx = [0, page.width / 2, page.width, ...others.flatMap((b) => [b.left, b.cx, b.right])]
+    const ty = [0, page.height / 2, page.height, ...others.flatMap((b) => [b.top, b.cy, b.bottom])]
+    // The moving element's visual edges, as offsets from its x/y (constant while dragging).
+    const own = bounds(el)
+    const ex = [own.left - el.x, own.cx - el.x, own.right - el.x]
+    const ey = [own.top - el.y, own.cy - el.y, own.bottom - el.y]
 
     track(
       e,
@@ -142,8 +149,8 @@ export default function Canvas({
         let y = el.y + dy
         const g = []
         const free = ev.altKey
-        const sx = snap && !free && findSnap([x, x + el.w / 2, x + el.w], tx, SNAP_PX / zoom)
-        const sy = snap && !free && findSnap([y, y + el.h / 2, y + el.h], ty, SNAP_PX / zoom)
+        const sx = snap && !free && findSnap(ex.map((o) => x + o), tx, SNAP_PX / zoom)
+        const sy = snap && !free && findSnap(ey.map((o) => y + o), ty, SNAP_PX / zoom)
         if (sx) {
           x += sx.d
           g.push({ axis: 'x', pos: sx.line })
@@ -169,7 +176,9 @@ export default function Canvas({
     const spanY = el.h - r.h
     const { imgX, imgY } = el.props
     const pct = (v) => Math.round(clamp(v, 0, 100) * 10) / 10
-    track(e, (dx, dy) => {
+    track(e, (pdx, pdy) => {
+      // The image moves along the shape's own axes, which differ from the page's once it is rotated.
+      const { x: dx, y: dy } = vectorToLocal(el, pdx, pdy)
       setPropsLive(el.id, {
         imgX: spanX ? pct(imgX + (dx * 100) / spanX) : imgX,
         imgY: spanY ? pct(imgY + (dy * 100) / spanY) : imgY,
@@ -186,6 +195,8 @@ export default function Canvas({
     const hasS = handle.includes('s')
     const hasE = handle.includes('e')
     const hasW = handle.includes('w')
+
+    if (el.rotation) return resizeRotated(e, el, { ratio, hasN, hasS, hasE, hasW, corner: handle.length === 2 })
 
     track(e, (dx, dy, ev) => {
       const grid = showGrid && !ev.altKey
@@ -215,6 +226,78 @@ export default function Canvas({
         if (hasN) top = bottom - h
       }
       setGeom(el.id, { x: Math.round(left), y: Math.round(top), w: Math.round(w), h: Math.round(h) })
+    })
+  }
+
+  /**
+   * Resizing a rotated element: the drag is measured along the element's own axes and the opposite
+   * edge/corner stays where it is on the page, so the centre moves with the resize. No grid snapping,
+   * since grid lines don't line up with a rotated box.
+   */
+  const resizeRotated = (e, el, { ratio, hasN, hasS, hasE, hasW, corner }) => {
+    const cx = el.x + el.w / 2
+    const cy = el.y + el.h / 2
+    track(e, (pdx, pdy, ev) => {
+      const { x: dx, y: dy } = vectorToLocal(el, pdx, pdy)
+      // Edges relative to the original centre, in the element's frame.
+      let left = -el.w / 2
+      let right = el.w / 2
+      let top = -el.h / 2
+      let bottom = el.h / 2
+      if (hasE) right += dx
+      if (hasW) left += dx
+      if (hasS) bottom += dy
+      if (hasN) top += dy
+      if (right - left < MIN_SIZE) {
+        if (hasW) left = right - MIN_SIZE
+        else right = left + MIN_SIZE
+      }
+      if (bottom - top < MIN_SIZE) {
+        if (hasN) top = bottom - MIN_SIZE
+        else bottom = top + MIN_SIZE
+      }
+      let w = right - left
+      let h = bottom - top
+      if (ev.shiftKey && corner) {
+        if (w / h > ratio) h = w / ratio
+        else w = h * ratio
+        if (hasW) left = right - w
+        else right = left + w
+        if (hasN) top = bottom - h
+        else bottom = top + h
+      }
+      const c = vectorToPage(el, (left + right) / 2, (top + bottom) / 2)
+      setGeom(el.id, {
+        x: Math.round(cx + c.x - w / 2),
+        y: Math.round(cy + c.y - h / 2),
+        w: Math.round(w),
+        h: Math.round(h),
+      })
+    })
+  }
+
+  /** Rotates around the element's centre. Shift steps by 15°; with snapping on, it clicks to every 45°. */
+  const startRotate = (e, el) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    const r = canvasRef.current.getBoundingClientRect()
+    const px = (e.clientX - r.left) / zoom
+    const py = (e.clientY - r.top) / zoom
+    const cx = el.x + el.w / 2
+    const cy = el.y + el.h / 2
+    const angleAt = (x, y) => (Math.atan2(y - cy, x - cx) * 180) / Math.PI
+    const start = angleAt(px, py)
+    const base = el.rotation || 0
+
+    track(e, (dx, dy, ev) => {
+      let angle = base + angleAt(px + dx, py + dy) - start
+      if (ev.shiftKey) angle = Math.round(angle / 15) * 15
+      else if (snap && !ev.altKey) {
+        const nearest = Math.round(angle / 45) * 45
+        if (Math.abs(angle - nearest) < ROTATE_SNAP_DEG) angle = nearest
+      }
+      setGeom(el.id, { rotation: normalizeAngle(Math.round(angle)) })
     })
   }
 
@@ -311,7 +394,7 @@ export default function Canvas({
               <div
                 key={el.id}
                 className={`el${el.locked ? ' locked' : ''}${editingId === el.id ? (el.type === 'shape' ? ' cropping' : ' editing') : ''}`}
-                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1 }}
+                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1, transform: rotationTransform(el) }}
                 onPointerDown={(e) => startMove(e, el)}
                 onDoubleClick={() => {
                   if (el.locked) return
@@ -347,13 +430,29 @@ export default function Canvas({
           {selected && (
             <div
               className={`selection${selected.locked ? ' locked' : ''}`}
-              style={{ left: selected.x, top: selected.y, width: selected.w, height: selected.h }}
+              style={{
+                left: selected.x,
+                top: selected.y,
+                width: selected.w,
+                height: selected.h,
+                transform: rotationTransform(selected),
+              }}
             >
               {!selected.locked &&
                 editingId !== selected.id &&
                 HANDLES.map((h) => (
                   <span key={h} className={`handle handle-${h}`} onPointerDown={(e) => startResize(e, selected, h)} />
                 ))}
+              {!selected.locked && editingId !== selected.id && (
+                <span
+                  className="rotate-handle"
+                  title="Kéo để xoay (Shift: bước 15°)"
+                  onPointerDown={(e) => startRotate(e, selected)}
+                  onDoubleClick={() => set((d) => ({ ...d, elements: d.elements.map((x) => (x.id === selected.id ? { ...x, rotation: 0 } : x)) }))}
+                >
+                  <Icon name="rotate" size={12} />
+                </span>
+              )}
               {cropping?.id === selected.id ? (
                 <div className="crop-bar" onPointerDown={(e) => e.stopPropagation()}>
                   <button type="button" title="Thu nhỏ ảnh" onClick={() => zoomImage(selected, (z) => z / ZOOM_STEP)}>
@@ -372,6 +471,7 @@ export default function Canvas({
                 <span className="size-badge">
                   {selected.locked ? 'Đã khoá · ' : ''}
                   {selected.w} × {selected.h}
+                  {selected.rotation ? ` · ${selected.rotation}°` : ''}
                 </span>
               )}
             </div>

@@ -197,3 +197,81 @@ Video hiện chỉ là link YouTube (không nằm trong Storage) nên không b�
 - [ ] Hai admin duyệt 2 thao tác của **cùng một user** cùng lúc (VD: xuất bản + đổi tên miền) → một bên chạy, bên kia báo "Trang web của người dùng này đang được cập nhật", thử lại sau thì được
 - [ ] Sau các thao tác trên: Vercel chỉ có **1 project** cho user đó, tên miền trỏ đúng trang, nhãn "Đang xuất bản" ở trang chủ đúng trang
 - [ ] Admin duyệt thao tác của 2 user **khác nhau** cùng lúc → cả hai chạy bình thường
+
+## 22. Xoay các phần tử trong trang chỉnh sửa
+
+- [ ] Chọn phần tử → có nút tròn phía trên khung chọn; kéo để xoay quanh tâm
+- [ ] Giữ **Shift** khi xoay → nhảy từng 15°
+- [ ] Bật nam châm: xoay gần 0°/45°/90°… tự hít vào; giữ **Alt** để tắt hít
+- [ ] Nhấp đúp nút xoay → về 0°
+- [ ] Nhãn kích thước hiện góc, VD "300 × 200 · 30°"
+- [ ] Bảng thuộc tính → "Góc xoay": nhập số, nút xoay trái/phải 90°, nút "0°"
+- [ ] Nhập 190° → tự thành -170°
+- [ ] Xoay được mọi loại: tiêu đề, đoạn văn, nút, ảnh, khối màu, đường kẻ, video, hình khối
+- [ ] Phần tử khoá: không có nút xoay
+- [ ] Đổi cỡ phần tử đã xoay (kéo cạnh và góc): cạnh/góc đối diện đứng yên; Shift + góc giữ tỉ lệ
+- [ ] Di chuyển phần tử đã xoay: đường gióng bám theo mép **nhìn thấy** của phần tử
+- [ ] Sửa chữ trực tiếp (nhấp đúp) trên phần tử đã xoay vẫn được
+- [ ] Hình khối có ảnh, đã xoay: kéo ảnh (crop) di chuyển đúng hướng; cuộn chuột phóng quanh con trỏ
+- [ ] Thả tệp ảnh lên hình khối đã xoay → ảnh vào đúng hình (kể cả ở góc bị xoay ra ngoài khung cũ)
+- [ ] Hoàn tác (Ctrl+Z): cả một lần kéo xoay là 1 bước
+- [ ] Nhân bản / sao chép-dán giữ nguyên góc xoay
+- [ ] Xem trước, ảnh thu nhỏ ở trang chủ, và trang **đã xuất bản** trên Vercel đều hiện đúng góc xoay
+- [ ] Trang cũ (tạo trước khi có tính năng xoay) mở bình thường, không bị xoay
+
+## 23. Phần tử Âm thanh với hiệu ứng nhảy theo nhạc
+
+Cần deploy lại Storage rules (thêm thư mục `audio`). Để hiệu ứng trong **trình soạn thảo/xem trước** nhảy theo đúng nhạc, bucket cần cấu hình CORS (`cors.json`, như mục 7); thiếu CORS thì vẫn phát được nhưng hiệu ứng chạy theo mẫu giả lập.
+
+- [ ] Cột trái có nhóm "Âm thanh" (xem mục 24); kéo/nhấp một kiểu để thêm → khung tối "Tải tệp âm thanh ở bảng bên phải"
+- [ ] Tải lên MP3 / M4A / WAV / OGG → tên tệp hiện trong bảng; tệp nằm ở Storage `users/{uid}/audio/`
+- [ ] Tệp không phải âm thanh hoặc > 20MB → báo lỗi, không tải lên
+- [ ] "Đổi tệp", "Bỏ tệp" hoạt động
+- [ ] Bấm nút ▶ ngay trên trang soạn thảo → phát được, **không** kéo/di chuyển phần tử; bấm lại để dừng
+- [ ] Đổi kiểu hiệu ứng, Màu 1/Màu 2, Số thanh ở bảng bên phải → cập nhật ngay
+- [ ] Khi phát: hiệu ứng nhảy theo nhạc (nhịp trống làm các thanh bên trái vọt lên); khi dừng: từ từ lắng xuống
+- [ ] "Phát lặp lại": hết bài tự phát lại
+- [ ] Hai phần tử âm thanh trên cùng trang: phát cái này thì cái kia tự dừng
+- [ ] Đổi cỡ / xoay / đổi màu nền / bo góc phần tử âm thanh → hiệu ứng vẽ lại đúng, không bị mờ khi zoom
+- [ ] Xem trước: phát được, hiệu ứng chạy
+- [ ] Trang **đã xuất bản**: phát được, hiệu ứng nhảy theo nhạc; tệp âm thanh nằm trong `/assets/…` của Vercel (xoá khỏi Storage vẫn nghe được)
+- [ ] Trình duyệt điện thoại (iOS Safari, Android Chrome) phát được trên trang đã xuất bản
+- [ ] Xoá tệp âm thanh khỏi Storage → trong trình soạn thảo nút phát mờ đi, rê chuột báo "Không phát được"
+- [ ] Admin "Lưu làm mẫu" một trang có âm thanh → mẫu phát được
+- [ ] Trang không có âm thanh → HTML xuất bản không chứa đoạn script âm thanh
+
+## 24. Âm thanh là một nhóm (như Hình khối) với nhiều kiểu
+
+- [ ] Cột trái: mục "Thành phần" không còn ô Âm thanh; có nhóm riêng **"Âm thanh"** dưới "Hình khối"
+- [ ] Nhóm có 7 ô, mỗi ô có icon riêng: Cột sóng, Đối xứng, Sóng, Đèn LED, Bong bóng, Vòng tròn, Nhịp đập
+- [ ] Kéo thả **và** nhấp từng ô → tạo phần tử đúng kiểu, đúng màu và kích thước riêng (Vòng tròn / Nhịp đập là khung vuông)
+- [ ] Phát nhạc: cả 7 kiểu đều nhảy theo nhạc
+  - Đèn LED: các ô sáng dần từ dưới lên, màu chuyển từ Màu 1 (dưới) sang Màu 2 (trên)
+  - Bong bóng: các chấm tròn phồng lên theo nhạc
+  - Nhịp đập: khối tròn giữa co giãn theo tiếng trầm, viền ngoài uốn theo nhạc
+- [ ] Vòng tròn / Nhịp đập: nút phát nằm giữa; các kiểu khác: nút ở góc dưới trái và hiệu ứng không đè lên nút
+- [ ] Bảng thuộc tính: tiêu đề hiện "Âm thanh · <tên kiểu>"; ô "Kiểu" là danh sách chọn đủ 7 kiểu
+- [ ] Bảng "Lớp" và bảng thuộc tính hiện đúng tên kiểu
+- [ ] Phần tử âm thanh tạo từ mục 23 (trước khi có nhóm) vẫn mở và phát bình thường
+- [ ] Trang đã xuất bản hiện đúng cả 7 kiểu
+
+## 25. Màu nền mặc định của âm thanh là trong suốt
+
+- [ ] Thêm phần tử âm thanh mới (mọi kiểu) → không có nền, thấy nền trang phía sau; ô "Màu nền" trong bảng thuộc tính là `transparent`
+- [ ] Chưa có tệp: khung chờ màu sáng "Âm thanh – Tải tệp âm thanh ở bảng bên phải"
+- [ ] Trên nền trang trắng: hiệu ứng và nút phát vẫn nhìn rõ
+- [ ] Vẫn đổi được sang màu nền khác như trước
+- [ ] Phần tử âm thanh tạo **trước** thay đổi này giữ nguyên nền tối đã lưu
+
+## 26. Bật/tắt tự động phát âm thanh (mặc định bật)
+
+- [ ] Phần tử âm thanh mới: bảng thuộc tính có "Tự động phát khi mở trang", **đã bật sẵn**
+- [ ] Trang chỉnh sửa: **không** tự phát (kể cả khi bật)
+- [ ] Xem trước / trang đã xuất bản, khi trình duyệt cho phép: nhạc tự phát ngay khi mở
+- [ ] Khi trình duyệt chặn (thường gặp ở lần đầu vào trang): nhạc tự bắt đầu ở lần **chạm/nhấp/gõ phím đầu tiên** vào bất kỳ chỗ nào trên trang
+- [ ] Lần tương tác đầu tiên là bấm nút phát của chính phần tử đó → phát (không bị phát rồi dừng ngay)
+- [ ] Trang có nhiều âm thanh cùng bật tự động phát → chỉ **cái đầu tiên** tự phát
+- [ ] Tắt tự động phát → chỉ phát khi bấm nút
+- [ ] Khi tự phát trước lúc người xem tương tác: nhạc có tiếng, hiệu ứng chạy theo mẫu; sau lần chạm đầu tiên hiệu ứng bám đúng theo nhạc
+- [ ] Điện thoại (iOS Safari / Android Chrome): chạm lần đầu vào trang thì nhạc bắt đầu
+- [ ] Phần tử âm thanh tạo trước thay đổi này cũng mặc định tự phát

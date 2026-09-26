@@ -2,8 +2,10 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
-import { isUploadedImage, uploadIcon, uploadImage } from '../lib/cloud.js'
+import { isUploadedImage, uploadAudio, uploadIcon, uploadImage } from '../lib/cloud.js'
 import { loadImageSize } from '../lib/image.js'
+import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
+import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
@@ -241,9 +243,85 @@ function ShapeSection({ el, setProps }) {
   )
 }
 
+function AudioSection({ el, setProps }) {
+  const fileRef = useRef(null)
+  const [busy, setBusy] = useState(false)
+  const p = el.props
+
+  const onFile = async (e) => {
+    const file = e.target.files?.[0]
+    e.target.value = ''
+    if (!file) return
+    setBusy(true)
+    try {
+      setProps({ src: await uploadAudio(file), name: file.name })
+    } catch (err) {
+      console.error(err)
+      alert(err.message || 'Không tải được tệp âm thanh lên.')
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <>
+      <Section title="Âm thanh">
+        <div className="audio-file">
+          <Icon name="audio" size={16} />
+          <span>{p.src ? p.name || 'Tệp âm thanh' : 'Chưa có tệp'}</span>
+        </div>
+        <div className="row">
+          <button type="button" className="btn" onClick={() => fileRef.current?.click()} disabled={busy}>
+            <Icon name="upload" size={14} />
+            {busy ? 'Đang tải lên…' : p.src ? 'Đổi tệp' : 'Tải tệp lên'}
+          </button>
+          {p.src && (
+            <button type="button" className="btn" onClick={() => setProps({ src: '', name: '' })} disabled={busy}>
+              Bỏ tệp
+            </button>
+          )}
+        </div>
+        <input ref={fileRef} type="file" accept="audio/*" hidden onChange={onFile} />
+        <p className="hint">MP3, M4A, OGG, WAV… tối đa 20MB. Bấm nút phát trên trang hoặc ở Xem trước để nghe thử.</p>
+        <label className="check">
+          <input type="checkbox" checked={p.loop} onChange={(e) => setProps({ loop: e.target.checked })} />
+          Phát lặp lại
+        </label>
+        <label className="check">
+          <input type="checkbox" checked={p.autoplay} onChange={(e) => setProps({ autoplay: e.target.checked })} />
+          Tự động phát khi mở trang
+        </label>
+        {p.autoplay && (
+          <p className="hint">
+            Trình duyệt thường chặn tự phát nhạc cho tới khi người xem chạm vào trang; khi đó nhạc bắt đầu ở lần chạm
+            đầu tiên. Không tự phát trong trang chỉnh sửa. Nếu trang có nhiều âm thanh, chỉ cái đầu tiên tự phát.
+          </p>
+        )}
+      </Section>
+      <Section title="Hiệu ứng">
+        <Field label="Kiểu">
+          <Select value={p.viz} options={AUDIO_ORDER.map((v) => [v, AUDIO_PRESETS[v].label])} onChange={(v) => setProps({ viz: v })} />
+        </Field>
+        <div className="grid2">
+          <Field label="Màu 1">
+            <ColorInput value={p.color} onChange={(v) => setProps({ color: v }, 'color')} />
+          </Field>
+          <Field label="Màu 2">
+            <ColorInput value={p.color2} onChange={(v) => setProps({ color2: v }, 'color2')} />
+          </Field>
+        </div>
+        <Field label="Số thanh">
+          <RangeInput value={p.bars} min={8} max={96} format={(v) => String(v)} onChange={(v) => setProps({ bars: v }, 'bars')} />
+        </Field>
+      </Section>
+    </>
+  )
+}
+
 function ContentSection({ el, editing, setProps, setGeom, onAction }) {
   const p = el.props
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
+  if (el.type === 'audio') return <AudioSection el={el} setProps={setProps} />
   if (el.type === 'shape') {
     return (
       <>
@@ -528,6 +606,8 @@ function PageSettings({ page, onChange }) {
           <dd>Dịch 1px (Shift: 10px)</dd>
           <dt>Shift + kéo góc</dt>
           <dd>Giữ tỉ lệ khi đổi cỡ</dd>
+          <dt>Kéo nút tròn phía trên</dt>
+          <dd>Xoay (Shift: bước 15°, nhấp đúp: về 0°)</dd>
           <dt>Alt + kéo</dt>
           <dd>Tắt hít nam châm</dd>
           <dt>Ctrl + S</dt>
@@ -604,6 +684,26 @@ export default function Inspector({ el, editing, page, onChange, onPageChange, o
             <NumberInput value={el.h} min={16} onChange={(v) => setGeom({ h: Math.round(v) }, 'h')} />
           </Field>
         </div>
+        <Field label="Góc xoay">
+          <div className="rotate-row">
+            <NumberInput
+              value={el.rotation || 0}
+              min={-360}
+              max={360}
+              suffix="°"
+              onChange={(v) => setGeom({ rotation: normalizeAngle(v) }, 'rotation')}
+            />
+            <button type="button" className="icon-btn" title="Xoay trái 90°" onClick={() => setGeom({ rotation: normalizeAngle((el.rotation || 0) - 90) })}>
+              <Icon name="rotateLeft" size={15} />
+            </button>
+            <button type="button" className="icon-btn" title="Xoay phải 90°" onClick={() => setGeom({ rotation: normalizeAngle((el.rotation || 0) + 90) })}>
+              <Icon name="rotate" size={15} />
+            </button>
+            <button type="button" className="btn" title="Bỏ xoay" onClick={() => setGeom({ rotation: 0 })} disabled={!el.rotation}>
+              0°
+            </button>
+          </div>
+        </Field>
         <button type="button" className="btn block" onClick={() => setGeom({ x: Math.round((page.width - el.w) / 2) })}>
           <Icon name="centerH" size={14} />
           Căn giữa theo chiều ngang trang

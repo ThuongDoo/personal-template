@@ -1,6 +1,7 @@
 import { useEffect, useId, useMemo, useRef } from 'react'
 import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
 import { shapeSvg } from '../lib/shapes.js'
+import { audioAttrs, mountAudio } from '../lib/audioViz.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 
 /** Shown in the editor where an image used to be but can no longer be loaded. */
@@ -24,6 +25,16 @@ function Shape({ el, style, ghost, isEditor }) {
       {isEditor && missing && <MissingImage overlay />}
     </div>
   )
+}
+
+/**
+ * Audio player with a visualizer; mountAudio (shared with published pages) builds its insides. Remounted
+ * (via its key) whenever a setting changes. Never autoplays in the editor.
+ */
+function AudioBlock({ p, css, isEditor }) {
+  const ref = useRef(null)
+  useEffect(() => mountAudio(ref.current), [])
+  return <div ref={ref} style={css} {...audioAttrs(p, { autoplay: !isEditor })} />
 }
 
 function ImageBlock({ p, css, isEditor }) {
@@ -135,6 +146,27 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
         <div style={css}>
           <div style={dividerLineStyle(el)} />
         </div>
+      )
+
+    case 'audio':
+      if (!p.src) {
+        return isEditor ? (
+          <div style={css} className="placeholder">
+            <span>Âm thanh</span>
+            <small>Tải tệp âm thanh ở bảng bên phải</small>
+          </div>
+        ) : (
+          <div style={css} />
+        )
+      }
+      // Keyed by the settings so a change remounts it: mountAudio owns the node's children.
+      return (
+        <AudioBlock
+          key={[p.src, p.viz, p.color, p.color2, p.bars, p.loop, p.autoplay].join('|')}
+          p={p}
+          css={css}
+          isEditor={isEditor}
+        />
       )
 
     case 'video': {

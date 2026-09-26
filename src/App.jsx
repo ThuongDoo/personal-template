@@ -10,6 +10,7 @@ import Toolbar from './components/Toolbar.jsx'
 import { DesignTooLargeError, saveDesign, signOut, uploadImage } from './lib/cloud.js'
 import { applyPatch, clamp, createElement, createFromKey, uid } from './lib/elements.js'
 import { exportHtml } from './lib/exportHtml.js'
+import { containsPoint } from './lib/geometry.js'
 import { shapeImageProps } from './lib/shapes.js'
 import { goHome } from './lib/route.js'
 import { useHistory } from './lib/useHistory.js'
@@ -136,10 +137,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           el.type === 'shape' &&
           !el.hidden &&
           !el.locked &&
-          pos.x >= el.x &&
-          pos.x <= el.x + el.w &&
-          pos.y >= el.y &&
-          pos.y <= el.y + el.h,
+          containsPoint(el, pos.x, pos.y),
       )
     if (!images.length) return
     showNotice(images.length > 1 ? `Đang tải ${images.length} ảnh lên…` : 'Đang tải ảnh lên…', { sticky: true })

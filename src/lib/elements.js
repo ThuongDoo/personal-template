@@ -1,3 +1,4 @@
+import { AUDIO_PRESETS } from './audioViz.js'
 import { SHAPES, randomSeed } from './shapes.js'
 
 export const GRID = 10
@@ -141,19 +142,33 @@ export const ELEMENT_TYPES = {
     props: { url: '' },
     style: { radius: 12, background: '#0f172a' },
   },
+  audio: {
+    label: 'Âm thanh',
+    w: 420,
+    h: 140,
+    // viz: one of AUDIO_PRESETS in audioViz.js, which also draws it (mountAudio).
+    props: { src: '', name: '', viz: 'bars', color: '#a78bfa', color2: '#f472b6', bars: 32, loop: false, autoplay: true },
+    style: { radius: 16, background: 'transparent' },
+  },
 }
 
 export const PALETTE_ORDER = ['heading', 'text', 'button', 'image', 'box', 'divider', 'video']
 
 /**
- * Palette/drag key → new element. Keys are element types, or `shape:<name>` for a shape preset
- * (size and props from the SHAPES catalog).
+ * Palette/drag key → new element. Keys are element types, `shape:<name>` for a shape preset (size and
+ * props from the SHAPES catalog) or `audio:<viz>` for an audio effect (from AUDIO_PRESETS).
  */
 export function createFromKey(key, rest = {}) {
-  const [type, shape] = key.split(':')
-  if (type !== 'shape' || !SHAPES[shape]) return createElement(type, rest)
-  const s = SHAPES[shape]
-  return createElement('shape', { w: s.w, h: s.h, ...rest, props: { ...s.props, shape, ...rest.props } })
+  const [type, preset] = key.split(':')
+  if (type === 'shape' && SHAPES[preset]) {
+    const s = SHAPES[preset]
+    return createElement('shape', { w: s.w, h: s.h, ...rest, props: { ...s.props, shape: preset, ...rest.props } })
+  }
+  if (type === 'audio' && AUDIO_PRESETS[preset]) {
+    const a = AUDIO_PRESETS[preset]
+    return createElement('audio', { w: a.w, h: a.h, ...rest, props: { ...a.props, viz: preset, ...rest.props } })
+  }
+  return createElement(type, rest)
 }
 
 export function createElement(type, { props, style, ...rest } = {}) {
@@ -165,6 +180,7 @@ export function createElement(type, { props, style, ...rest } = {}) {
     y: 0,
     w: t.w,
     h: t.h,
+    rotation: 0,
     hidden: false,
     locked: false,
     ...rest,
@@ -196,9 +212,13 @@ export function normalizeDoc(raw) {
   return { page, elements }
 }
 
-/** Display name of an element's kind (shapes show their preset, e.g. "Hình thoi"). */
+/** Display name of an element's kind (shapes and audio show their preset, e.g. "Hình thoi"). */
 export function elementLabel(el) {
-  return (el.type === 'shape' && SHAPES[el.props.shape]?.label) || ELEMENT_TYPES[el.type].label
+  return (
+    (el.type === 'shape' && SHAPES[el.props.shape]?.label) ||
+    (el.type === 'audio' && AUDIO_PRESETS[el.props.viz] && `Âm thanh · ${AUDIO_PRESETS[el.props.viz].label}`) ||
+    ELEMENT_TYPES[el.type].label
+  )
 }
 
 export function fontStack(value) {

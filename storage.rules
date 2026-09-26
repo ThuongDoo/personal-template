@@ -17,6 +17,13 @@ service firebase.storage {
         && request.resource.contentType.matches('image/.*');
     }
 
+    match /users/{uid}/audio/{file} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if request.auth != null && request.auth.uid == uid
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('audio/.*');
+    }
+
     match /users/{uid}/exports/{file} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if request.auth != null && request.auth.uid == uid
@@ -24,13 +31,13 @@ service firebase.storage {
         && request.resource.contentType.matches('application/json|text/html');
     }
 
-    // Images copied into templates: only admins add them, and they are never overwritten or deleted
+    // Images (and audio) copied into templates: only admins add them, and they are never overwritten or deleted
     // from the app because several templates may share one.
     match /templates/images/{file} {
       allow read: if request.auth != null;
       allow create: if isAdmin()
-        && request.resource.size < 10 * 1024 * 1024
-        && request.resource.contentType.matches('image/.*');
+        && request.resource.size < 20 * 1024 * 1024
+        && request.resource.contentType.matches('image/.*|audio/.*');
     }
   }
 }

@@ -1,4 +1,5 @@
 import ElementContent from './ElementContent.jsx'
+import { rotationTransform } from '../lib/geometry.js'
 
 /** Thumbnails are drawn at this width; the card grid uses fixed-width columns to match. */
 const THUMB_WIDTH = 280
@@ -14,7 +15,15 @@ export default function DesignThumb({ design }) {
           el.hidden ? null : (
             <div
               key={el.id}
-              style={{ position: 'absolute', left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1 }}
+              style={{
+                position: 'absolute',
+                left: el.x,
+                top: el.y,
+                width: el.w,
+                height: el.h,
+                zIndex: i + 1,
+                transform: rotationTransform(el),
+              }}
             >
               {el.type === 'video' ? (
                 // Avoid loading a YouTube iframe per card.

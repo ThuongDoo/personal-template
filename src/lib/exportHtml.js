@@ -1,5 +1,6 @@
 import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, youtubeEmbed } from './elements.js'
 import { shapeSvg } from './shapes.js'
+import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 
 const UNITLESS = new Set(['opacity', 'fontWeight', 'lineHeight', 'zIndex'])
 
@@ -37,6 +38,13 @@ function renderInner(el) {
       return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}</div>`
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
+    case 'audio': {
+      if (!p.src) return `<div style="${css}"></div>`
+      const data = Object.entries(audioAttrs(p))
+        .map(([k, v]) => (v === '' ? k : `${k}="${attr(v)}"`))
+        .join(' ')
+      return `<div style="${css}" ${data}></div>`
+    }
     case 'video': {
       const src = youtubeEmbed(p.url)
       return src
@@ -51,10 +59,20 @@ function renderInner(el) {
 /** Builds a standalone HTML file. The fixed-width page is scaled down to fit narrow screens. */
 export function exportHtml(doc) {
   const { page, elements } = doc
+  const hasAudio = elements.some((el) => !el.hidden && el.type === 'audio' && el.props.src)
   const body = elements
     .filter((el) => !el.hidden)
     .map((el, i) => {
-      const wrap = toCssText({ position: 'absolute', left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1 })
+      const wrap = toCssText({
+        position: 'absolute',
+        left: el.x,
+        top: el.y,
+        width: el.w,
+        height: el.h,
+        zIndex: i + 1,
+        // Rotated around the element's centre (the CSS default), matching the editor.
+        transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+      })
       return `    <div style="${wrap}">${renderInner(el)}</div>`
     })
     .join('\n')
@@ -94,7 +112,10 @@ ${body}
       window.addEventListener('resize', fit);
       fit();
     })();
-  </script>
+  </script>${hasAudio ? `
+  <script>
+${AUDIO_SCRIPT.replace(/<\//g, '<\\/')}
+  </script>` : ''}
 </body>
 </html>
 `

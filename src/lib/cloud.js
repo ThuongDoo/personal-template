@@ -45,6 +45,16 @@ const IMAGE_EXT = {
   'image/gif': 'gif',
   'image/svg+xml': 'svg',
   'image/avif': 'avif',
+  // Audio goes through the same copy path when a design becomes a template.
+  'audio/mpeg': 'mp3',
+  'audio/mp4': 'm4a',
+  'audio/x-m4a': 'm4a',
+  'audio/aac': 'aac',
+  'audio/ogg': 'ogg',
+  'audio/wav': 'wav',
+  'audio/x-wav': 'wav',
+  'audio/webm': 'weba',
+  'audio/flac': 'flac',
 }
 
 const currentUid = () => {
@@ -168,6 +178,20 @@ export async function uploadImage(file) {
   const uid = currentUid()
   const { blob, width, height } = await readImageFile(file)
   return { src: await uploadImageBlob(userImages(uid), blob), width, height }
+}
+
+/** Largest audio file accepted; the Storage rules enforce the same limit. */
+export const MAX_AUDIO_BYTES = 20 * 1024 * 1024
+
+/** Uploads an audio file as-is and returns its Storage URL. */
+export async function uploadAudio(file) {
+  const uid = currentUid()
+  if (!file.type.startsWith('audio/')) throw new Error('Tệp này không phải âm thanh')
+  if (file.size > MAX_AUDIO_BYTES) throw new Error('Tệp âm thanh tối đa 20MB')
+  const ext = file.name.match(/\.([a-z0-9]{1,5})$/i)?.[1]?.toLowerCase() ?? 'audio'
+  const fileRef = ref(storage, `users/${uid}/audio/${Date.now()}-${randomId()}.${ext}`)
+  await uploadBytes(fileRef, file, { contentType: file.type, cacheControl: 'public, max-age=31536000' })
+  return getDownloadURL(fileRef)
 }
 
 /** Uploads a site icon (favicon), downscaled to 256px, and returns its Storage URL. */
