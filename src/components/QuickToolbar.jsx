@@ -1,7 +1,11 @@
 import { useEffect, useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput } from './fields.jsx'
-import { FONTS, TEXT_TYPES } from '../lib/elements.js'
+import { FontList } from './FontPicker.jsx'
+import IconPicker from './IconPicker.jsx'
+import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
+import { TEXT_TYPES } from '../lib/elements.js'
+import { fontOf } from '../lib/fonts.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
 import { ROUNDABLE_SHAPES } from '../lib/shapes.js'
 
@@ -63,6 +67,75 @@ function PanelButton({ id, title, icon, openId, setOpenId, children }) {
       {open && (
         <div className="qt-popover qt-panel" onPointerDown={(e) => e.stopPropagation()}>
           {children}
+        </div>
+      )}
+    </span>
+  )
+}
+
+/** The current font, in its own face; opens the searchable font list under the toolbar. */
+function FontButton({ value, onChange, openId, setOpenId }) {
+  const open = openId === 'font'
+  const font = fontOf(value)
+  return (
+    <span className="qt-color">
+      <button
+        type="button"
+        className={`qt-select qt-font${open ? ' on' : ''}`}
+        title="Phông chữ"
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        style={{ fontFamily: font.stack }}
+        onClick={() => setOpenId(open ? null : 'font')}
+      >
+        <span>{font.label}</span>
+        <Icon name="chevronDown" size={13} />
+      </button>
+      {open && (
+        <div className="qt-popover qt-font-pop" onPointerDown={(e) => e.stopPropagation()}>
+          <FontList
+            value={font.value}
+            onClose={() => setOpenId(null)}
+            onPick={(v) => {
+              onChange(v)
+              setOpenId(null)
+            }}
+          />
+        </div>
+      )}
+    </span>
+  )
+}
+
+/** Shows the icon element's current icon; opens the searchable icon grid to swap it. */
+function IconSwapButton({ value, onChange, openId, setOpenId }) {
+  const open = openId === 'icon'
+  const title = `Đổi icon (đang dùng: ${ICON_LIBRARY[value]?.label ?? value})`
+  return (
+    <span className="qt-color">
+      <button
+        type="button"
+        className={`qt-btn qt-icon-swap${open ? ' on' : ''}`}
+        title={title}
+        aria-label={title}
+        aria-haspopup="dialog"
+        aria-expanded={open}
+        onClick={() => setOpenId(open ? null : 'icon')}
+      >
+        <span className="qt-icon-glyph" dangerouslySetInnerHTML={{ __html: iconSvg({ icon: value, iconColor: 'currentColor', iconSize: 100 }) }} />
+        <Icon name="chevronDown" size={13} />
+      </button>
+      {open && (
+        <div className="qt-popover qt-icon-pop" onPointerDown={(e) => e.stopPropagation()}>
+          <span className="qt-popover-title">Đổi icon</span>
+          <IconPicker
+            value={value}
+            autoFocus
+            onPick={(name) => {
+              onChange(name)
+              setOpenId(null)
+            }}
+          />
         </div>
       )}
     </span>
@@ -190,18 +263,13 @@ export default function QuickToolbar({ el, setStyle, setProps, setEl, onAction, 
     return () => document.removeEventListener('pointerdown', close)
   }, [openId])
 
+  // The properties panel hides what these controls cover: keep lib/quickFields.js in step with them.
   let controls = []
   if (TEXT_TYPES.includes(el.type)) {
     const bold = s.fontWeight >= 600
     const next = ALIGNS[(ALIGNS.indexOf(s.textAlign) + 1) % ALIGNS.length]
     controls = [
-      <select key="font" className="qt-select" title="Phông chữ" value={s.fontFamily} onChange={(e) => setStyle({ fontFamily: e.target.value })}>
-        {FONTS.map((f) => (
-          <option key={f.value} value={f.value}>
-            {f.label}
-          </option>
-        ))}
-      </select>,
+      <FontButton key="font" value={s.fontFamily} openId={openId} setOpenId={setOpenId} onChange={(v) => setStyle({ fontFamily: v })} />,
       <Stepper key="size" title="Cỡ chữ" value={s.fontSize} min={6} max={400} step={2} onChange={(v) => setStyle({ fontSize: v }, 'fontSize')} />,
       <Sep key="s1" />,
       <button key="b" type="button" className={`qt-btn${bold ? ' on' : ''}`} title="In đậm" aria-pressed={bold} onClick={() => setStyle({ fontWeight: bold ? 400 : 700 })}>
@@ -265,6 +333,8 @@ export default function QuickToolbar({ el, setStyle, setProps, setEl, onAction, 
     ]
   } else if (el.type === 'icon') {
     controls = [
+      <IconSwapButton key="icon" value={p.icon} openId={openId} setOpenId={setOpenId} onChange={(name) => setProps({ icon: name })} />,
+      <Sep key="s0" />,
       color('ic', 'Màu icon', p.iconColor, (v) => setProps({ iconColor: v }, 'iconColor'), { glyph: 'icon' }),
       color('bg', 'Màu nền', s.background, (v) => setStyle({ background: v }, 'background'), { allowNone: true }),
     ]

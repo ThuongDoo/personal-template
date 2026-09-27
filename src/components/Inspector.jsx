@@ -1,17 +1,17 @@
 import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
-import { FONTS, TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
+import { quickFields } from '../lib/quickFields.js'
+import { TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
 import { isUploadedImage, uploadAudio, uploadIcon, uploadImage, uploadVideo } from '../lib/cloud.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
 import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
-import { ICON_GROUPS, ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
-import { stripDiacritics } from '../lib/slug.js'
+import { ICON_LIBRARY } from '../lib/iconLibrary.js'
 import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 import { startUpload } from '../lib/uploadProgress.js'
 import { QuotaError } from '../lib/storageQuota.js'
-import { ROUNDABLE_SHAPES, SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, imageRect, zoomImageAt, IMAGE_FRAME_RESET, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
+import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, imageRect, zoomImageAt, IMAGE_FRAME_RESET, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
   [300, 'Mảnh'],
@@ -31,12 +31,6 @@ const LINE_STYLES = [
   ['solid', 'Liền'],
   ['dashed', 'Nét đứt'],
   ['dotted', 'Chấm'],
-]
-const ALIGN = [
-  { value: 'left', icon: 'alignLeft', title: 'Căn trái' },
-  { value: 'center', icon: 'alignCenter', title: 'Căn giữa' },
-  { value: 'right', icon: 'alignRight', title: 'Căn phải' },
-  { value: 'justify', icon: 'alignJustify', title: 'Căn đều' },
 ]
 const VALIGN = [
   { value: 'top', icon: 'vTop', title: 'Trên' },
@@ -208,34 +202,12 @@ function ImageSection({ el, setProps, setGeom }) {
   )
 }
 
-function ImagePositionSection({ el, editing, setProps, onAction }) {
+// Dragging the image on the page ("Chỉnh ảnh" on the quick toolbar, which also measures images added
+// before positioning existed) is the main way in; these are the exact values.
+function ImagePositionSection({ el, setProps }) {
   const p = el.props
-  const [measuring, setMeasuring] = useState(false)
-  if (!p.src) return null
-  const video = p.mediaType === 'video'
-  const noun = video ? 'video' : 'ảnh'
-
-  // Images added before positioning existed have no stored size yet.
-  if (!p.imgW) {
-    const measure = async () => {
-      setMeasuring(true)
-      try {
-        const { width, height } = await (video ? loadVideoSize : loadImageSize)(p.src)
-        setProps({ imgW: width, imgH: height })
-      } catch {
-        alert(`Không tải được ${noun}.`)
-      } finally {
-        setMeasuring(false)
-      }
-    }
-    return (
-      <Section title={`Vị trí ${noun} trong hình`}>
-        <button type="button" className="btn block" onClick={measure} disabled={measuring}>
-          {measuring ? `Đang tải ${noun}…` : `Bật căn chỉnh vị trí ${noun}`}
-        </button>
-      </Section>
-    )
-  }
+  if (!p.src || !p.imgW) return null
+  const noun = p.mediaType === 'video' ? 'video' : 'ảnh'
 
   // Where the image center sits, in % of the shape (0 = left/top edge, 100 = right/bottom; beyond = outside).
   const r = imageRect(el.w, el.h, p)
@@ -243,11 +215,10 @@ function ImagePositionSection({ el, editing, setProps, onAction }) {
 
   return (
     <Section title={`Vị trí ${noun} trong hình`}>
-      <button type="button" className={`btn block${editing ? ' primary' : ''}`} onClick={() => onAction('crop')} disabled={el.locked}>
-        <Icon name="move" size={14} />
-        {editing ? 'Xong' : `Kéo ${noun} trực tiếp trên trang`}
-      </button>
-      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời {noun}, kéo góc để co giãn (giữ Shift để giữ tỉ lệ), cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
+      <p className="hint">
+        Bấm “Chỉnh {noun}” trên thanh công cụ hoặc nhấp đúp vào hình để kéo {noun} trực tiếp trên trang (kéo góc để co giãn, giữ
+        Shift để giữ tỉ lệ, cuộn chuột để phóng to/thu nhỏ, Esc để xong).
+      </p>
       <Field label="Ngang">
         <RangeInput value={center.x} min={-50} max={150} format={(v) => `${v}%`} onChange={(v) => setProps({ imgCX: v / 100 }, 'imgCX')} />
       </Field>
@@ -294,26 +265,15 @@ function ShapeSection({ el, setProps }) {
           </div>
         </>
       )}
-      {ROUNDABLE_SHAPES.includes(p.shape) && (
-        <Field label="Bo góc">
-          <NumberInput value={p.cornerRadius ?? 0} min={0} max={200} suffix="px" onChange={(v) => setProps({ cornerRadius: v }, 'cornerRadius')} />
-        </Field>
-      )}
       {(torn || p.shape === 'blob') && (
         <button type="button" className="btn block" onClick={() => setProps({ seed: randomSeed() })}>
           {torn ? 'Xé lại (tạo vết rách khác)' : 'Tạo hình cong khác'}
         </button>
       )}
-      <div className="grid2">
-        <Field label={torn ? 'Viền giấy' : 'Viền'}>
-          <NumberInput value={p.rim} min={0} max={40} suffix="px" onChange={(v) => setProps({ rim: v }, 'rim')} />
-        </Field>
-        {p.rim > 0 && (
-          <Field label="Màu viền">
-            <ColorInput value={p.rimColor} onChange={(v) => setProps({ rimColor: v }, 'rimColor')} />
-          </Field>
-        )}
-      </div>
+      {/* Corner rounding and the rim colour are on the quick toolbar. */}
+      <Field label={torn ? 'Viền giấy' : 'Viền'}>
+        <NumberInput value={p.rim} min={0} max={40} suffix="px" onChange={(v) => setProps({ rim: v }, 'rim')} />
+      </Field>
       <label className="check">
         <input type="checkbox" checked={p.texture} onChange={(e) => setProps({ texture: e.target.checked })} />
         Vân giấy
@@ -326,53 +286,12 @@ function ShapeSection({ el, setProps }) {
   )
 }
 
-/** Lowercase without Vietnamese accents, so "dien thoai" finds "Điện thoại". */
-const searchable = (text) => stripDiacritics(text).toLowerCase()
-
 function IconSection({ el, setProps }) {
   const p = el.props
-  const [query, setQuery] = useState('')
-  const q = searchable(query.trim())
-  const matches = (name, icon) => !q || searchable(icon.label).includes(q) || name.toLowerCase().includes(q)
-  // Grouped as usual; while searching, groups without a match are left out.
-  const groups = ICON_GROUPS.map(([group, title]) => [
-    title,
-    Object.entries(ICON_LIBRARY).filter(([name, icon]) => icon.group === group && matches(name, icon)),
-  ]).filter(([, icons]) => icons.length)
-
   return (
     <>
+      {/* Which icon and its colour are picked on the quick toolbar. */}
       <Section title="Icon">
-        <input
-          className="input"
-          type="search"
-          value={query}
-          placeholder={`Tìm trong ${Object.keys(ICON_LIBRARY).length} icon…`}
-          onChange={(e) => setQuery(e.target.value)}
-        />
-        {!groups.length && <p className="hint">Không tìm thấy icon nào.</p>}
-        {groups.map(([title, icons]) => (
-          <div key={title} className="icon-group">
-            <span className="field-label">{title}</span>
-            <div className="icon-grid">
-              {icons.map(([name, icon]) => (
-                <button
-                  key={name}
-                  type="button"
-                  className={`icon-pick${p.icon === name ? ' active' : ''}`}
-                  title={icon.label}
-                  aria-label={icon.label}
-                  aria-pressed={p.icon === name}
-                  onClick={() => setProps({ icon: name })}
-                  dangerouslySetInnerHTML={{ __html: iconSvg({ icon: name, iconColor: 'currentColor', iconSize: 100 }) }}
-                />
-              ))}
-            </div>
-          </div>
-        ))}
-        <Field label="Màu icon">
-          <ColorInput value={p.iconColor} onChange={(v) => setProps({ iconColor: v }, 'iconColor')} />
-        </Field>
         <Field label="Cỡ icon">
           <RangeInput value={p.iconSize} min={20} max={100} format={(v) => `${v}%`} onChange={(v) => setProps({ iconSize: v }, 'iconSize')} />
         </Field>
@@ -473,14 +392,7 @@ function AudioSection({ el, setProps }) {
         <Field label="Kiểu">
           <Select value={p.viz} options={AUDIO_ORDER.map((v) => [v, AUDIO_PRESETS[v].label])} onChange={(v) => setProps({ viz: v })} />
         </Field>
-        <div className="grid2">
-          <Field label="Màu 1">
-            <ColorInput value={p.color} allowGradient={false} onChange={(v) => setProps({ color: v }, 'color')} />
-          </Field>
-          <Field label="Màu 2">
-            <ColorInput value={p.color2} allowGradient={false} onChange={(v) => setProps({ color2: v }, 'color2')} />
-          </Field>
-        </div>
+        {/* Its two colours are on the quick toolbar. */}
         <Field label="Số thanh">
           <RangeInput value={p.bars} min={8} max={96} format={(v) => String(v)} onChange={(v) => setProps({ bars: v }, 'bars')} />
         </Field>
@@ -489,7 +401,7 @@ function AudioSection({ el, setProps }) {
   )
 }
 
-function ContentSection({ el, editing, setProps, setGeom, onAction }) {
+function ContentSection({ el, setProps, setGeom }) {
   const p = el.props
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
   if (el.type === 'audio') return <AudioSection el={el} setProps={setProps} />
@@ -498,7 +410,7 @@ function ContentSection({ el, editing, setProps, setGeom, onAction }) {
     return (
       <>
         <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
-        <ImagePositionSection el={el} editing={editing} setProps={setProps} onAction={onAction} />
+        <ImagePositionSection el={el} setProps={setProps} />
         <ShapeSection el={el} setProps={setProps} />
       </>
     )
@@ -555,79 +467,32 @@ function ContentSection({ el, editing, setProps, setGeom, onAction }) {
   )
 }
 
+// Font, size, colour, alignment, italic / underline and spacing are on the quick toolbar.
 function TypographySection({ s, setStyle }) {
   return (
     <Section title="Chữ">
-      <Field label="Phông chữ">
-        <Select value={s.fontFamily} options={FONTS.map((f) => [f.value, f.label])} onChange={(v) => setStyle({ fontFamily: v })} />
-      </Field>
       <div className="grid2">
-        <Field label="Cỡ chữ">
-          <NumberInput value={s.fontSize} min={6} max={400} suffix="px" onChange={(v) => setStyle({ fontSize: v }, 'fontSize')} />
-        </Field>
         <Field label="Độ đậm">
           <Select value={s.fontWeight} options={WEIGHTS} onChange={(v) => setStyle({ fontWeight: Number(v) })} />
-        </Field>
-        <Field label="Giãn dòng">
-          <NumberInput value={s.lineHeight} min={0.5} max={4} step={0.1} onChange={(v) => setStyle({ lineHeight: v }, 'lineHeight')} />
-        </Field>
-        <Field label="Giãn chữ">
-          <NumberInput value={s.letterSpacing} min={-10} max={40} step={0.5} suffix="px" onChange={(v) => setStyle({ letterSpacing: v }, 'letterSpacing')} />
-        </Field>
-      </div>
-      <Field label="Màu chữ">
-        <ColorInput value={s.color} onChange={(v) => setStyle({ color: v }, 'color')} />
-      </Field>
-      <div className="grid2">
-        <Field label="Căn ngang">
-          <Segmented value={s.textAlign} options={ALIGN} onChange={(v) => setStyle({ textAlign: v })} />
         </Field>
         <Field label="Căn dọc">
           <Segmented value={s.verticalAlign} options={VALIGN} onChange={(v) => setStyle({ verticalAlign: v })} />
         </Field>
       </div>
-      <div className="row">
-        <button type="button" className={`icon-btn${s.italic ? ' on' : ''}`} title="In nghiêng" onClick={() => setStyle({ italic: !s.italic })}>
-          <Icon name="italic" />
-        </button>
-        <button type="button" className={`icon-btn${s.underline ? ' on' : ''}`} title="Gạch chân" onClick={() => setStyle({ underline: !s.underline })}>
-          <Icon name="underline" />
-        </button>
-      </div>
     </Section>
   )
 }
 
-function AppearanceSection({ el, s, setStyle }) {
-  if (el.type === 'shape') {
-    return (
-      <Section title="Màu nền">
-        <Field label="Màu nền (khi không có ảnh)">
-          <ColorInput value={s.background} allowNone onChange={(v) => setStyle({ background: v }, 'background')} />
-        </Field>
-        <Field label="Độ mờ">
-          <OpacitySlider value={s.opacity} onChange={(v) => setStyle({ opacity: v }, 'opacity')} />
-        </Field>
-      </Section>
-    )
-  }
+/** Background, border, shadow… minus what the quick toolbar already edits (`quick`, see quickFields). */
+function AppearanceSection({ el, s, setStyle, quick }) {
+  // Its background colour and opacity are both on the toolbar.
+  if (el.type === 'shape') return null
 
   if (el.type === 'divider') {
     return (
       <Section title="Đường kẻ">
-        <Field label="Màu">
-          <ColorInput value={s.color} onChange={(v) => setStyle({ color: v }, 'color')} />
-        </Field>
-        <div className="grid2">
-          <Field label="Độ dày">
-            <NumberInput value={s.lineWidth} min={1} max={40} suffix="px" onChange={(v) => setStyle({ lineWidth: v }, 'lineWidth')} />
-          </Field>
-          <Field label="Kiểu">
-            <Select value={s.lineStyle} options={LINE_STYLES} onChange={(v) => setStyle({ lineStyle: v })} />
-          </Field>
-        </div>
-        <Field label="Độ mờ">
-          <OpacitySlider value={s.opacity} onChange={(v) => setStyle({ opacity: v }, 'opacity')} />
+        <Field label="Kiểu">
+          <Select value={s.lineStyle} options={LINE_STYLES} onChange={(v) => setStyle({ lineStyle: v })} />
         </Field>
       </Section>
     )
@@ -635,13 +500,17 @@ function AppearanceSection({ el, s, setStyle }) {
 
   return (
     <Section title="Nền & viền">
-      <Field label="Màu nền">
-        <ColorInput value={s.background} allowNone onChange={(v) => setStyle({ background: v }, 'background')} />
-      </Field>
-      <div className="grid2">
-        <Field label="Bo góc">
-          <NumberInput value={s.radius} min={0} max={999} suffix="px" onChange={(v) => setStyle({ radius: v }, 'radius')} />
+      {!quick.has('background') && (
+        <Field label="Màu nền">
+          <ColorInput value={s.background} allowNone onChange={(v) => setStyle({ background: v }, 'background')} />
         </Field>
+      )}
+      <div className="grid2">
+        {!quick.has('radius') && (
+          <Field label="Bo góc">
+            <NumberInput value={s.radius} min={0} max={999} suffix="px" onChange={(v) => setStyle({ radius: v }, 'radius')} />
+          </Field>
+        )}
         <Field label="Khoảng đệm">
           <NumberInput value={s.padding} min={0} max={200} suffix="px" onChange={(v) => setStyle({ padding: v }, 'padding')} />
         </Field>
@@ -660,9 +529,6 @@ function AppearanceSection({ el, s, setStyle }) {
       <Field label="Đổ bóng">
         <Select value={s.shadow} options={SHADOWS} onChange={(v) => setStyle({ shadow: v })} />
       </Field>
-      <Field label="Độ mờ">
-        <OpacitySlider value={s.opacity} onChange={(v) => setStyle({ opacity: v }, 'opacity')} />
-      </Field>
     </Section>
   )
 }
@@ -672,15 +538,6 @@ function RangeInput({ value, min, max, step = 1, format, onChange }) {
     <div className="slider">
       <input type="range" min={min} max={max} step={step} value={value} onChange={(e) => onChange(Number(e.target.value))} />
       <span>{format(value)}</span>
-    </div>
-  )
-}
-
-function OpacitySlider({ value, onChange }) {
-  return (
-    <div className="slider">
-      <input type="range" min={0} max={100} value={Math.round(value * 100)} onChange={(e) => onChange(Number(e.target.value) / 100)} />
-      <span>{Math.round(value * 100)}%</span>
     </div>
   )
 }
@@ -797,7 +654,7 @@ function PageSettings({ page, onChange }) {
   )
 }
 
-export default function Inspector({ el, editing, page, onChange, onPageChange, onAction }) {
+export default function Inspector({ el, page, onChange, onPageChange, onAction }) {
   if (!el) return <PageSettings page={page} onChange={onPageChange} />
 
   const s = el.style
@@ -830,15 +687,9 @@ export default function Inspector({ el, editing, page, onChange, onPageChange, o
         <button type="button" className={`icon-btn${el.locked ? ' on' : ''}`} title={el.locked ? 'Mở khoá' : 'Khoá vị trí'} onClick={() => onAction('lock')}>
           <Icon name={el.locked ? 'lock' : 'unlock'} />
         </button>
-        <button type="button" className="icon-btn" title="Nhân bản (Ctrl+D)" onClick={() => onAction('duplicate')}>
-          <Icon name="copy" />
-        </button>
-        <button type="button" className="icon-btn danger" title="Xoá (Delete)" onClick={() => onAction('delete')}>
-          <Icon name="trash" />
-        </button>
       </div>
 
-      <ContentSection el={el} editing={editing} setProps={setProps} setGeom={setGeom} onAction={onAction} />
+      <ContentSection el={el} setProps={setProps} setGeom={setGeom} />
 
       <Section title="Vị trí & kích thước">
         <div className="grid2">
@@ -882,7 +733,7 @@ export default function Inspector({ el, editing, page, onChange, onPageChange, o
       </Section>
 
       {TEXT_TYPES.includes(el.type) && <TypographySection s={s} setStyle={setStyle} />}
-      <AppearanceSection el={el} s={s} setStyle={setStyle} />
+      <AppearanceSection el={el} s={s} setStyle={setStyle} quick={quickFields(el)} />
     </div>
   )
 }

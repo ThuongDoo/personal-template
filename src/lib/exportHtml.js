@@ -1,4 +1,5 @@
-import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, elementTransform, youtubeEmbed } from './elements.js'
+import { contentStyle, dividerLineStyle, elementTransform, youtubeEmbed } from './elements.js'
+import { googleFontsUrl, usedFonts } from './fonts.js'
 import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
@@ -70,6 +71,8 @@ function renderInner(el) {
 /** Builds a standalone HTML file. The fixed-width page is scaled down to fit narrow screens. */
 export function exportHtml(doc) {
   const { page, elements } = doc
+  // Only the fonts this page uses.
+  const fontsUrl = googleFontsUrl(usedFonts(elements))
   const hasAudio = elements.some((el) => !el.hidden && el.type === 'audio' && el.props.src)
   const body = elements
     .filter((el) => !el.hidden)
@@ -98,10 +101,10 @@ export function exportHtml(doc) {
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>${esc(page.title)}</title>${page.favicon ? `
   <link rel="icon" href="${attr(page.favicon)}">` : ''}
-  <link rel="preconnect" href="https://fonts.googleapis.com">
+${fontsUrl ? `  <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link rel="stylesheet" href="${attr(GOOGLE_FONTS_URL)}">
-  <style>
+  <link rel="stylesheet" href="${attr(fontsUrl)}">
+` : ''}  <style>
     html, body { margin: 0; background: ${attr(page.background)}; }
     .wrap { position: relative; overflow: hidden; height: ${page.height}px; }
     .page { position: absolute; top: 0; left: 50%; width: ${page.width}px; height: ${page.height}px;

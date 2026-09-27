@@ -1,10 +1,11 @@
-import { useEffect, useEffectEvent, useState } from 'react'
+import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
 import QuickToolbar from './QuickToolbar.jsx'
 import UploadIndicator from './UploadIndicator.jsx'
-import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, elementTransform } from '../lib/elements.js'
+import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp, elementTransform } from '../lib/elements.js'
 import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
 import { imageCenterProps, imageRect, zoomImageAt } from '../lib/shapes.js'
 import { useUploads } from '../lib/uploadProgress.js'
@@ -26,27 +27,64 @@ const ROTATE_SNAP_DEG = 4
 /** Screen px between the element and the quick toolbar; above leaves room for the rotate handle. */
 const TOOLBAR_GAP_ABOVE = 56
 const TOOLBAR_GAP_BELOW = 40
+/** Smallest distance between the quick toolbar and the window / workspace edges. */
+const TOOLBAR_MARGIN = 8
 
 /**
- * Places the quick toolbar over the element's visual box: centred above it, or below when the element
- * is near the top of the page. A zero-size anchor at page coordinates, scaled back to screen size so
- * the toolbar looks the same at every zoom.
+ * Places the quick toolbar over the element's visual box: centred above it, or below when there is no
+ * room above in the workspace. Rendered into <body> with fixed positioning so it floats over the side
+ * panels instead of being covered or clipped by them, and kept inside the window horizontally.
  */
-function QuickToolbarAnchor({ el, zoom, ...rest }) {
-  const b = bounds(el)
-  const above = b.top * zoom > 70
-  return (
+function QuickToolbarAnchor({ el, zoom, canvasRef, workspaceRef, ...rest }) {
+  const ref = useRef(null)
+  const [pos, setPos] = useState(null)
+
+  const place = useEffectEvent(() => {
+    const canvas = canvasRef.current
+    const bar = ref.current?.firstElementChild
+    if (!canvas || !bar) return
+    const c = canvas.getBoundingClientRect()
+    const area = (workspaceRef.current ?? canvas).getBoundingClientRect()
+    const b = bounds(el)
+    const w = bar.offsetWidth
+    const h = bar.offsetHeight
+    const top = c.top + b.top * zoom - TOOLBAR_GAP_ABOVE - h
+    const y = top >= area.top + TOOLBAR_MARGIN ? top : c.top + b.bottom * zoom + TOOLBAR_GAP_BELOW
+    const next = {
+      x: Math.round(clamp(c.left + b.cx * zoom - w / 2, TOOLBAR_MARGIN, window.innerWidth - w - TOOLBAR_MARGIN)),
+      // Scrolled far away, it waits at the workspace edge rather than covering the header.
+      y: Math.round(clamp(y, area.top + TOOLBAR_MARGIN, area.bottom - h - TOOLBAR_MARGIN)),
+    }
+    if (!Number.isFinite(next.x) || !Number.isFinite(next.y)) return
+    setPos((p) => (p && p.x === next.x && p.y === next.y ? p : next))
+  })
+
+  // After every render (the element or zoom may have changed), then on scroll / resize.
+  useLayoutEffect(() => place())
+  useEffect(() => {
+    const ws = workspaceRef.current
+    const onChange = () => place()
+    const observer = new ResizeObserver(onChange)
+    if (ws) observer.observe(ws)
+    if (ref.current?.firstElementChild) observer.observe(ref.current.firstElementChild)
+    ws?.addEventListener('scroll', onChange, { passive: true })
+    window.addEventListener('resize', onChange)
+    return () => {
+      observer.disconnect()
+      ws?.removeEventListener('scroll', onChange)
+      window.removeEventListener('resize', onChange)
+    }
+  }, [workspaceRef])
+
+  return createPortal(
     <div
+      ref={ref}
       className="qt-anchor"
-      style={{ left: b.cx, top: above ? b.top : b.bottom, transform: `scale(${1 / zoom})` }}
+      style={pos ? { left: pos.x, top: pos.y } : { left: 0, top: 0, visibility: 'hidden' }}
     >
-      <QuickToolbar
-        key={el.id}
-        el={el}
-        {...rest}
-        style={above ? { bottom: TOOLBAR_GAP_ABOVE } : { top: TOOLBAR_GAP_BELOW }}
-      />
-    </div>
+      <QuickToolbar key={el.id} el={el} {...rest} />
+    </div>,
+    document.body,
   )
 }
 
@@ -569,6 +607,8 @@ export default function Canvas({
             <QuickToolbarAnchor
               el={selected}
               zoom={zoom}
+              canvasRef={canvasRef}
+              workspaceRef={workspaceRef}
               setStyle={(patch, key) => onUpdate(selected.id, { style: patch }, key && `style.${key}`)}
               setProps={(patch, key) => onUpdate(selected.id, { props: patch }, key && `props.${key}`)}
               setEl={(patch) => onUpdate(selected.id, patch)}

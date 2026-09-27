@@ -3,6 +3,7 @@ import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js
 import { isVideo, shapeClipPath, shapeSvg, videoBoxStyle } from '../lib/shapes.js'
 import { audioAttrs, mountAudio } from '../lib/audioViz.js'
 import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
+import { loadFonts } from '../lib/fonts.js'
 import { textGradientStyle } from '../lib/gradient.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 
@@ -161,6 +162,11 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
   // 'thumb' (home screen previews) behaves like the editor but keeps videos still.
   const isEditor = mode !== 'preview'
   const still = mode === 'thumb'
+  // Fonts are fetched on demand: the first element using one adds its stylesheet.
+  const font = el.style.fontFamily
+  useEffect(() => {
+    if (font) loadFonts([font])
+  }, [font])
 
   switch (el.type) {
     case 'heading':

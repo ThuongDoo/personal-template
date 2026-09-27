@@ -442,7 +442,6 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
             <Inspector
               key={selected?.id ?? 'page'}
               el={selected}
-              editing={!!selected && editingId === selected.id}
               page={doc.page}
               onChange={updateElement}
               onPageChange={updatePage}

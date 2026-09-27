@@ -1,4 +1,5 @@
 import { AUDIO_PRESETS } from './audioViz.js'
+import { FONTS, fontStack } from './fonts.js'
 import { firstColor, isGradient } from './gradient.js'
 import { SHAPES, randomSeed } from './shapes.js'
 
@@ -9,21 +10,8 @@ export const TEXT_TYPES = ['heading', 'text', 'button']
 export const uid = () => Math.random().toString(36).slice(2, 9)
 export const clamp = (v, min, max) => Math.min(max, Math.max(min, v))
 
-export const FONTS = [
-  { value: 'be-vietnam', label: 'Be Vietnam Pro', stack: "'Be Vietnam Pro', system-ui, sans-serif" },
-  { value: 'inter', label: 'Inter', stack: "'Inter', system-ui, sans-serif" },
-  { value: 'montserrat', label: 'Montserrat', stack: "'Montserrat', system-ui, sans-serif" },
-  { value: 'playfair', label: 'Playfair Display', stack: "'Playfair Display', Georgia, serif" },
-  { value: 'lora', label: 'Lora', stack: "'Lora', Georgia, serif" },
-  { value: 'system', label: 'Hệ thống', stack: "system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" },
-  { value: 'mono', label: 'Monospace', stack: 'ui-monospace, Consolas, monospace' },
-]
-
-export const GOOGLE_FONTS_URL =
-  'https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400' +
-  '&family=Inter:wght@300;400;500;600;700;800&family=Lora:ital,wght@0,400;0,600;0,700;1,400' +
-  '&family=Montserrat:ital,wght@0,300;0,400;0,500;0,600;0,700;0,800;1,400' +
-  '&family=Playfair+Display:ital,wght@0,400;0,600;0,700;0,800;1,400&display=swap'
+// Fonts live in fonts.js; re-exported for the modules that import them from here.
+export { FONTS, fontStack }
 
 export const SHADOWS = {
   none: 'none',
@@ -360,10 +348,6 @@ export function elementLabel(el) {
     (el.type === 'audio' && AUDIO_PRESETS[el.props.viz] && `Âm thanh · ${AUDIO_PRESETS[el.props.viz].label}`) ||
     ELEMENT_TYPES[el.type].label
   )
-}
-
-export function fontStack(value) {
-  return (FONTS.find((f) => f.value === value) ?? FONTS[0]).stack
 }
 
 export function youtubeEmbed(url) {

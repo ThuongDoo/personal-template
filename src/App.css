@@ -2238,18 +2238,14 @@ button.card:disabled {
 
 /* ---------------------------------------------------------------- quick toolbar (over the selection) */
 
+/* Fixed in <body>, above the side panels (below modals); positioned by QuickToolbarAnchor. */
 .qt-anchor {
-  position: absolute;
-  width: 0;
-  height: 0;
-  transform-origin: 0 0;
-  z-index: 3;
+  position: fixed;
+  z-index: 200;
 }
 
 .quick-toolbar {
-  position: absolute;
-  left: 0;
-  transform: translateX(-50%);
+  position: relative;
   display: flex;
   align-items: center;
   gap: 2px;
@@ -2268,7 +2264,7 @@ button.card:disabled {
 @keyframes qt-in {
   from {
     opacity: 0;
-    transform: translateX(-50%) translateY(4px);
+    transform: translateY(4px);
   }
 }
 
@@ -2464,4 +2460,140 @@ button.card:disabled {
   height: calc(14px / var(--z));
   border-radius: 50%;
   border-width: calc(2px / var(--z));
+}
+
+/* Font picker (quick toolbar) */
+.font-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.font-groups {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.font-group {
+  padding: 3px 8px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: transparent;
+  font-size: 12px;
+  color: var(--muted);
+  cursor: pointer;
+}
+
+.font-group.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.font-options {
+  max-height: min(300px, 42vh);
+  overflow-y: auto;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+
+.font-group-title {
+  position: sticky;
+  top: 0;
+  padding: 6px 4px 4px;
+  background: var(--panel);
+  font-size: 11px;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--muted);
+}
+
+.font-option {
+  display: block;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text);
+  font-size: 17px;
+  line-height: 1.3;
+  text-align: left;
+  cursor: pointer;
+}
+
+.font-option.active {
+  background: rgba(79, 70, 229, 0.08);
+}
+
+.font-option.selected {
+  color: var(--accent);
+  font-weight: 600;
+}
+
+.font-empty {
+  margin: 8px 4px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.qt-font {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  width: 140px;
+  max-width: none;
+  font-size: 14px;
+  color: var(--text);
+  cursor: pointer;
+}
+
+.qt-font span {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  text-align: left;
+}
+
+.qt-font.on {
+  border-color: var(--accent);
+}
+
+.qt-popover.qt-font-pop {
+  left: 0;
+  transform: none;
+  width: 280px;
+}
+
+.icon-picker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+/* Quick toolbar: swap the icon of an icon button */
+.qt-icon-swap {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.qt-icon-glyph {
+  display: grid;
+  width: 18px;
+  height: 18px;
+}
+
+.qt-icon-glyph svg {
+  width: 100%;
+  height: 100%;
+}
+
+.qt-popover.qt-icon-pop {
+  width: 300px;
+  max-height: min(380px, 55vh);
+  overflow-y: auto;
 }

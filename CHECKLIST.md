@@ -228,7 +228,7 @@ Cần deploy lại Storage rules (thêm thư mục `audio`). Để hiệu ứng 
 - [ ] Tệp không phải âm thanh hoặc > 20MB → báo lỗi, không tải lên
 - [ ] "Đổi tệp", "Bỏ tệp" hoạt động
 - [ ] Bấm nút ▶ ngay trên trang soạn thảo → phát được, **không** kéo/di chuyển phần tử; bấm lại để dừng
-- [ ] Đổi kiểu hiệu ứng, Màu 1/Màu 2, Số thanh ở bảng bên phải → cập nhật ngay
+- [ ] Đổi kiểu hiệu ứng, Số thanh ở bảng bên phải và Màu 1/Màu 2 trên thanh công cụ nhỏ → cập nhật ngay
 - [ ] Khi phát: hiệu ứng nhảy theo nhạc (nhịp trống làm các thanh bên trái vọt lên); khi dừng: từ từ lắng xuống
 - [ ] "Phát lặp lại": hết bài tự phát lại
 - [ ] Hai phần tử âm thanh trên cùng trang: phát cái này thì cái kia tự dừng
@@ -257,7 +257,7 @@ Cần deploy lại Storage rules (thêm thư mục `audio`). Để hiệu ứng 
 
 ## 25. Màu nền mặc định của âm thanh là trong suốt
 
-- [ ] Thêm phần tử âm thanh mới (mọi kiểu) → không có nền, thấy nền trang phía sau; ô "Màu nền" trong bảng thuộc tính là `transparent`
+- [ ] Thêm phần tử âm thanh mới (mọi kiểu) → không có nền, thấy nền trang phía sau; ô "Màu nền" trên thanh công cụ nhỏ là trong suốt
 - [ ] Chưa có tệp: khung chờ màu sáng "Âm thanh – Tải tệp âm thanh ở bảng bên phải"
 - [ ] Trên nền trang trắng: hiệu ứng và nút phát vẫn nhìn rõ
 - [ ] Vẫn đổi được sang màu nền khác như trước
@@ -309,7 +309,7 @@ Cần deploy lại Storage rules (thêm thư mục `audio`). Để hiệu ứng 
 - [ ] Kéo thả / nhấp để thêm → nút icon trên trang
 - [ ] Bảng thuộc tính → "Icon": lưới chọn icon chia theo nhóm (xem mục 30); icon đang chọn được tô sáng
 - [ ] Chọn icon khác → đổi ngay trên trang
-- [ ] "Màu icon" đổi màu; "Cỡ icon" (20–100%) và "Độ dày nét" hoạt động
+- [ ] "Màu icon" (thanh công cụ nhỏ) đổi màu; "Cỡ icon" (20–100%) và "Độ dày nét" (bảng thuộc tính) hoạt động
 - [ ] Nền, bo góc, viền, bóng, độ mờ, xoay, đổi cỡ dùng như phần tử khác
 - [ ] "Khi bấm": nhập đường dẫn (https://, `tel:`, `mailto:`), "Mở trong tab mới", "Mô tả"
 - [ ] Trang chỉnh sửa: bấm vào nút icon chỉ chọn phần tử, không mở liên kết
@@ -438,7 +438,7 @@ Cần deploy: backend + Storage rules (thư mục `users/{uid}/videos`).
 - [ ] Chọn Video → "Tải video lên" (MP4/WebM/MOV, tối đa 30MB): có tiến trình tải lên trên nút và trên hình
 - [ ] Video trong hình: tự phát, **tắt tiếng**, lặp lại, bị cắt đúng theo hình (tim, sao, tròn, giấy rách, …)
 - [ ] Viền hình, vân giấy, đổ bóng vẫn hiện quanh hình có video
-- [ ] Nhấp đúp vào hình có video (hoặc "Kéo video trực tiếp trên trang") → kéo để dời, cuộn chuột để phóng; toàn khung video hiện mờ phía sau khi đang chỉnh; các thanh Ngang / Dọc / Thu phóng và "Đặt lại vị trí video" hoạt động
+- [ ] Nhấp đúp vào hình có video (hoặc nút "Chỉnh video" trên thanh công cụ nhỏ) → kéo để dời, cuộn chuột để phóng; toàn khung video hiện mờ phía sau khi đang chỉnh; các thanh Ngang / Dọc / Thu phóng và "Đặt lại vị trí video" hoạt động
 - [ ] Hình khối đã xoay chứa video → video xoay theo, vẫn cắt đúng
 - [ ] Dán đường dẫn video (link .mp4 trực tiếp) → phát trong hình
 - [ ] "Bỏ video" → hình trở lại màu nền; chuyển Ảnh ↔ Video làm trống hình (tệp cũ không hợp kiểu mới)
@@ -476,7 +476,7 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 
 ## 42. Thanh công cụ nhanh nổi trên phần tử đang chọn
 
-- [ ] Chọn một phần tử → thanh công cụ nhỏ hiện phía trên (trên cả nút xoay); phần tử sát mép trên trang → thanh hiện phía dưới
+- [ ] Chọn một phần tử → thanh công cụ nhỏ hiện phía trên (trên cả nút xoay); phần tử sát mép trên vùng làm việc (không đủ chỗ phía trên) → thanh hiện phía dưới
 - [ ] Thanh giữ nguyên kích thước khi phóng to/thu nhỏ trang; không che bảng thuộc tính
 - [ ] Đang kéo / đổi cỡ / xoay → thanh tạm ẩn, thả chuột hiện lại; đang căn ảnh/video trong hình khối → ẩn
 - [ ] **Chữ** (tiêu đề, đoạn văn, nút): phông chữ, cỡ chữ (−/+ bước 2, gõ số trực tiếp), **B** / *I* / U (nút sáng khi đang bật), màu chữ ("A" gạch màu), màu nền, căn lề (bấm để đổi trái → giữa → phải → đều)
@@ -486,7 +486,7 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] **Đường kẻ**: màu, độ dày; **Âm thanh**: Màu 1, Màu 2 (đơn sắc), màu nền
 - [ ] Mọi loại: Nhân bản, Xoá
 - [ ] Bấm ô màu → bảng chọn màu mở ngay dưới (Đơn sắc / Chuyển màu, trừ màu âm thanh chỉ đơn sắc); bấm ra ngoài → đóng
-- [ ] Mọi thay đổi trên thanh cập nhật ngay trên trang **và** bảng thuộc tính bên phải; Ctrl+Z hoàn tác được (bấm −/+ liên tục gộp thành 1 bước)
+- [ ] Mọi thay đổi trên thanh cập nhật ngay trên trang; Ctrl+Z hoàn tác được (bấm −/+ liên tục gộp thành 1 bước)
 - [ ] Dùng thanh công cụ không làm bỏ chọn hay kéo lệch phần tử
 - [ ] Gõ số trong ô cỡ chữ không kích hoạt phím tắt (Delete, mũi tên…)
 
@@ -494,7 +494,7 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 
 - [ ] Mọi loại phần tử: nút **Độ mờ** (hình tròn nửa đậm) → bảng có thanh trượt 0–100%, phần tử mờ dần ngay khi kéo
 - [ ] Chữ (tiêu đề, đoạn văn, nút): nút **Khoảng cách** → bảng có 2 thanh trượt: **Giãn dòng** (0,8–3) và **Giãn chữ** (−5 đến 30px)
-- [ ] Giá trị hiện cạnh tên thanh trượt (VD "1.60", "2px", "80%") và khớp với bảng thuộc tính bên phải
+- [ ] Giá trị hiện cạnh tên thanh trượt (VD "1.60", "2px", "80%") đúng với phần tử
 - [ ] Mở bảng này thì bảng màu / bảng kia tự đóng; bấm ra ngoài → đóng
 - [ ] Kéo thanh trượt liên tục rồi Ctrl+Z → hoàn tác cả lần kéo
 - [ ] Độ mờ / giãn dòng / giãn chữ hiển thị đúng ở Xem trước và trang đã xuất bản
@@ -507,7 +507,7 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] Nhãn kích thước và tay nắm của khung chọn **không** bị lật ngược chữ
 - [ ] Phần tử vừa xoay vừa lật hiển thị đúng; đổi cỡ vẫn bình thường
 - [ ] Hình khối đã lật có ảnh: nhấp đúp để căn ảnh → kéo và cuộn chuột vẫn đúng hướng tay
-- [ ] Bo góc hình khối: các đỉnh tròn dần theo số px; ảnh/video bên trong và viền cũng tròn theo; bảng thuộc tính → "Hình dạng" cũng có ô "Bo góc" cho các hình này
+- [ ] Bo góc hình khối: các đỉnh tròn dần theo số px; ảnh/video bên trong và viền cũng tròn theo
 - [ ] Hình tròn, trái tim, mái vòm, hình cong, giấy rách: **không** có ô bo góc
 - [ ] Xem trước, ảnh thu nhỏ trang chủ và trang **đã xuất bản** hiển thị đúng lật và bo góc
 
@@ -521,7 +521,7 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 
 ## 46. Phóng to / thu nhỏ ảnh trong hình bằng cách kéo góc (chế độ kéo ảnh)
 
-- [ ] Vào chế độ kéo ảnh (nút "Chỉnh ảnh", nhấp đúp hình, hoặc nút ở bảng thuộc tính) → khung toàn bộ ảnh có **4 tay nắm tròn ở 4 góc**
+- [ ] Vào chế độ kéo ảnh (nút "Chỉnh ảnh" trên thanh công cụ hoặc nhấp đúp hình) → khung toàn bộ ảnh có **4 tay nắm tròn ở 4 góc**
 - [ ] Kéo một góc ra ngoài → ảnh to lên; kéo vào trong → ảnh nhỏ lại; **góc đối diện đứng yên** (tỉ lệ: xem mục 47)
 - [ ] Số % trên thanh "− % +" cập nhật theo; vẫn dùng được nút −/+ và cuộn chuột
 - [ ] Kéo phần ảnh (không phải góc) vẫn là dời ảnh như cũ
@@ -551,3 +551,45 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] "Đặt lại vị trí ảnh" và đổi ảnh mới → ảnh về giữa hình, vừa khít
 - [ ] Thiết kế **cũ** (lưu trước bản cập nhật này) mở ra: ảnh giữ nguyên vị trí như trước
 - [ ] Xem trước và trang **đã xuất bản** (cần deploy lại backend): ảnh bị cắt theo hình ở đúng vị trí đã kéo; video trong hình cũng kéo ra ngoài được
+
+## 49. Thanh công cụ nhỏ luôn nằm trên cùng, không bị sidebar che
+
+- [ ] Chọn phần tử sát mép trái / phải của vùng làm việc (hoặc cuộn ngang để phần tử lấp dưới sidebar) → thanh công cụ **nổi đè lên sidebar**, hiện đầy đủ, không bị cắt
+- [ ] Thanh công cụ luôn nằm gọn trong cửa sổ (không tràn ra ngoài mép trái/phải màn hình)
+- [ ] Cuộn vùng làm việc, đổi mức zoom, thu/phóng cửa sổ → thanh bám theo phần tử ngay
+- [ ] Phần tử bị cuộn ra khỏi vùng nhìn thấy → thanh dừng ở mép vùng làm việc, không che thanh tiêu đề phía trên
+- [ ] Bấm các nút trên thanh (màu, cỡ chữ, độ mờ…) → bảng chọn mở bình thường, cũng nổi trên sidebar; phần tử **vẫn đang được chọn**
+- [ ] Hộp thoại (xuất bản, dọn dẹp dung lượng…) mở ra vẫn nằm **trên** thanh công cụ
+- [ ] Đang kéo / xoay / chỉnh ảnh → thanh ẩn như trước; bỏ chọn → thanh biến mất
+
+## 50. Thêm nhiều phông chữ đa dạng (76 phông, đều gõ được tiếng Việt)
+
+- [ ] Chọn chữ → bấm ô phông chữ trên thanh công cụ nhỏ → mở danh sách có ô tìm kiếm và các nhóm: Không chân, Có chân, Tiêu đề nổi bật, Viết tay, Đơn cách
+- [ ] Mỗi tên phông hiển thị bằng chính phông đó; phông đang dùng được tô màu và cuộn tới sẵn
+- [ ] Gõ tìm (VD "vibes", "garamond", không phân biệt dấu) → lọc đúng; bấm nhóm → chỉ hiện phông nhóm đó
+- [ ] Phím ↑ ↓ di chuyển, Enter chọn, Esc đóng (phần tử vẫn được chọn); bấm ra ngoài → đóng
+- [ ] Đổi sang từng nhóm phông (VD Great Vibes, Oswald, Merriweather, Bungee, JetBrains Mono) → chữ tiếng Việt có dấu hiển thị đúng, không bị lẫn phông khác ở chữ có dấu
+- [ ] In đậm / in nghiêng với phông nhiều độ đậm (Roboto, Montserrat…) hoạt động
+- [ ] Thiết kế cũ dùng Be Vietnam Pro / Inter / Montserrat / Playfair / Lora / Hệ thống / Monospace vẫn hiển thị như trước
+- [ ] Mở lại thiết kế, Xem trước, ảnh thu nhỏ ở trang chủ → chữ hiển thị đúng phông đã chọn
+- [ ] Trang **đã xuất bản** (cần deploy lại backend) hiển thị đúng phông; trang chỉ tải những phông nó dùng
+
+## 51. Đổi icon của nút icon ngay trên thanh công cụ nhỏ
+
+- [ ] Chọn một nút icon (hoặc Icon) → nút đầu tiên trên thanh công cụ hiện **icon đang dùng** kèm mũi tên; rê chuột thấy "Đổi icon (đang dùng: …)"
+- [ ] Bấm → bảng icon mở ngay dưới thanh: ô tìm kiếm (con trỏ nằm sẵn trong ô), các nhóm icon, icon đang dùng được tô màu
+- [ ] Gõ tìm (VD "dien thoai", "facebook", không cần dấu) → lọc đúng; không có kết quả → "Không tìm thấy icon nào."
+- [ ] Bấm một icon → icon trên trang đổi ngay, bảng tự đóng, phần tử vẫn được chọn; Ctrl+Z hoàn tác được
+- [ ] Bảng dài thì cuộn được bên trong, không tràn khỏi màn hình; bấm ra ngoài → đóng
+- [ ] Bảng thuộc tính bên phải (mục Icon) vẫn tìm / chọn icon như trước và đồng bộ với thanh công cụ
+
+## 52. Bảng thuộc tính bên phải bỏ những mục đã có trên thanh công cụ nhỏ
+
+- [ ] **Mọi loại**: đầu bảng không còn nút Nhân bản / Xoá (còn các nút lớp + Khoá); không còn thanh "Độ mờ" ở đâu trong bảng
+- [ ] **Tiêu đề / đoạn văn / nút**: mục "Chữ" chỉ còn **Độ đậm** và **Căn dọc** (phông, cỡ, màu chữ, căn ngang, nghiêng, gạch chân, giãn dòng, giãn chữ nằm trên thanh công cụ); mục "Nền & viền" không còn Màu nền (còn Bo góc, Khoảng đệm, Viền, Đổ bóng)
+- [ ] **Khối màu, video YouTube**: "Nền & viền" không còn Màu nền, Bo góc
+- [ ] **Ảnh**: "Nền & viền" không còn Bo góc (vẫn còn Màu nền)
+- [ ] **Hình khối**: không còn mục "Màu nền"; "Hình dạng" không còn Bo góc, Màu viền (vẫn còn Viền, Vân giấy, Đổ bóng); "Vị trí ảnh trong hình" không còn nút kéo ảnh (dùng "Chỉnh ảnh" trên thanh / nhấp đúp), vẫn còn Ngang / Dọc / Thu phóng / Đặt lại
+- [ ] **Nút icon**: mục "Icon" không còn lưới chọn icon và Màu icon (còn Cỡ icon, Độ dày nét, Khi bấm)
+- [ ] **Đường kẻ**: chỉ còn "Kiểu" (màu, độ dày trên thanh); **Âm thanh**: "Hiệu ứng" không còn Màu 1 / Màu 2
+- [ ] Các mục đã bỏ vẫn chỉnh được đầy đủ trên thanh công cụ nhỏ cho đúng loại phần tử đó; phím tắt Ctrl+D / Delete vẫn hoạt động
