@@ -2,7 +2,7 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { quickFields } from '../lib/quickFields.js'
-import { TEXT_TYPES, elementLabel, youtubeEmbed } from '../lib/elements.js'
+import { TEXT_TYPES, elementLabel, scrollLink, scrollLinkY, scrollYHref, youtubeEmbed } from '../lib/elements.js'
 import { isUploadedImage, uploadAudio, uploadIcon, uploadImage, uploadVideo } from '../lib/cloud.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
 import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
@@ -286,7 +286,61 @@ function ShapeSection({ el, setProps }) {
   )
 }
 
-function IconSection({ el, setProps }) {
+const LINK_KINDS = [
+  { value: 'url', label: 'Mở đường dẫn' },
+  { value: 'scroll', label: 'Cuộn tới vị trí' },
+]
+
+/**
+ * What a button / icon button does when clicked: open a URL, or scroll to a point picked on the page
+ * (stored in `href` as well, see scrollLink).
+ */
+function LinkFields({ el, elements, page, setProps, placeholder, picking, onAction }) {
+  const p = el.props
+  const link = scrollLink(p.href)
+  const y = scrollLinkY(link, elements)
+
+  return (
+    <>
+      <Field label="Khi nhấn">
+        <Segmented
+          value={link ? 'scroll' : 'url'}
+          options={LINK_KINDS}
+          onChange={(kind) => {
+            if (kind === (link ? 'scroll' : 'url')) return
+            setProps({ href: kind === 'scroll' ? scrollYHref(0) : '' })
+            // Straight into picking the point on the page.
+            if (kind === 'scroll' && !picking) onAction('pickScroll')
+          }}
+        />
+      </Field>
+      {link ? (
+        <>
+          <button type="button" className={`btn block${picking ? ' primary' : ''}`} onClick={() => onAction('pickScroll')} disabled={el.hidden}>
+            <Icon name="target" size={14} />
+            {picking ? 'Bấm lên trang để chọn… (Esc để huỷ)' : 'Chấm vị trí trên trang'}
+          </button>
+          <Field label="Vị trí (cách đỉnh trang)">
+            <NumberInput value={y ?? 0} min={0} max={page.height} suffix="px" onChange={(v) => setProps({ href: scrollYHref(v) }, 'href')} />
+          </Field>
+          <p className="hint">Khách bấm vào sẽ được cuộn mượt tới vị trí này (đường gạch cam trên trang). Thử trong Xem trước.</p>
+        </>
+      ) : (
+        <>
+          <Field label="Đường dẫn">
+            <input className="input" value={p.href} placeholder={placeholder} onChange={(e) => setProps({ href: e.target.value }, 'href')} />
+          </Field>
+          <label className="check">
+            <input type="checkbox" checked={p.newTab} onChange={(e) => setProps({ newTab: e.target.checked })} />
+            Mở trong tab mới
+          </label>
+        </>
+      )}
+    </>
+  )
+}
+
+function IconSection({ el, link, setProps }) {
   const p = el.props
   return (
     <>
@@ -307,18 +361,7 @@ function IconSection({ el, setProps }) {
         </Field>
       </Section>
       <Section title="Khi bấm">
-        <Field label="Đường dẫn">
-          <input
-            className="input"
-            value={p.href}
-            placeholder="https://..., tel:09..., mailto:..."
-            onChange={(e) => setProps({ href: e.target.value }, 'href')}
-          />
-        </Field>
-        <label className="check">
-          <input type="checkbox" checked={p.newTab} onChange={(e) => setProps({ newTab: e.target.checked })} />
-          Mở trong tab mới
-        </label>
+        <LinkFields el={el} {...link} setProps={setProps} placeholder="https://..., tel:09..., mailto:..." />
         <Field label="Mô tả (cho trình đọc màn hình)">
           <input
             className="input"
@@ -401,11 +444,11 @@ function AudioSection({ el, setProps }) {
   )
 }
 
-function ContentSection({ el, setProps, setGeom }) {
+function ContentSection({ el, link, setProps, setGeom }) {
   const p = el.props
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
   if (el.type === 'audio') return <AudioSection el={el} setProps={setProps} />
-  if (el.type === 'icon') return <IconSection el={el} setProps={setProps} />
+  if (el.type === 'icon') return <IconSection el={el} link={link} setProps={setProps} />
   if (el.type === 'shape') {
     return (
       <>
@@ -447,22 +490,7 @@ function ContentSection({ el, setProps, setGeom }) {
         />
       </Field>
       <p className="hint">Hoặc nhấp đúp vào phần tử trên trang để sửa trực tiếp.</p>
-      {el.type === 'button' && (
-        <>
-          <Field label="Liên kết khi nhấn">
-            <input
-              className="input"
-              value={p.href}
-              placeholder="https://... hoặc mailto:..."
-              onChange={(e) => setProps({ href: e.target.value }, 'href')}
-            />
-          </Field>
-          <label className="check">
-            <input type="checkbox" checked={p.newTab} onChange={(e) => setProps({ newTab: e.target.checked })} />
-            Mở trong tab mới
-          </label>
-        </>
-      )}
+      {el.type === 'button' && <LinkFields el={el} {...link} setProps={setProps} placeholder="https://... hoặc mailto:..." />}
     </Section>
   )
 }
@@ -654,7 +682,7 @@ function PageSettings({ page, onChange }) {
   )
 }
 
-export default function Inspector({ el, page, onChange, onPageChange, onAction }) {
+export default function Inspector({ el, elements, page, pickingScroll, onChange, onPageChange, onAction }) {
   if (!el) return <PageSettings page={page} onChange={onPageChange} />
 
   const s = el.style
@@ -689,7 +717,7 @@ export default function Inspector({ el, page, onChange, onPageChange, onAction }
         </button>
       </div>
 
-      <ContentSection el={el} setProps={setProps} setGeom={setGeom} />
+      <ContentSection el={el} link={{ elements, page, picking: pickingScroll, onAction }} setProps={setProps} setGeom={setGeom} />
 
       <Section title="Vị trí & kích thước">
         <div className="grid2">

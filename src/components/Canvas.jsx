@@ -5,7 +5,7 @@ import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
 import QuickToolbar from './QuickToolbar.jsx'
 import UploadIndicator from './UploadIndicator.jsx'
-import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp, elementTransform } from '../lib/elements.js'
+import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp, elementTransform, scrollLink, scrollLinkY } from '../lib/elements.js'
 import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
 import { imageCenterProps, imageRect, zoomImageAt } from '../lib/shapes.js'
 import { useUploads } from '../lib/uploadProgress.js'
@@ -88,6 +88,20 @@ function QuickToolbarAnchor({ el, zoom, canvasRef, workspaceRef, ...rest }) {
   )
 }
 
+/** Where the selected button / icon button scrolls to: a dashed line across the page. */
+function ScrollTargetMarker({ el, elements, zoom }) {
+  if (el.type !== 'button' && el.type !== 'icon') return null
+  const y = scrollLinkY(scrollLink(el.props.href), elements)
+  if (y === null) return null
+  return (
+    <div className="scroll-line" style={{ top: y }}>
+      <span className="scroll-line-label" style={{ transform: `scale(${1 / zoom})` }}>
+        Nút này cuộn tới đây · cách đỉnh {y}px
+      </span>
+    </div>
+  )
+}
+
 /**
  * How far the image inside a shape reaches below the shape (px, 0 if it doesn't), so the
  * repositioning bar can sit under the image frame instead of covering its corner handles.
@@ -134,6 +148,8 @@ export default function Canvas({
   onDropFiles,
   onUpdate,
   onAction,
+  pickingScroll = false,
+  onPickScroll,
 }) {
   const [guides, setGuides] = useState([])
   const [dropActive, setDropActive] = useState(false)
@@ -141,6 +157,20 @@ export default function Canvas({
   const [gesturing, setGesturing] = useState(false)
   const { page, elements } = doc
   const selected = elements.find((el) => el.id === selectedId && !el.hidden)
+  // Pointer position while picking a scroll target ({ y, snapped }), null when off the page.
+  const [pickY, setPickY] = useState(null)
+
+  /** Page y under the pointer, snapped to the top edge of an element nearby when snapping is on. */
+  const pickPoint = (e) => {
+    const r = e.currentTarget.getBoundingClientRect()
+    const y = clamp((e.clientY - r.top) / zoom, 0, page.height)
+    if (snap) {
+      const edges = elements.filter((el) => !el.hidden && el.id !== selectedId).map((el) => bounds(el).top)
+      const near = findSnap([y], edges, SNAP_PX / zoom)
+      if (near) return { y: Math.round(near.line), snapped: true }
+    }
+    return { y: Math.round(y), snapped: false }
+  }
 
   const setGeom = (id, geom) =>
     set((d) => ({ ...d, elements: d.elements.map((el) => (el.id === id ? { ...el, ...geom } : el)) }), {
@@ -603,7 +633,32 @@ export default function Canvas({
               style={g.axis === 'x' ? { left: g.pos } : { top: g.pos }}
             />
           ))}
-          {selected && !gesturing && cropping?.id !== selected.id && (
+          {pickingScroll && (
+            // Picking the point a button scrolls to: a line follows the pointer, a click sets it.
+            <div
+              className="scroll-pick"
+              style={{ width: page.width, height: page.height }}
+              onPointerMove={(e) => setPickY(pickPoint(e))}
+              onPointerLeave={() => setPickY(null)}
+              onPointerDown={(e) => {
+                if (e.button !== 0) return
+                e.preventDefault()
+                e.stopPropagation()
+                setPickY(null)
+                onPickScroll(pickPoint(e).y)
+              }}
+            >
+              {pickY && (
+                <div className={`scroll-line picking${pickY.snapped ? ' snapped' : ''}`} style={{ top: pickY.y }}>
+                  <span className="scroll-line-label" style={{ transform: `scale(${1 / zoom})` }}>
+                    Cuộn tới đây · cách đỉnh {pickY.y}px{pickY.snapped ? ' (bám mép phần tử)' : ''} · Esc để huỷ
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+          {selected && !pickingScroll && !gesturing && <ScrollTargetMarker el={selected} elements={elements} zoom={zoom} />}
+          {selected && !gesturing && !pickingScroll && cropping?.id !== selected.id && (
             <QuickToolbarAnchor
               el={selected}
               zoom={zoom}

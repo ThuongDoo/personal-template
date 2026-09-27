@@ -350,6 +350,44 @@ export function elementLabel(el) {
   )
 }
 
+/**
+ * Links of buttons / icon buttons can scroll within the page instead of leaving it: `href` is then
+ * `#y-<px>`, a point picked on the page (px from its top, in design coordinates). Designs from before
+ * may also hold SCROLL_TOP or `#el-<element id>` (published pages give every element that id), which
+ * still work.
+ */
+export const SCROLL_TOP = '#top'
+export const anchorId = (id) => `el-${id}`
+export const scrollYHref = (y) => `#y-${Math.max(0, Math.round(y))}`
+
+/** Where an in-page link goes — { top: true }, { id } or { y } — or null for an ordinary link. */
+export function scrollLink(href) {
+  if (href === SCROLL_TOP) return { top: true }
+  const el = /^#el-([\w-]+)$/.exec(href || '')
+  if (el) return { id: el[1] }
+  const y = /^#y-(\d+)$/.exec(href || '')
+  return y ? { y: Number(y[1]) } : null
+}
+
+/**
+ * The page y an in-page link scrolls to. Links made before points could be picked may still name
+ * the page top or an element: those count as its top edge (null if that element is gone).
+ */
+export function scrollLinkY(link, elements) {
+  if (!link) return null
+  if (link.top) return 0
+  if ('y' in link) return link.y
+  const target = elements.find((e) => e.id === link.id)
+  return target ? Math.round(target.y) : null
+}
+
+/** href / target / rel for a link's <a>; in-page links never open a new tab. */
+export function linkAttrs(p) {
+  const inPage = scrollLink(p.href) !== null
+  const newTab = p.newTab && !inPage
+  return { href: p.href || '#', target: newTab ? '_blank' : undefined, rel: newTab ? 'noopener noreferrer' : undefined }
+}
+
 export function youtubeEmbed(url) {
   const m = /(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([\w-]{11})/.exec(url || '')
   return m ? `https://www.youtube.com/embed/${m[1]}` : null

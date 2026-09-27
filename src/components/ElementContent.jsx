@@ -1,5 +1,5 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react'
-import { contentStyle, dividerLineStyle, youtubeEmbed } from '../lib/elements.js'
+import { contentStyle, dividerLineStyle, linkAttrs, youtubeEmbed } from '../lib/elements.js'
 import { isVideo, shapeClipPath, shapeSvg, videoBoxStyle } from '../lib/shapes.js'
 import { audioAttrs, mountAudio } from '../lib/audioViz.js'
 import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
@@ -76,9 +76,7 @@ function IconBlock({ p, css, isEditor }) {
   const name = p.label || ICON_LIBRARY[p.icon]?.label || 'Liên kết'
   return (
     <a
-      href={p.href || '#'}
-      target={p.newTab ? '_blank' : undefined}
-      rel={p.newTab ? 'noopener noreferrer' : undefined}
+      {...linkAttrs(p)}
       aria-label={name}
       title={name}
       style={{ ...css, cursor: 'pointer' }}
@@ -177,9 +175,7 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
       if (isEditor) return <TextBlock text={p.text} style={css} fill={textFill} editing={editing} onCommit={onCommitText} />
       return (
         <a
-          href={p.href || '#'}
-          target={p.newTab ? '_blank' : undefined}
-          rel={p.newTab ? 'noopener noreferrer' : undefined}
+          {...linkAttrs(p)}
           style={{ ...css, cursor: 'pointer' }}
         >
           <Painted text={p.text} fill={textFill} />

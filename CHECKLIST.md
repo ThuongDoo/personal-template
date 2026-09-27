@@ -593,3 +593,31 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] **Nút icon**: mục "Icon" không còn lưới chọn icon và Màu icon (còn Cỡ icon, Độ dày nét, Khi bấm)
 - [ ] **Đường kẻ**: chỉ còn "Kiểu" (màu, độ dày trên thanh); **Âm thanh**: "Hiệu ứng" không còn Màu 1 / Màu 2
 - [ ] Các mục đã bỏ vẫn chỉnh được đầy đủ trên thanh công cụ nhỏ cho đúng loại phần tử đó; phím tắt Ctrl+D / Delete vẫn hoạt động
+
+## 53. Nút bấm / nút icon cuộn trong trang (xem cách chọn vị trí ở mục 54–55)
+
+- [ ] Chọn nút bấm (hoặc nút icon) → bảng thuộc tính có "Khi nhấn": **Mở đường dẫn** / **Cuộn tới vị trí**
+- [ ] "Mở đường dẫn" hoạt động như cũ (đường dẫn + "Mở trong tab mới"); nút cũ đã có link vẫn ở chế độ này
+- [ ] Xem trước: bấm nút → trang **cuộn mượt** tới vị trí đã chọn; trình chỉnh sửa không bị đổi trang / thoát ra
+- [ ] Xem trước: nút có link trống ("#") bấm không làm gì, không bị nhảy về trang chủ
+- [ ] Trang **đã xuất bản** (cần deploy lại backend): bấm nút cuộn mượt, thanh địa chỉ không đổi; tick "Mở trong tab mới" không ảnh hưởng tới nút cuộn
+- [ ] Nhân bản nút → bản sao cuộn tới cùng vị trí; đổi lại "Mở đường dẫn" → ô đường dẫn trống để nhập
+
+## 54. Chấm một vị trí trên trang làm điểm cuộn tới
+
+- [ ] Nút bấm / nút icon → bấm **"Cuộn tới vị trí"** (hoặc sau đó bấm **"Chấm vị trí trên trang"**) → nút đổi thành "Bấm lên trang để chọn… (Esc để huỷ)", thanh công cụ nhỏ ẩn, con trỏ thành dấu +
+- [ ] Rê chuột trên trang → đường gạch cam chạy theo, nhãn "Cuộn tới đây · cách đỉnh …px"; cuộn vùng làm việc để chấm ở phần dưới trang được
+- [ ] Bật hít (nam châm): rê gần mép trên một phần tử → đường chuyển **xanh lá**, ghi "(bám mép phần tử)" và dính đúng mép; tắt hít → không dính
+- [ ] Bấm → chọn xong: ô số "Vị trí (cách đỉnh trang)" hiện đúng số px, sửa tay được; trên trang hiện đường gạch cam "Nút này cuộn tới đây"
+- [ ] Esc hoặc bấm lại nút khi đang chấm → huỷ, không đổi gì; chọn phần tử khác / mở Xem trước cũng huỷ
+- [ ] Bỏ chọn nút → đường gạch cam biến mất; chọn lại → hiện lại đúng chỗ
+- [ ] Xem trước: bấm nút → cuộn mượt tới đúng vị trí đã chấm (vị trí đó nằm ở mép trên màn hình, trừ khi đã tới cuối trang)
+- [ ] Trang **đã xuất bản** (cần deploy lại backend): cuộn tới đúng vị trí trên cả máy tính và điện thoại (trang thu nhỏ vẫn đúng chỗ); thanh địa chỉ không đổi
+- [ ] Ctrl+Z sau khi chấm → trở lại đích cũ
+
+## 55. Bỏ cuộn tới phần tử — chỉ còn cuộn tới vị trí đã chấm
+
+- [ ] "Khi nhấn" chỉ còn **Mở đường dẫn** / **Cuộn tới vị trí**; không còn danh sách "Cuộn tới" (Đầu trang / các phần tử)
+- [ ] Bấm "Cuộn tới vị trí" → **vào ngay chế độ chấm** trên trang (đường gạch cam theo chuột); Esc → huỷ chấm, nút vẫn ở chế độ cuộn với vị trí 0px (đầu trang)
+- [ ] Muốn cuộn về đầu trang → nhập 0 vào ô "Vị trí (cách đỉnh trang)"
+- [ ] Nút tạo trước bản này đang cuộn tới "Đầu trang" hoặc một phần tử → vẫn cuộn đúng ở Xem trước / trang xuất bản; bảng thuộc tính hiện nó là vị trí tương ứng (0px, hoặc mép trên phần tử) kèm đường gạch cam; sửa số / chấm lại → chuyển sang vị trí mới

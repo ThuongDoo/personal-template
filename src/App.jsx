@@ -9,7 +9,7 @@ import PublishDialog from './components/PublishDialog.jsx'
 import TemplateDialog from './components/TemplateDialog.jsx'
 import Toolbar from './components/Toolbar.jsx'
 import { DesignTooLargeError, saveDesign, signOut, uploadImage, uploadVideo } from './lib/cloud.js'
-import { applyPatch, clamp, createElement, createFromKey, uid } from './lib/elements.js'
+import { applyPatch, clamp, createElement, createFromKey, scrollYHref, uid } from './lib/elements.js'
 import { exportHtml } from './lib/exportHtml.js'
 import { containsPoint } from './lib/geometry.js'
 import { shapeImageProps } from './lib/shapes.js'
@@ -29,6 +29,8 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
   const { doc, set, checkpoint, undo, redo, canUndo, canRedo } = useHistory(() => initialDoc)
   const [selectedId, setSelectedId] = useState(null)
   const [editingId, setEditingId] = useState(null)
+  // A button / icon button whose scroll target is being picked by clicking on the page.
+  const [pickingScrollFor, setPickingScrollFor] = useState(null)
   const [zoom, setZoom] = useState(() => fitZoom(window.innerWidth - SIDE_PANELS_WIDTH - 80, doc.page.width))
   const [showGrid, setShowGrid] = useState(false)
   const [snap, setSnap] = useState(true)
@@ -263,12 +265,14 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
 
   const select = (id) => {
     setSelectedId(id)
+    if (id !== pickingScrollFor) setPickingScrollFor(null)
     if (id !== editingId) setEditingId(null)
   }
 
   const onAction = (action) => {
     if (!selected) return
     if (action === 'crop') setEditingId(editingId === selected.id ? null : selected.id)
+    else if (action === 'pickScroll') setPickingScrollFor(pickingScrollFor === selected.id ? null : selected.id)
     else if (action === 'delete') removeElement(selected.id)
     else if (action === 'duplicate') duplicateElement(selected)
     else if (action === 'lock') toggleFlag(selected.id, 'locked')
@@ -296,6 +300,7 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
   const openPreview = () => {
     document.activeElement?.blur?.()
     setEditingId(null)
+    setPickingScrollFor(null)
     document.documentElement.requestFullscreen?.().catch(() => {})
     setPreviewing(true)
   }
@@ -343,7 +348,8 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
       return
     }
     if (e.key === 'Escape') {
-      if (editingId) setEditingId(null)
+      if (pickingScrollFor) setPickingScrollFor(null)
+      else if (editingId) setEditingId(null)
       else setSelectedId(null)
       return
     }
@@ -414,6 +420,11 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           zoom={zoom}
           selectedId={selectedId}
           editingId={editingId}
+          pickingScroll={!!pickingScrollFor && pickingScrollFor === selectedId}
+          onPickScroll={(y) => {
+            updateElement(pickingScrollFor, { props: { href: scrollYHref(y) } })
+            setPickingScrollFor(null)
+          }}
           showGrid={showGrid}
           snap={snap}
           workspaceRef={workspaceRef}
@@ -442,6 +453,8 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
             <Inspector
               key={selected?.id ?? 'page'}
               el={selected}
+              elements={doc.elements}
+              pickingScroll={pickingScrollFor === selected?.id}
               page={doc.page}
               onChange={updateElement}
               onPageChange={updatePage}

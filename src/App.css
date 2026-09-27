@@ -2597,3 +2597,46 @@ button.card:disabled {
   max-height: min(380px, 55vh);
   overflow-y: auto;
 }
+
+/* Scroll targets of buttons: picking a point on the page, and markers for the selected button's target */
+.scroll-pick {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: auto;
+  cursor: crosshair;
+  background: rgba(249, 115, 22, 0.04);
+  z-index: 5;
+}
+
+.scroll-line {
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 0;
+  border-top: calc(2px / var(--z)) dashed #f97316;
+  pointer-events: none;
+}
+
+.scroll-line.snapped {
+  border-top-color: #16a34a;
+}
+
+.scroll-line-label {
+  position: absolute;
+  left: 0;
+  bottom: 100%;
+  margin-bottom: calc(4px / var(--z));
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: #f97316;
+  color: #fff;
+  font-size: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  transform-origin: bottom left;
+}
+
+.scroll-line.snapped .scroll-line-label {
+  background: #16a34a;
+}

@@ -1,4 +1,4 @@
-import { contentStyle, dividerLineStyle, elementTransform, youtubeEmbed } from './elements.js'
+import { anchorId, contentStyle, dividerLineStyle, elementTransform, linkAttrs, scrollLink, youtubeEmbed } from './elements.js'
 import { googleFontsUrl, usedFonts } from './fonts.js'
 import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
@@ -21,6 +21,33 @@ export function toCssText(obj) {
     .join(';')
 }
 
+/** href / target / rel attributes of a button or icon link. */
+function linkHtml(p) {
+  const { href, target, rel } = linkAttrs(p)
+  return `href="${attr(href)}"` + (target ? ` target="${target}" rel="${rel}"` : '')
+}
+
+// In-page links (see scrollLink) glide to their element or point without touching the address bar.
+// A point is in design px: scaled like the page (#page is shrunk to fit narrow screens).
+const SCROLL_SCRIPT = `document.addEventListener('click', function (e) {
+  var a = e.target.closest && e.target.closest('a[href^="#"]');
+  if (!a) return;
+  var h = a.getAttribute('href');
+  var m = /^#y-([0-9]+)$/.exec(h);
+  if (m) {
+    e.preventDefault();
+    var page = document.getElementById('page');
+    var r = page.getBoundingClientRect();
+    window.scrollTo({ top: window.scrollY + r.top + Number(m[1]) * (r.width / page.offsetWidth), behavior: 'smooth' });
+    return;
+  }
+  var el = h === '#top' ? null : document.getElementById(h.slice(1));
+  if (h !== '#top' && !el) return;
+  e.preventDefault();
+  if (el) el.scrollIntoView({ behavior: 'smooth', block: 'start' });
+  else window.scrollTo({ top: 0, behavior: 'smooth' });
+});`
+
 function renderInner(el) {
   const css = attr(toCssText(contentStyle(el)))
   const p = el.props
@@ -32,10 +59,8 @@ function renderInner(el) {
       return `<h2 style="${css}">${text}</h2>`
     case 'text':
       return `<p style="${css}">${text}</p>`
-    case 'button': {
-      const target = p.newTab ? ' target="_blank" rel="noopener noreferrer"' : ''
-      return `<a href="${attr(p.href || '#')}"${target} style="${css}">${text}</a>`
-    }
+    case 'button':
+      return `<a ${linkHtml(p)} style="${css}">${text}</a>`
     case 'image':
       return p.src
         ? `<div style="${css}"><img src="${attr(p.src)}" alt="${attr(p.alt)}" style="width:100%;height:100%;object-fit:${attr(p.fit)};display:block"></div>`
@@ -45,10 +70,9 @@ function renderInner(el) {
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
     case 'icon': {
-      const target = p.newTab ? ' target="_blank" rel="noopener noreferrer"' : ''
       // Icon-only links need a text name for screen readers; the icon's own name is the fallback.
       const name = p.label || ICON_LIBRARY[p.icon]?.label || 'Liên kết'
-      return `<a href="${attr(p.href || '#')}"${target} aria-label="${attr(name)}" title="${attr(name)}" style="${css}">${iconSvg(p, `icon-${el.id}`)}</a>`
+      return `<a ${linkHtml(p)} aria-label="${attr(name)}" title="${attr(name)}" style="${css}">${iconSvg(p, `icon-${el.id}`)}</a>`
     }
     case 'audio': {
       if (!p.src) return `<div style="${css}"></div>`
@@ -73,6 +97,7 @@ export function exportHtml(doc) {
   const { page, elements } = doc
   // Only the fonts this page uses.
   const fontsUrl = googleFontsUrl(usedFonts(elements))
+  const hasScrollLinks = elements.some((el) => !el.hidden && (el.type === 'button' || el.type === 'icon') && scrollLink(el.props.href))
   const hasAudio = elements.some((el) => !el.hidden && el.type === 'audio' && el.props.src)
   const body = elements
     .filter((el) => !el.hidden)
@@ -90,7 +115,8 @@ export function exportHtml(doc) {
       // A gradient border is an overlay on top of the element (see gradientBorderStyle).
       const border = gradientBorderStyle(el.style)
       const overlay = border ? `<span aria-hidden="true" style="${attr(toCssText(border))}"></span>` : ''
-      return `    <div style="${wrap}">${renderInner(el)}${overlay}</div>`
+      // The id is what in-page links scroll to.
+      return `    <div id="${anchorId(el.id)}" style="${wrap}">${renderInner(el)}${overlay}</div>`
     })
     .join('\n')
 
@@ -129,7 +155,10 @@ ${body}
       window.addEventListener('resize', fit);
       fit();
     })();
-  </script>${hasAudio ? `
+  </script>${hasScrollLinks ? `
+  <script>
+${SCROLL_SCRIPT}
+  </script>` : ''}${hasAudio ? `
   <script>
 ${AUDIO_SCRIPT.replace(/<\//g, '<\\/')}
   </script>` : ''}
