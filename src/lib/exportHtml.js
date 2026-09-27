@@ -1,5 +1,6 @@
-import { anchorId, contentStyle, dividerLineStyle, elementTransform, linkAttrs, scrollLink, youtubeEmbed } from './elements.js'
+import { anchorId, blendMode, contentStyle, dividerLineStyle, elementTransform, linkAttrs, scrollLink, youtubeEmbed } from './elements.js'
 import { googleFontsUrl, usedFonts } from './fonts.js'
+import { decorSvg } from './decor.js'
 import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
@@ -67,6 +68,8 @@ function renderInner(el) {
         : `<div style="${css}"></div>`
     case 'shape':
       return `<div style="${css}">${shapeSvg(el, `shape-${el.id}`)}${shapeVideoHtml(el)}</div>`
+    case 'decor':
+      return `<div style="${css}">${decorSvg(el, `decor-${el.id}`)}</div>`
     case 'divider':
       return `<div style="${css}"><div style="${attr(toCssText(dividerLineStyle(el)))}"></div></div>`
     case 'icon': {
@@ -111,6 +114,7 @@ export function exportHtml(doc) {
         zIndex: i + 1,
         // Rotated (and mirrored) around the element's centre (the CSS default), matching the editor.
         transform: elementTransform(el),
+        mixBlendMode: blendMode(el),
       })
       // A gradient border is an overlay on top of the element (see gradientBorderStyle).
       const border = gradientBorderStyle(el.style)

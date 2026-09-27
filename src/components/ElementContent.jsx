@@ -3,6 +3,7 @@ import { contentStyle, dividerLineStyle, linkAttrs, youtubeEmbed } from '../lib/
 import { isVideo, shapeClipPath, shapeSvg, videoBoxStyle } from '../lib/shapes.js'
 import { audioAttrs, mountAudio } from '../lib/audioViz.js'
 import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
+import { decorSvg } from '../lib/decor.js'
 import { loadFonts } from '../lib/fonts.js'
 import { textGradientStyle } from '../lib/gradient.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
@@ -83,6 +84,15 @@ function IconBlock({ p, css, isEditor }) {
       dangerouslySetInnerHTML={svg}
     />
   )
+}
+
+/** A decoration (ink blot, brush stroke…), redrawn when its settings or size change. */
+function DecorBlock({ el, css }) {
+  // Unique per rendered decoration: gradient and clip ids live in the page's shared id space.
+  const id = 'decor' + useId().replace(/[^a-zA-Z0-9_-]/g, '')
+  const { props, w, h } = el
+  const html = useMemo(() => decorSvg({ props }, id, { w, h }), [props, w, h, id])
+  return <div style={css} dangerouslySetInnerHTML={{ __html: html }} />
 }
 
 function ImageBlock({ p, css, isEditor }) {
@@ -207,6 +217,9 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
 
     case 'icon':
       return <IconBlock p={p} css={css} isEditor={isEditor} />
+
+    case 'decor':
+      return <DecorBlock el={el} css={css} />
 
     case 'audio':
       if (!p.src) {

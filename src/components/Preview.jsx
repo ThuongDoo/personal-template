@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
-import { anchorId, elementTransform, scrollLink } from '../lib/elements.js'
+import { anchorId, blendMode, elementTransform, scrollLink } from '../lib/elements.js'
 
 export default function Preview({ doc, onClose, onOpenTab }) {
   const { page, elements } = doc
@@ -88,6 +88,7 @@ export default function Preview({ doc, onClose, onOpenTab }) {
                     height: el.h,
                     zIndex: i + 1,
                     transform: elementTransform(el),
+                    mixBlendMode: blendMode(el),
                   }}
                 >
                   <ElementContent el={el} mode="preview" />

@@ -5,7 +5,7 @@ import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
 import QuickToolbar from './QuickToolbar.jsx'
 import UploadIndicator from './UploadIndicator.jsx'
-import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp, elementTransform, scrollLink, scrollLinkY } from '../lib/elements.js'
+import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, blendMode, clamp, elementTransform, scrollLink, scrollLinkY } from '../lib/elements.js'
 import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
 import { imageCenterProps, imageRect, zoomImageAt } from '../lib/shapes.js'
 import { useUploads } from '../lib/uploadProgress.js'
@@ -554,7 +554,7 @@ export default function Canvas({
               <div
                 key={el.id}
                 className={`el${el.locked ? ' locked' : ''}${editingId === el.id ? (el.type === 'shape' ? ' cropping' : ' editing') : ''}`}
-                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1, transform: elementTransform(el) }}
+                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1, transform: elementTransform(el), mixBlendMode: blendMode(el) }}
                 onPointerDown={(e) => startMove(e, el)}
                 onDoubleClick={() => {
                   if (el.locked) return

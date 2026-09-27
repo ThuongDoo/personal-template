@@ -2,6 +2,7 @@ import { useRef, useState } from 'react'
 import Icon from './Icon.jsx'
 import { ColorInput, Field, NumberInput, Section, Segmented, Select } from './fields.jsx'
 import { quickFields } from '../lib/quickFields.js'
+import { DECORS, DECOR_ORDER, WASHI_PATTERNS } from '../lib/decor.js'
 import { TEXT_TYPES, elementLabel, scrollLink, scrollLinkY, scrollYHref, youtubeEmbed } from '../lib/elements.js'
 import { isUploadedImage, uploadAudio, uploadIcon, uploadImage, uploadVideo } from '../lib/cloud.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
@@ -340,6 +341,39 @@ function LinkFields({ el, elements, page, setProps, placeholder, picking, onActi
   )
 }
 
+// Colour, "Tạo hình khác", blending and stroke width are on the quick toolbar.
+function DecorSection({ el, setProps }) {
+  const p = el.props
+  return (
+    <Section title="Trang trí">
+      <Field label="Kiểu">
+        <Select value={p.kind} options={DECOR_ORDER.map((k) => [k, DECORS[k].label])} onChange={(v) => setProps({ kind: v })} />
+      </Field>
+      {p.kind === 'splatter' && (
+        <Field label="Mật độ">
+          <RangeInput value={p.density} min={8} max={160} format={(v) => `${v} chấm`} onChange={(v) => setProps({ density: v }, 'density')} />
+        </Field>
+      )}
+      {p.kind === 'dots' && (
+        <>
+          <Field label="Khoảng cách">
+            <RangeInput value={p.spacing} min={8} max={80} format={(v) => `${v}px`} onChange={(v) => setProps({ spacing: v }, 'spacing')} />
+          </Field>
+          <Field label="Cỡ chấm">
+            <RangeInput value={p.dotSize} min={1} max={20} step={0.5} format={(v) => `${v}px`} onChange={(v) => setProps({ dotSize: v }, 'dotSize')} />
+          </Field>
+        </>
+      )}
+      {p.kind === 'washi' && (
+        <Field label="Hoạ tiết">
+          <Select value={p.pattern} options={WASHI_PATTERNS} onChange={(v) => setProps({ pattern: v })} />
+        </Field>
+      )}
+      <p className="hint">Kéo góc để co giãn — nét vẽ tự vẽ lại theo khung mới. Đổi màu và “Tạo hình khác” trên thanh công cụ nhỏ.</p>
+    </Section>
+  )
+}
+
 function IconSection({ el, link, setProps }) {
   const p = el.props
   return (
@@ -449,6 +483,7 @@ function ContentSection({ el, link, setProps, setGeom }) {
   if (el.type === 'image') return <ImageSection key={el.id} el={el} setProps={setProps} setGeom={setGeom} />
   if (el.type === 'audio') return <AudioSection el={el} setProps={setProps} />
   if (el.type === 'icon') return <IconSection el={el} link={link} setProps={setProps} />
+  if (el.type === 'decor') return <DecorSection el={el} setProps={setProps} />
   if (el.type === 'shape') {
     return (
       <>
@@ -513,8 +548,8 @@ function TypographySection({ s, setStyle }) {
 
 /** Background, border, shadow… minus what the quick toolbar already edits (`quick`, see quickFields). */
 function AppearanceSection({ el, s, setStyle, quick }) {
-  // Its background colour and opacity are both on the toolbar.
-  if (el.type === 'shape') return null
+  // Its background colour and opacity are both on the toolbar; decorations draw everything themselves.
+  if (el.type === 'shape' || el.type === 'decor') return null
 
   if (el.type === 'divider') {
     return (

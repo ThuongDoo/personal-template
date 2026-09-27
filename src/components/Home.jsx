@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import DesignThumb from './DesignThumb.jsx'
+import TemplateShowcase from './TemplateShowcase.jsx'
 import Icon from './Icon.jsx'
 import UserChip from './UserChip.jsx'
 import StorageMeter from './StorageMeter.jsx'
@@ -214,24 +215,25 @@ export default function Home({ user, isAdmin }) {
   } else if (!designs) {
     saved = <p className="home-empty">Đang tải…</p>
   } else if (!designs.length) {
-    saved = <p className="home-empty">Bạn chưa có trang nào. Hãy tạo trang đầu tiên ở trên.</p>
+    saved = <p className="home-empty">Bạn chưa có trang nào. Hãy tạo trang trắng ở trên hoặc chọn một mẫu bên phải.</p>
   } else {
+    // A compact list: the column is narrow so the templates get the rest of the screen.
     saved = (
-      <div className="card-grid">
+      <ul className="saved-list">
         {designs.map((d) => {
           const badges = publishBadges(d.id, overview)
           const liveUrl = overview?.site?.designId === d.id ? overview.site.url : null
           return (
-            <div key={d.id} className={`card${liveUrl ? ' card-live' : ''}`}>
-              <button type="button" className="card-open" onClick={() => openDesignRoute(d.id)}>
-                <DesignThumb design={d} />
-                <span className="card-text">
+            <li key={d.id} className={`saved-item${liveUrl ? ' live' : ''}`}>
+              <button type="button" className="saved-open" onClick={() => openDesignRoute(d.id)} title="Mở để chỉnh sửa">
+                <DesignThumb design={d} width={96} height={64} />
+                <span className="saved-text">
                   <strong>{d.page.title || 'Chưa đặt tên'}</strong>
-                  <small>Sửa lần cuối: {formatTime(d.updatedAt)}</small>
+                  <small>{formatTime(d.updatedAt)}</small>
                 </span>
               </button>
               {badges.length > 0 && (
-                <span className="card-badges">
+                <span className="saved-badges">
                   {badges.map((b) => (
                     <span key={b.label} className={`badge badge-${b.tone}`} title={b.title}>
                       {b.label}
@@ -240,20 +242,23 @@ export default function Home({ user, isAdmin }) {
                 </span>
               )}
               {liveUrl && (
-                <a className="card-link" href={liveUrl} target="_blank" rel="noopener noreferrer">
+                <a className="card-link saved-link" href={liveUrl} target="_blank" rel="noopener noreferrer">
                   {liveUrl.replace(/^https:\/\//, '')}
                   <Icon name="external" size={12} />
                 </a>
               )}
-              <button type="button" className="icon-btn danger card-delete" title="Xoá trang" onClick={() => remove(d)}>
+              <button type="button" className="icon-btn danger saved-delete" title="Xoá trang" onClick={() => remove(d)}>
                 <Icon name="trash" />
               </button>
-            </div>
+            </li>
           )
         })}
-      </div>
+      </ul>
     )
   }
+
+  const blank = templates[0]
+  const samples = templates.slice(1)
 
   return (
     <div className="home">
@@ -275,35 +280,23 @@ export default function Home({ user, isAdmin }) {
         <UserChip user={user} onSignOut={signOut} />
       </header>
 
-      <main className="home-main">
-        <section>
-          <h2>Tạo trang mới</h2>
+      <div className="home-body">
+        <aside className="home-side">
+          <button type="button" className="blank-create" onClick={() => create(blank)} disabled={!canCreate}>
+            <span className="blank-plus">
+              <Icon name="plus" size={20} />
+            </span>
+            <span className="saved-text">
+              <strong>{creating === blank.id ? 'Đang tạo…' : 'Trang trắng'}</strong>
+              <small>Bắt đầu từ trang trống</small>
+            </span>
+          </button>
           {full && (
             <p className="limit-note">
-              Bạn đã dùng hết {MAX_DESIGNS}/{MAX_DESIGNS} trang. Hãy xoá một trang cũ ở bên dưới để tạo trang mới.
+              Bạn đã dùng hết {MAX_DESIGNS}/{MAX_DESIGNS} trang. Hãy xoá một trang cũ bên dưới để tạo trang mới.
             </p>
           )}
-          <div className="card-grid">
-            {templates.map((t) => (
-              <button key={t.id} type="button" className="card card-open" onClick={() => create(t)} disabled={!canCreate}>
-                {t.id === 'blank' ? (
-                  <span className="thumb thumb-blank">
-                    <Icon name="plus" size={28} />
-                  </span>
-                ) : (
-                  <DesignThumb design={t.preview} />
-                )}
-                <span className="card-text">
-                  <strong>{creating === t.id ? 'Đang tạo…' : t.name}</strong>
-                  <small>{t.description}</small>
-                </span>
-              </button>
-            ))}
-          </div>
-        </section>
-
-        <section>
-          <h2>
+          <h2 className="side-title">
             Trang đã lưu
             {designs && (
               <span className={`limit-count${full ? ' full' : ''}`}>
@@ -312,8 +305,12 @@ export default function Home({ user, isAdmin }) {
             )}
           </h2>
           {saved}
-        </section>
-      </main>
+        </aside>
+
+        <main className="home-stage">
+          <TemplateShowcase templates={samples} creating={creating} canCreate={canCreate} onUse={create} />
+        </main>
+      </div>
     </div>
   )
 }

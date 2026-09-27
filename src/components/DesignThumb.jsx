@@ -1,16 +1,20 @@
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
-import { elementTransform } from '../lib/elements.js'
+import { blendMode, elementTransform } from '../lib/elements.js'
 
-/** Thumbnails are drawn at this width; the card grid uses fixed-width columns to match. */
+/** Thumbnails are drawn at this width by default; the card grid uses fixed-width columns to match. */
 const THUMB_WIDTH = 280
 
-/** Scaled-down, non-interactive render of the top of a page. */
-export default function DesignThumb({ design }) {
+/**
+ * Scaled-down, non-interactive render of a page: its top part at `width` px wide, or the whole page
+ * (`full`, for a scrollable preview). `height` overrides the frame height of the cropped version.
+ */
+export default function DesignThumb({ design, width = THUMB_WIDTH, height, full = false }) {
   const { page, elements } = design
-  const scale = THUMB_WIDTH / page.width
+  const scale = width / page.width
+  const frame = full ? { width, height: page.height * scale } : height ? { width, height } : undefined
   return (
-    <div className="thumb" style={{ background: page.background }} aria-hidden="true">
+    <div className="thumb" style={{ background: page.background, ...frame }} aria-hidden="true">
       <div className="thumb-page" style={{ width: page.width, height: page.height, transform: `scale(${scale})` }}>
         {elements.map((el, i) =>
           el.hidden ? null : (
@@ -24,6 +28,7 @@ export default function DesignThumb({ design }) {
                 height: el.h,
                 zIndex: i + 1,
                 transform: elementTransform(el),
+                mixBlendMode: blendMode(el),
               }}
             >
               {el.type === 'video' ? (

@@ -7,7 +7,8 @@ import { ICON_LIBRARY, iconSvg } from '../lib/iconLibrary.js'
 import { TEXT_TYPES } from '../lib/elements.js'
 import { fontOf } from '../lib/fonts.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
-import { ROUNDABLE_SHAPES } from '../lib/shapes.js'
+import { ROUNDABLE_SHAPES, randomSeed } from '../lib/shapes.js'
+import { DECORS, INK_STYLES, STAIN_PRESETS, decorSvg } from '../lib/decor.js'
 
 const ALIGNS = ['left', 'center', 'right', 'justify']
 const ALIGN_ICONS = { left: 'alignLeft', center: 'alignCenter', right: 'alignRight', justify: 'alignJustify' }
@@ -139,6 +140,55 @@ function IconSwapButton({ value, onChange, openId, setOpenId }) {
         </div>
       )}
     </span>
+  )
+}
+
+/** Small drawings of each ink blot style (fixed seed), in the text colour, for the style picker. */
+const INK_PREVIEWS = Object.fromEntries(
+  INK_STYLES.map(([style]) => [
+    style,
+    { __html: decorSvg({ props: { kind: 'ink', inkStyle: style, seed: 7, color: 'currentColor' } }, `qt-ink-${style}`, { w: 44, h: 44 }) },
+  ]),
+)
+
+/** Grid of ink blot styles, each shown as a drawing. */
+function InkStylePicker({ value, onChange }) {
+  return (
+    <div className="ink-styles" role="radiogroup" aria-label="Dạng vết mực">
+      {INK_STYLES.map(([style, label]) => (
+        <button
+          key={style}
+          type="button"
+          role="radio"
+          aria-checked={value === style}
+          className={`ink-style${value === style ? ' on' : ''}`}
+          onClick={() => onChange(style)}
+        >
+          <span className="ink-style-art" dangerouslySetInnerHTML={INK_PREVIEWS[style]} />
+          <span>{label}</span>
+        </button>
+      ))}
+    </div>
+  )
+}
+
+/** Every traced stain as a small drawing, to swap the selected one for another. */
+function StainPicker({ value, onChange }) {
+  return (
+    <div className="stain-picks" role="radiogroup" aria-label="Chọn vết mực">
+      {STAIN_PRESETS.map((s, i) => (
+        <button
+          key={s.key}
+          type="button"
+          role="radio"
+          aria-checked={value === i}
+          title={s.label}
+          className={`stain-pick${value === i ? ' on' : ''}`}
+          onClick={() => onChange(i, s)}
+          dangerouslySetInnerHTML={{ __html: decorSvg({ props: { kind: 'stain', stain: i, color: 'currentColor' } }, `qt-stain-${i}`) }}
+        />
+      ))}
+    </div>
   )
 }
 
@@ -342,6 +392,52 @@ export default function QuickToolbar({ el, setStyle, setProps, setEl, onAction, 
     controls = [
       color('line', 'Màu đường kẻ', s.color, (v) => setStyle({ color: v }, 'color'), { glyph: 'divider' }),
       <Stepper key="w" title="Độ dày" icon="divider" value={s.lineWidth} min={1} max={40} onChange={(v) => setStyle({ lineWidth: v }, 'lineWidth')} />,
+    ]
+  } else if (el.type === 'decor') {
+    controls = [
+      color('dc', 'Màu', p.color, (v) => setProps({ color: v }, 'color'), { glyph: 'decor' }),
+      ...(p.kind === 'stain'
+        ? [
+            <PanelButton key="stain" id="stain" title="Đổi vết mực" icon="sliders" openId={openId} setOpenId={setOpenId}>
+              <span className="qt-popover-title">Đổi vết mực</span>
+              <StainPicker
+                value={p.stain ?? 0}
+                // Keeps the width, takes the new stain's proportions so it isn't squashed.
+                onChange={(i, s) => setEl({ h: Math.max(16, Math.round((el.w * s.h) / s.w)), props: { stain: i } })}
+              />
+            </PanelButton>,
+          ]
+        : []),
+      ...(p.kind === 'ink'
+        ? [
+            <PanelButton key="ink" id="ink" title="Dạng vết mực" icon="sliders" openId={openId} setOpenId={setOpenId}>
+              <span className="qt-popover-title">Dạng vết mực</span>
+              <InkStylePicker value={p.inkStyle ?? 'blot'} onChange={(v) => setProps({ inkStyle: v })} />
+            </PanelButton>,
+          ]
+        : []),
+      ...(DECORS[p.kind]?.line
+        ? [<Stepper key="sw" title="Độ dày nét" icon="divider" value={p.strokeWidth} min={1} max={30} onChange={(v) => setProps({ strokeWidth: v }, 'strokeWidth')} />]
+        : []),
+      <Sep key="s1" />,
+      ...(DECORS[p.kind]?.fixed
+        ? []
+        : [
+            <button key="seed" type="button" className="qt-btn qt-text-btn" title="Vẽ lại với nét khác (giữ màu và kích thước)" onClick={() => setProps({ seed: randomSeed() })}>
+              <Icon name="shuffle" size={15} />
+              Tạo hình khác
+            </button>,
+          ]),
+      <button
+        key="blend"
+        type="button"
+        className={`qt-btn${p.blend ? ' on' : ''}`}
+        title="Hoà trộn với nền (như mực in lên chữ / ảnh bên dưới)"
+        aria-pressed={p.blend}
+        onClick={() => setProps({ blend: !p.blend })}
+      >
+        <Icon name="blend" size={15} />
+      </button>,
     ]
   } else if (el.type === 'audio') {
     // The visualizer draws on a canvas, so its two colours stay solid (they already form a gradient).

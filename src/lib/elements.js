@@ -1,4 +1,5 @@
 import { AUDIO_PRESETS } from './audioViz.js'
+import { DECORS, decorPreset } from './decor.js'
 import { FONTS, fontStack } from './fonts.js'
 import { firstColor, isGradient } from './gradient.js'
 import { SHAPES, randomSeed } from './shapes.js'
@@ -154,6 +155,18 @@ export const ELEMENT_TYPES = {
     props: { icon: 'phone', iconColor: '#ffffff', iconSize: 50, strokeWidth: 2, href: '#', newTab: false, label: '' },
     style: { background: '#4f46e5', radius: 999 },
   },
+  decor: {
+    label: 'Trang trí',
+    w: 220,
+    h: 220,
+    // kind: one of DECORS in decor.js, which draws it from `seed`. strokeWidth: arrow / circle;
+    // density: splatter; spacing / dotSize: dot grid; pattern: washi tape; inkStyle: ink blot (INK_STYLES);
+    // stain: which traced stain (INK_STAINS).
+    // blend: multiply with what's below.
+    props: { kind: 'ink', seed: 0, color: '#1f2937', inkStyle: 'blot', stain: 0, strokeWidth: 4, density: 40, spacing: 24, dotSize: 4, pattern: 'stripes', blend: false },
+    initProps: () => ({ seed: randomSeed() }),
+    style: { background: 'transparent', radius: 0 },
+  },
 }
 
 export const PALETTE_ORDER = ['image', 'box', 'divider', 'video']
@@ -290,6 +303,8 @@ export function createFromKey(key, rest = {}) {
     const s = SHAPES[preset]
     return createElement('shape', { w: s.w, h: s.h, ...rest, props: { ...s.props, shape: preset, ...rest.props } })
   }
+  const decor = type === 'decor' && decorPreset(preset)
+  if (decor) return createElement('decor', { w: decor.w, h: decor.h, ...rest, props: { ...decor.props, ...rest.props } })
   if (type === 'audio' && AUDIO_PRESETS[preset]) {
     const a = AUDIO_PRESETS[preset]
     return createElement('audio', { w: a.w, h: a.h, ...rest, props: { ...a.props, viz: preset, ...rest.props } })
@@ -346,6 +361,7 @@ export function elementLabel(el) {
   return (
     (el.type === 'shape' && SHAPES[el.props.shape]?.label) ||
     (el.type === 'audio' && AUDIO_PRESETS[el.props.viz] && `Âm thanh · ${AUDIO_PRESETS[el.props.viz].label}`) ||
+    (el.type === 'decor' && DECORS[el.props.kind]?.label) ||
     ELEMENT_TYPES[el.type].label
   )
 }
@@ -392,6 +408,9 @@ export function youtubeEmbed(url) {
   const m = /(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([\w-]{11})/.exec(url || '')
   return m ? `https://www.youtube.com/embed/${m[1]}` : null
 }
+
+/** mix-blend-mode of an element's positioned wrapper: decorations can multiply with what's below. */
+export const blendMode = (el) => (el.type === 'decor' && el.props.blend ? 'multiply' : undefined)
 
 /**
  * CSS transform of an element's positioned wrapper: its rotation, then any mirroring. The selection
@@ -448,6 +467,10 @@ export function contentStyle(el) {
   }
   if (el.type === 'icon') {
     Object.assign(css, { display: 'flex', alignItems: 'center', justifyContent: 'center' })
+  }
+  if (el.type === 'decor') {
+    // Hand-drawn strokes and splashes may reach a little past the box.
+    Object.assign(css, { overflow: 'visible' })
   }
   if (el.type === 'shape') {
     // The SVG draws its own fill, rim and shadow, and the shadow must spill past the box.

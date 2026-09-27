@@ -621,3 +621,103 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] Bấm "Cuộn tới vị trí" → **vào ngay chế độ chấm** trên trang (đường gạch cam theo chuột); Esc → huỷ chấm, nút vẫn ở chế độ cuộn với vị trí 0px (đầu trang)
 - [ ] Muốn cuộn về đầu trang → nhập 0 vào ô "Vị trí (cách đỉnh trang)"
 - [ ] Nút tạo trước bản này đang cuộn tới "Đầu trang" hoặc một phần tử → vẫn cuộn đúng ở Xem trước / trang xuất bản; bảng thuộc tính hiện nó là vị trí tương ứng (0px, hoặc mép trên phần tử) kèm đường gạch cam; sửa số / chấm lại → chuyển sang vị trí mới
+
+## 56. Mẫu "Portfolio – Poster pastel"
+
+- [ ] Trang chủ → "Tạo trang mới" có mẫu **Portfolio – Poster pastel** (đứng đầu danh sách mẫu)
+- [ ] Phần đầu giống poster: nền chuyển cam đào → hồng, chữ "PORT FOLIO" lớn màu xám đậm, khung ảnh trắng có thanh hồng phía trên và thanh hồng → xanh ngọc bên trái, ảnh chân dung, thẻ hồng bán trong suốt đè góc ảnh với "XIN CHÀO, TÔI LÀ / MAI ANH / NGUYỄN" (đủ dấu ngã), hai cột chấm tròn
+- [ ] Các phần tiếp theo cùng tông: Về mình (3 con số), Dịch vụ (3 thẻ), Dự án (ảnh trên nền lệch màu), Kinh nghiệm (dòng thời gian), khối Liên hệ chuyển màu, mạng xã hội, chân trang
+- [ ] Tạo trang từ mẫu → sửa chữ, đổi ảnh chân dung (Ảnh → Tải ảnh lên), đổi màu được như trang thường
+- [ ] Xem trước và xuất bản → hiển thị giống trong trình chỉnh sửa
+
+## 57. Mẫu "Portfolio – Bìa tạp chí đỏ rượu"
+
+- [ ] Trang chủ → "Tạo trang mới" có mẫu **Portfolio – Bìa tạp chí đỏ rượu** (đứng đầu danh sách mẫu)
+- [ ] Phần đầu kiểu bìa tạp chí: nền đỏ rượu, chữ **PORTFOLIO** trắng khổng lồ, ảnh chân dung hình vòm đè lên chân chữ, tên "KHÁNH LINH" dưới góc phải tiêu đề, ảnh nhỏ viền trắng bên trái, đoạn giới thiệu chữ hoa nhỏ góc trái dưới, "NHÀ SÁNG TẠO / THÁNG 8 / 2026" góc phải dưới
+- [ ] Các tiêu đề font Anton (NHÌN THẾ GIỚI QUA MÀU SẮC, MÌNH LÀM GÌ, TÁC PHẨM CHỌN LỌC, LIÊN HỆ) hiển thị **đủ dấu**, không bị cắt
+- [ ] Phần thân nền kem: Về mình (3 con số), 3 thẻ dịch vụ đỏ rượu, lưới 4 dự án có ảnh + tên, khối Liên hệ đỏ rượu với nút email và mạng xã hội
+- [ ] Tạo trang từ mẫu → đổi ảnh trong hình vòm (chọn hình → "Đổi ảnh" hoặc "Chỉnh ảnh" để kéo lại khung), sửa chữ được
+- [ ] Xem trước và xuất bản → hiển thị giống trong trình chỉnh sửa
+
+## 58. Nhóm "Trang trí": chấm mực, loang màu nước, vệt cọ, văng sơn…
+
+- [ ] Bảng element bên trái có nhóm **Trang trí (10)**: Chấm mực, Loang màu nước, Vệt cọ, Văng sơn, Bút highlight, Mũi tên vẽ tay, Vòng khoanh, Lấp lánh, Băng dính washi, Lưới chấm bi — mỗi ô có hình xem trước nhỏ
+- [ ] Bấm hoặc kéo thả từng mẫu vào trang → hiện đúng hình; bảng "Lớp" ghi đúng tên mẫu, có icon giọt mực
+- [ ] Thanh công cụ nhỏ: **Màu** (đơn sắc hoặc chuyển màu — chuyển màu trải đều trên cả hình), **Tạo hình khác** (vẽ lại nét mới, giữ màu/kích thước; không có ở Lưới chấm bi), nút **Hoà trộn**, Độ mờ, Nhân bản, Xoá; Mũi tên / Vòng khoanh có thêm **Độ dày nét**
+- [ ] Bật **Hoà trộn**: đặt Bút highlight / Loang màu nước đè lên chữ hoặc ảnh → chữ/ảnh bên dưới vẫn hiện rõ như mực in lên (không bị che); tắt → che bình thường
+- [ ] Bảng thuộc tính → mục "Trang trí": đổi **Kiểu** sang mẫu khác; Văng sơn có **Mật độ**, Lưới chấm bi có **Khoảng cách** + **Cỡ chấm**, Băng dính có **Hoạ tiết** (Sọc chéo / Chấm bi / Trơn); không còn mục "Nền & viền"
+- [ ] Kéo góc co giãn → hình vẽ lại theo khung mới, không bị méo nét; xoay / lật được
+- [ ] Mỗi hình giữ nguyên nét vẽ sau khi lưu, mở lại, Xem trước, ảnh thu nhỏ ở trang chủ và trang **đã xuất bản** (cần deploy lại backend)
+- [ ] Nhiều hình trang trí cùng dùng màu chuyển trên một trang → không hình nào bị lẫn màu của hình khác
+
+## 59. Chấm mực có 7 dạng vết mực
+
+- [ ] Chọn một **Chấm mực** → thanh công cụ nhỏ có nút **Dạng vết mực** (biểu tượng thanh trượt) → bảng 7 ô có hình xem trước: Chấm tròn, Bắn tia, Chảy giọt, Phun xịt, Vệt giọt, Văng một phía, Mực khô; dạng đang dùng được tô màu
+- [ ] Bấm từng dạng → hình trên trang đổi ngay, giữ màu / kích thước
+  - Bắn tia: nhiều tia nhọn toả ra, có giọt ở đầu tia
+  - Chảy giọt: mảng mực phía trên, các dòng chảy xuống thon dần, đầu dòng có giọt tròn
+  - Phun xịt: mảng mực viền mờ, xung quanh lấm tấm bụi mực (đôi khi có một vệt chảy)
+  - Vệt giọt: chuỗi giọt lớn → nhỏ theo đường cong (khung đứng → dọc, khung ngang → ngang)
+  - Văng một phía: vết mực với các vệt dài văng về một bên + một vệt chảy dài xuống
+  - Mực khô: mảng loang lổ có các lỗ trống nhỏ, mép sần
+- [ ] "Tạo hình khác" với mỗi dạng → ra biến thể mới cùng dạng
+- [ ] Đổi màu (kể cả chuyển màu), bật Hoà trộn, co giãn / xoay → vẫn đúng; lưu, mở lại, Xem trước, trang **đã xuất bản** (cần deploy lại backend) giống trong trình chỉnh sửa
+
+## 60. Nhóm "Trang trí" để trống (thay cho mục 58–59 về bảng element)
+
+- [ ] Bảng element bên trái vẫn có nhóm **Trang trí** với số lượng **0** và dòng "Chưa có mẫu trang trí nào."; không có nút phóng to / "Xem tất cả"
+- [ ] Không còn cách thêm chấm mực, vệt cọ… mới từ bảng element (các bước "thêm từ bảng element" ở mục 58–59 bỏ qua)
+- [ ] Thiết kế **đã có sẵn** hình trang trí (tạo trước bản này) → vẫn hiển thị đúng, chọn vào vẫn đổi màu / dạng vết mực / "Tạo hình khác" / hoà trộn được; Xem trước và trang xuất bản vẫn đúng
+
+## 61. Vết mực thật lấy từ ink.jpg (16 vết)
+
+- [ ] Nhóm **Trang trí** trong bảng element có **16** ô "Vết mực 1 … 16", mỗi ô là hình thu nhỏ của đúng vết đó trong ảnh `ink.jpg`
+- [ ] Bấm / kéo thả một vết vào trang → hình giống hệt vết trong ảnh gốc (tia bắn, giọt, mép răng cưa), đúng tỉ lệ, cạnh dài 240px
+- [ ] Thanh công cụ nhỏ: **Màu** (đơn sắc / chuyển màu), **Đổi vết mực** (bảng 16 vết, vết đang dùng được tô màu; chọn vết khác → giữ chiều rộng, chiều cao tự theo tỉ lệ vết mới), **Hoà trộn**, Độ mờ, Nhân bản, Xoá
+- [ ] Phóng to rất lớn (VD 1000px) → nét vẫn sắc, không vỡ hạt
+- [ ] Bật Hoà trộn và đặt vết mực đè lên chữ / ảnh → nội dung bên dưới vẫn thấy rõ
+- [ ] Lưu, mở lại, Xem trước, ảnh thu nhỏ trang chủ, trang **đã xuất bản** (cần deploy lại backend) → vết mực hiển thị giống trong trình chỉnh sửa
+- [ ] (Bản quyền) Nếu dùng giấy phép miễn phí của Freepik: trang web xuất bản có dùng vết mực cần ghi nguồn "Designed by starline / Freepik"
+
+## 62. Vết mực là một element duy nhất, đổi được nhiều hình dạng
+
+- [ ] Nhóm **Trang trí** chỉ còn **1** ô **Vết mực** (thay cho 16 ô ở mục 61)
+- [ ] Thêm Vết mực vào trang → chọn nó → **Đổi vết mực** trên thanh công cụ nhỏ → chọn được đủ 16 hình dạng; mỗi lần đổi giữ màu, hoà trộn, chiều rộng (chiều cao theo tỉ lệ hình mới)
+- [ ] Vết mực đã thêm theo cách cũ (từ 16 ô) vẫn hiển thị và đổi hình được như thường
+
+## 63. Mẫu "Portfolio – Mực đỏ" (kết hợp vết mực)
+
+- [ ] Trang chủ → "Tạo trang mới" có mẫu **Portfolio – Mực đỏ** (đứng đầu danh sách mẫu)
+- [ ] Phần đầu: tên **NGUYỄN MINH TRANG** đỏ đậm (đủ dấu), "VỀ TÔI" + đoạn giới thiệu + danh sách chữ đỏ, nút "Liên hệ với tôi"; bên phải ảnh chân dung khung vòm đặt trên **vết mực đỏ thật**, có giọt mực vương và một vết mực in đè (hoà trộn) lên góc ảnh; vết mực không đè lên chữ tên
+- [ ] Bên dưới: 3 con số trên vết mực nhạt, 3 thẻ dịch vụ có icon trên chấm mực đỏ, 3 dự án có giọt mực in lên góc ảnh, dòng thời gian kinh nghiệm với chấm mực, khối liên hệ chữ trắng nằm gọn trong vết mực tròn lớn, mạng xã hội + chân trang (có ghi nguồn vết mực starline / Freepik)
+- [ ] Tạo trang từ mẫu → chọn từng vết mực: đổi màu, **Đổi vết mực**, hoà trộn được; đổi ảnh chân dung được
+- [ ] Xem trước và xuất bản → hiển thị giống trong trình chỉnh sửa
+
+## 64. 9 mẫu theo bộ slide trong src/assets/tl
+
+Mỗi mẫu là một trang dài gồm 8–9 phần, mỗi phần tương ứng một slide trong ảnh mẫu (1200 × 750).
+
+- [ ] Trang chủ → "Tạo trang mới" có đủ 9 mẫu (đứng đầu danh sách):
+  - [ ] **Nâu rượu & nét vẽ tay** (mau-portfolio-1): nền be, chữ nâu rượu cỡ lớn, ảnh đen trắng, mũi tên / trái tim vẽ tay
+  - [ ] **Hồng phấn cổ điển** (mau-portfolio-2): nền hồng phấn, chữ có chân, khung chữ tím hồng, "Let's work together" chữ viết tay
+  - [ ] **Đen trắng chữ lớn** (mau-portfolio-3): nền đen, chữ trắng khổng lồ, chữ EDUCATION xoay dọc, nhãn viền bo tròn
+  - [ ] **Cam đỏ năng động** (mau-portfolio-4): xen kẽ nền sáng / đen, chữ cam đỏ, chữ viết tay "project", "together"
+  - [ ] **Bìa tạp chí đỏ rượu** (mau-portfolio-5): đỏ rượu – xanh lá – kem, đủ 9 phần (thay bản chỉ có phần đầu ở mục 57)
+  - [ ] **Mực đỏ** (content-marketing): nền trắng, chữ đỏ, vết mực đỏ thật, đủ 9 phần (thay bản ở mục 63)
+  - [ ] **Marketing sắc màu** (marketing): xen kẽ sáng / xám đậm, tiêu đề xanh lá – đỏ mận – xanh dương – vàng – cam, icon quả địa cầu
+  - [ ] **Xanh ngọc mạng xã hội** (social-media): nền bạc hà với mảng cong nhạt, chữ xanh ngọc đậm (8 phần)
+  - [ ] **Thiết kế đồ hoạ cam xám** (thiet-ke-do-hoa): bìa chữ nhạt lặp lại, tia bắn cam sau ảnh, dòng thời gian, lời khen khách hàng, case study quán cà phê
+- [ ] Mỗi mẫu: tiêu đề lớn không bị cắt / tràn dòng, chữ tiếng Việt đủ dấu, ảnh hiện đủ (không ô trống)
+- [ ] Tạo trang từ mẫu → sửa chữ, đổi ảnh, đổi màu, mũi tên / vết mực / tia bắn chỉnh được như phần tử trang trí
+- [ ] Xem trước và xuất bản → hiển thị giống trong trình chỉnh sửa; cuộn qua từng phần mượt, không có khoảng trắng lạ giữa các phần
+
+## 65. Trang chủ bố cục mới: cột trang đã lưu + trình chiếu mẫu
+
+- [ ] Bên trái là một **cột nhỏ**: trên cùng nút **Trang trắng** (khung nét đứt), dưới là **Trang đã lưu x/3** dạng danh sách gọn (ảnh nhỏ, tên, giờ sửa, nhãn Đang xuất bản / Chờ duyệt / Bị từ chối, link trang đang chạy); rê chuột → hiện nút xoá
+- [ ] Bấm một trang đã lưu → mở trình chỉnh sửa; bấm **Trang trắng** → tạo trang trống
+- [ ] Phần còn lại là **một mẫu phóng to**: "Mẫu 1 / N", tên, mô tả, nút **Dùng mẫu này**; khung xem trước to gần hết màn hình, **cuộn chuột trong khung** để xem hết cả trang mẫu
+- [ ] Nút **‹ ›** hai bên và phím **← →** chuyển mẫu (từ mẫu cuối → quay về mẫu đầu); đổi mẫu thì khung cuộn về đầu
+- [ ] Hàng chấm bên dưới: chấm đang xem kéo dài, bấm chấm bất kỳ → nhảy tới mẫu đó; rê chuột vào chấm → hiện tên mẫu
+- [ ] Đủ 3/3 trang → nút Trang trắng và "Dùng mẫu này" bị khoá, cột trái hiện nhắc xoá bớt trang
+- [ ] Thanh dung lượng góc trái dưới không che danh sách trang
+- [ ] Điện thoại: cột trang đã lưu nằm trên, khung mẫu bên dưới, vẫn chuyển mẫu được

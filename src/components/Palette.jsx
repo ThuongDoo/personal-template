@@ -14,6 +14,7 @@ import {
 import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
 import { iconSvg } from '../lib/iconLibrary.js'
 import { SHAPES, SHAPE_ORDER, shapePaths } from '../lib/shapes.js'
+import { STAIN_PRESETS, decorSvg } from '../lib/decor.js'
 
 // Small, fixed tear so the torn-paper tile icon reads at 20px.
 const ICON_PROPS = { edge: 'diagonal', depth: 1.2, tooth: 2.5, rim: 0, seed: 7 }
@@ -109,6 +110,14 @@ function AudioIcon({ viz }) {
   )
 }
 
+/** A stain's own outline, fitted in a 40 × 28 tile, in the tile's text colour. */
+function StainIcon({ index }) {
+  const s = STAIN_PRESETS[index]
+  const k = Math.min(40 / s.w, 28 / s.h)
+  const html = { __html: decorSvg({ props: { kind: 'stain', stain: index, color: 'currentColor' } }, `palette-stain-${index}`) }
+  return <span className="stain-icon" style={{ width: s.w * k, height: s.h * k }} dangerouslySetInnerHTML={html} aria-hidden="true" />
+}
+
 function Tile({ dragKey, onAdd, children }) {
   return (
     <div
@@ -149,7 +158,8 @@ function readOpenGroups() {
  * A palette group. Collapsed it shows only its first tiles, to keep the column short; the button
  * next to the title expands it. Which groups are open is remembered in this browser.
  */
-function Group({ title, hint, count, wide, open, onToggle, children }) {
+/** A palette group. `empty`: what to say while it has no tiles yet. */
+function Group({ title, hint, empty, count, wide, open, onToggle, children = [] }) {
   const tiles = open ? children : children.slice(0, PREVIEW_COUNT)
   const more = count > PREVIEW_COUNT
   return (
@@ -173,7 +183,11 @@ function Group({ title, hint, count, wide, open, onToggle, children }) {
       </div>
       {open && hint && <p className="hint">{hint}</p>}
       {/* Collapsed groups use two wide columns so their two tiles fill the row. */}
-      <div className={`tiles${open && !wide ? ' tiles-3' : ''}`}>{tiles}</div>
+      {count === 0 ? (
+        <p className="hint palette-empty">{empty}</p>
+      ) : (
+        <div className={`tiles${open && !wide ? ' tiles-3' : ''}`}>{tiles}</div>
+      )}
       {more && !open && (
         <button type="button" className="group-more" onClick={onToggle}>
           Xem tất cả {count}
@@ -268,6 +282,22 @@ export default function Palette({ onAdd }) {
             <span>{SHAPES[shape].label}</span>
           </Tile>
         ))}
+      </Group>
+
+      <Group
+        {...group('decor')}
+        title="Trang trí"
+        count={1}
+        empty="Chưa có mẫu trang trí nào."
+        hint={`Vết mực thật (starline / Freepik): ${STAIN_PRESETS.length} hình dạng — chọn ở “Đổi vết mực” trên thanh công cụ nhỏ.`}
+      >
+        {/* One element; its shape is picked afterwards among all the traced stains. */}
+        {[
+          <Tile key="stain" dragKey={`decor:${STAIN_PRESETS[0].key}`} onAdd={onAdd}>
+            <StainIcon index={0} />
+            <span>Vết mực</span>
+          </Tile>,
+        ]}
       </Group>
 
       <Group

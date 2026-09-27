@@ -1,4 +1,5 @@
 import { TEXT_TYPES } from './elements.js'
+import { DECORS } from './decor.js'
 import { ROUNDABLE_SHAPES } from './shapes.js'
 
 /**
@@ -23,6 +24,12 @@ export function quickFields(el) {
     keys.push('icon', 'iconColor', 'background')
   } else if (el.type === 'divider') {
     keys.push('color', 'lineWidth')
+  } else if (el.type === 'decor') {
+    keys.push('color', 'blend')
+    if (!DECORS[p.kind]?.fixed) keys.push('seed')
+    if (p.kind === 'ink') keys.push('inkStyle')
+    if (p.kind === 'stain') keys.push('stain')
+    if (DECORS[p.kind]?.line) keys.push('strokeWidth')
   } else if (el.type === 'audio') {
     keys.push('color', 'color2', 'background')
   }
