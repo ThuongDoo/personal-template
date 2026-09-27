@@ -46,13 +46,18 @@ export const cancelDomainChange = () => api('/me/domain/pending', { method: 'DEL
 // ---------------------------------------------------------------- publishing (user)
 
 /**
- * `{ request, site, domain }` for one of the user's designs: its publish request (or null), the user's
- * live site (or null; `site.designId` is the design shown there) and their domain settings.
+ * `{ request, site, domain, contact }` for one of the user's designs: its publish request (or null), the
+ * user's live site (or null; `site.designId` is the design shown there), their domain settings and
+ * `contact.threadsUrl` (null until they have given it).
  */
 export const getPublishStatus = (designId) => api(`/designs/${enc(designId)}/publish`)
 
-/** Sends the design (as saved in Firestore) for admin review. */
-export const requestPublish = (designId) => api(`/designs/${enc(designId)}/publish`, { method: 'POST' })
+/**
+ * Sends the design (as saved in Firestore) for admin review. `threadsUrl`: the user's Threads link, needed
+ * the first time (it's kept on their profile afterwards).
+ */
+export const requestPublish = (designId, threadsUrl) =>
+  api(`/designs/${enc(designId)}/publish`, { method: 'POST', ...(threadsUrl && { body: { threadsUrl } }) })
 
 /**
  * `{ requests: { [designId]: request }, site }`: every design's latest publish request, and the live site

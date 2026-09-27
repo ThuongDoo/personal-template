@@ -721,3 +721,44 @@ Mỗi mẫu là một trang dài gồm 8–9 phần, mỗi phần tương ứng 
 - [ ] Đủ 3/3 trang → nút Trang trắng và "Dùng mẫu này" bị khoá, cột trái hiện nhắc xoá bớt trang
 - [ ] Thanh dung lượng góc trái dưới không che danh sách trang
 - [ ] Điện thoại: cột trang đã lưu nằm trên, khung mẫu bên dưới, vẫn chuyển mẫu được
+
+## 66. Hỏi link Threads khi gửi yêu cầu xuất bản (chỉ lần đầu)
+
+- [ ] Tài khoản **chưa từng** gửi xuất bản: mở "Xuất bản" → bước 3 **Liên hệ Threads** có ô "Link tài khoản Threads"; nút "Tiếp tục" bị khoá cho tới khi nhập link hợp lệ (xem mục 67)
+- [ ] Nhập sai (VD link Instagram, có dấu cách) → hiện "Link chưa đúng…"; nhập `@tentaikhoan`, `threads.net/@ten`, hoặc link một bài đăng → hiện "Sẽ lưu là https://www.threads.com/@ten" và cho gửi
+- [ ] Gửi xong → trong Firestore, `users/{uid}` có trường **threadsUrl**; yêu cầu xuất bản có `contact.threadsUrl`
+- [ ] Các lần xuất bản sau (kể cả trang khác, sau khi đăng xuất / đăng nhập lại) → **không hỏi lại**, gửi được ngay
+- [ ] Gọi thẳng API không kèm link khi chưa có link đã lưu → máy chủ từ chối với lời nhắc nhập link Threads
+- [ ] Trang **Quản trị** → danh sách yêu cầu xuất bản: mỗi yêu cầu có dòng "Liên hệ: Threads @ten", bấm mở đúng trang Threads
+- [ ] (Cần deploy lại backend)
+
+## 67. Xuất bản theo từng bước (hộp thoại lớn, chữ to)
+
+- [ ] Bấm **Xuất bản** → hộp thoại lớn, chữ to, thanh 4 bước: **1 Tiêu đề & icon → 2 Tên miền → 3 Liên hệ Threads → 4 Xác nhận**; bước đang làm tô tím, bước xong có dấu ✓ và đường nối tô màu
+- [ ] **Bước 1**: sửa tiêu đề web (xoá trống → "Tiếp tục" bị khoá: "Hãy nhập tiêu đề web"); tải / đổi / bỏ icon web ngay trong bước (có thanh tiến trình); thay đổi áp dụng ngay vào trang (mục Website ở bảng Cài đặt trang cũng đổi theo)
+- [ ] **Bước 2**: chưa có tên miền → ô chọn tên miền, "Tiếp tục" bị khoá tới khi chọn xong; đã có → hiện tên miền to, nút "Đổi tên miền" (chờ duyệt như cũ)
+- [ ] **Bước 3**: chưa lưu Threads → ô nhập bắt buộc; đã lưu → chỉ hiện link đã lưu, bấm "Tiếp tục" luôn
+- [ ] **Bước 4**: tóm tắt tiêu đề + icon, tên miền, Threads (mỗi dòng có "Sửa" để quay về bước đó); cảnh báo nếu tên miền đang chạy trang khác; nút **Gửi yêu cầu xuất bản** (hoặc "Gửi bản cập nhật để duyệt" nếu trang đang chạy)
+- [ ] "Quay lại" về bước trước; bấm số bước trên thanh để nhảy về bước đã qua (không nhảy tới bước chưa làm được)
+- [ ] Trang đang **chờ duyệt / đang triển khai** → mở hộp thoại vào thẳng bước 4 với trạng thái, có nút "Huỷ yêu cầu xuất bản"
+- [ ] Nút ✕ / Esc / bấm ra ngoài → đóng; điện thoại: thanh bước chỉ hiện số, vẫn dùng được
+
+## 68. 9 mẫu theo bộ slide gói gọn trong 1 màn hình (thay mục 64)
+
+- [ ] 9 mẫu (Nâu rượu & nét vẽ tay, Hồng phấn cổ điển, Đen trắng chữ lớn, Cam đỏ năng động, Bìa tạp chí đỏ rượu, Mực đỏ, Marketing sắc màu, Xanh ngọc mạng xã hội, Thiết kế đồ hoạ cam xám) giờ chỉ cao **800px – vừa một màn hình**, không cần cuộn
+- [ ] Mỗi mẫu vẫn giữ chất riêng của bộ slide gốc (chữ PORTFOLIO khổng lồ, ảnh đè lên chữ, mảng màu, vết mực / mũi tên / chữ viết tay) và đủ các phần: tên + giới thiệu, kỹ năng, học vấn / kinh nghiệm, dự án (ảnh nhỏ), liên hệ
+- [ ] Không chữ nào bị cắt / tràn dòng (đặc biệt chữ PORTFOLIO, CONTACT ME, tên có dấu)
+- [ ] Trang chủ → khung trình chiếu mẫu hiển thị trọn cả mẫu, gần như không cần cuộn
+- [ ] Tạo trang từ mẫu → sửa chữ, đổi ảnh, đổi màu vết mực / mũi tên được; Xem trước và xuất bản giống trình chỉnh sửa
+
+## 69. Giải thích ngắn vì sao cần link Threads
+
+- [ ] Bước 3 "Liên hệ Threads" có khung xanh lá, icon khiên, tiêu đề to **"Vì sao cần link Threads?"** và một câu: "Để chúng tôi nhắn tin báo cho bạn khi trang web đã hoàn thiện. Chỉ cần link trang cá nhân, không cần mật khẩu."
+- [ ] Khung hiện cả khi đã lưu Threads trước đó (bước 3 chỉ hiển thị link đã lưu)
+- [ ] Chữ đủ to, dễ đọc; trên điện thoại khung không bị tràn
+
+## 70. Thông báo đã gửi yêu cầu xuất bản
+
+- [ ] Bước 4 bấm **Gửi yêu cầu xuất bản** (hoặc "Gửi bản cập nhật để duyệt") thành công → hộp thoại chuyển sang thông báo: dấu ✓ xanh lá, **"Đã gửi yêu cầu thành công!"**, "Yêu cầu xuất bản đang chờ quản trị viên xử lý…", nút **OK**
+- [ ] Bấm **OK** (hoặc Enter vì nút OK được chọn sẵn, Esc, bấm ra ngoài) → đóng hộp thoại; mở lại "Xuất bản" → vào thẳng bước 4 với trạng thái "Đang chờ quản trị viên duyệt"
+- [ ] Gửi lỗi (mất mạng, chưa lưu được…) → không hiện thông báo thành công, lỗi hiện ngay trong hộp thoại như cũ

@@ -276,6 +276,14 @@ function RequestRow({ request: r, onPreview, onDone }) {
           {r.user?.name && r.user?.email ? ` · ${r.user.email}` : ''} · gửi lúc {formatTime(r.submittedAt && new Date(r.submittedAt))}
         </small>
         {r.domain && <small>Tên miền: {r.domain}</small>}
+        {r.contact?.threadsUrl && (
+          <small>
+            Liên hệ:{' '}
+            <a href={r.contact.threadsUrl} target="_blank" rel="noopener noreferrer">
+              Threads {r.contact.threadsUrl.replace(/^https:\/\/www\.threads\.com\//, '')}
+            </a>
+          </small>
+        )}
         {r.status === 'rejected' && <small className="warn">Lý do từ chối: {r.rejectReason}</small>}
         {r.status === 'approved' && <small>Duyệt lúc {formatTime(r.reviewedAt && new Date(r.reviewedAt))}</small>}
         {r.lastError && r.status === 'pending' && <small className="warn">Lần duyệt trước bị lỗi: {r.lastError}</small>}

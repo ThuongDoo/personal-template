@@ -10,7 +10,7 @@ import { AUDIO_ORDER, AUDIO_PRESETS } from '../lib/audioViz.js'
 import { ICON_LIBRARY } from '../lib/iconLibrary.js'
 import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
-import { startUpload } from '../lib/uploadProgress.js'
+import { useUpload } from './useUpload.jsx'
 import { QuotaError } from '../lib/storageQuota.js'
 import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, imageRect, zoomImageAt, IMAGE_FRAME_RESET, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
@@ -43,37 +43,6 @@ const FITS = [
   { value: 'contain', label: 'Vừa khung', title: 'Hiện toàn bộ ảnh' },
   { value: 'fill', label: 'Kéo giãn', title: 'Kéo giãn theo khung' },
 ]
-
-/**
- * State for an upload button: `run(start, elementId)` calls `start(onProgress)` and mirrors its progress
- * both on the button (`label`, `bar`) and, when `elementId` is given, over that element on the page.
- */
-function useUpload() {
-  // undefined: idle; null: preparing the file; 0…1: uploading.
-  const [progress, setProgress] = useState(undefined)
-  const run = async (start, elementId) => {
-    const onPage = startUpload({ elementId })
-    setProgress(null)
-    try {
-      return await start((fraction) => {
-        setProgress(fraction)
-        onPage.progress(fraction)
-      })
-    } finally {
-      onPage.done()
-      setProgress(undefined)
-    }
-  }
-  const busy = progress !== undefined
-  return {
-    busy,
-    run,
-    label: progress === null ? 'Đang xử lý…' : `Đang tải lên ${Math.round((progress ?? 0) * 100)}%`,
-    bar: busy && (
-      <span className={`upload-bar${progress === null ? ' preparing' : ''}`} style={{ '--p': progress ?? 0 }} aria-hidden="true" />
-    ),
-  }
-}
 
 const SHAPE_MEDIA = [
   { value: 'image', label: 'Ảnh' },

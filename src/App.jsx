@@ -468,7 +468,13 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
 
       {previewing && <Preview doc={doc} onClose={closePreview} onOpenTab={openInNewTab} />}
       {publishing && (
-        <PublishDialog designId={designId} page={doc.page} save={() => persist(doc)} onClose={() => setPublishing(false)} />
+        <PublishDialog
+          designId={designId}
+          page={doc.page}
+          onPageChange={updatePage}
+          save={() => persist(doc)}
+          onClose={() => setPublishing(false)}
+        />
       )}
       {makingTemplate && (
         <TemplateDialog
