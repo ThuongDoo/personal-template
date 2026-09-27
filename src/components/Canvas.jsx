@@ -2,13 +2,17 @@ import { useEffect, useEffectEvent, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
+import QuickToolbar from './QuickToolbar.jsx'
 import UploadIndicator from './UploadIndicator.jsx'
-import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, clamp } from '../lib/elements.js'
+import { DND_TYPE, GRID, TEXT_TYPES, applyPatch, elementTransform } from '../lib/elements.js'
 import { bounds, normalizeAngle, rotationTransform, toLocal, vectorToLocal, vectorToPage } from '../lib/geometry.js'
-import { imageRect, zoomImageAt } from '../lib/shapes.js'
+import { imageCenterProps, imageRect, zoomImageAt } from '../lib/shapes.js'
 import { useUploads } from '../lib/uploadProgress.js'
 
 const HANDLES = ['nw', 'n', 'ne', 'e', 'se', 's', 'sw', 'w']
+/** Corner handles on the image frame while repositioning an image inside a shape. */
+const IMAGE_CORNERS = ['nw', 'ne', 'se', 'sw']
+const MIN_IMAGE_SIZE = 20
 const MIN_SIZE = 16
 const SNAP_PX = 6
 const AUTOSCROLL_EDGE = 60
@@ -18,6 +22,44 @@ const toGrid = (v) => Math.round(v / GRID) * GRID
 const ZOOM_STEP = 1.2
 /** With snapping on, rotation clicks to multiples of 45° within this many degrees. */
 const ROTATE_SNAP_DEG = 4
+
+/** Screen px between the element and the quick toolbar; above leaves room for the rotate handle. */
+const TOOLBAR_GAP_ABOVE = 56
+const TOOLBAR_GAP_BELOW = 40
+
+/**
+ * Places the quick toolbar over the element's visual box: centred above it, or below when the element
+ * is near the top of the page. A zero-size anchor at page coordinates, scaled back to screen size so
+ * the toolbar looks the same at every zoom.
+ */
+function QuickToolbarAnchor({ el, zoom, ...rest }) {
+  const b = bounds(el)
+  const above = b.top * zoom > 70
+  return (
+    <div
+      className="qt-anchor"
+      style={{ left: b.cx, top: above ? b.top : b.bottom, transform: `scale(${1 / zoom})` }}
+    >
+      <QuickToolbar
+        key={el.id}
+        el={el}
+        {...rest}
+        style={above ? { bottom: TOOLBAR_GAP_ABOVE } : { top: TOOLBAR_GAP_BELOW }}
+      />
+    </div>
+  )
+}
+
+/**
+ * How far the image inside a shape reaches below the shape (px, 0 if it doesn't), so the
+ * repositioning bar can sit under the image frame instead of covering its corner handles.
+ */
+function imageOverhang(el) {
+  const r = imageRect(el.w, el.h, el.props)
+  if (!r) return 0
+  const bottom = el.flipY ? el.h - r.y : r.y + r.h
+  return Math.max(0, bottom - el.h)
+}
 
 /** Closest target line to any of the given edges, within threshold. */
 function findSnap(edges, targets, threshold) {
@@ -52,9 +94,13 @@ export default function Canvas({
   onCommitText,
   onDropElement,
   onDropFiles,
+  onUpdate,
+  onAction,
 }) {
   const [guides, setGuides] = useState([])
   const [dropActive, setDropActive] = useState(false)
+  // True while dragging, resizing or rotating: the quick toolbar steps out of the way.
+  const [gesturing, setGesturing] = useState(false)
   const { page, elements } = doc
   const selected = elements.find((el) => el.id === selectedId && !el.hidden)
 
@@ -83,20 +129,27 @@ export default function Canvas({
       { merge: `${el.id}:imgZoom` },
     )
 
-  // Mouse wheel over the shape being cropped zooms its image around the pointer. Registered natively
-  // because React's wheel listener is passive and can't stop the page from scrolling.
+  // Mouse wheel over the shape being cropped (or its image) zooms the image around the pointer. Registered
+  // natively because React's wheel listener is passive and can't stop the page from scrolling; on the
+  // canvas' parent so the image frame in the overlay is covered too.
   const onWheel = useEffectEvent((e) => {
     if (!cropping?.props.imgW) return
     const r = canvasRef.current.getBoundingClientRect()
-    const { x: px, y: py } = toLocal(cropping, (e.clientX - r.left) / zoom, (e.clientY - r.top) / zoom)
-    if (px < 0 || py < 0 || px > cropping.w || py > cropping.h) return
+    const local = toLocal(cropping, (e.clientX - r.left) / zoom, (e.clientY - r.top) / zoom)
+    // A mirrored shape shows its content mirrored: find the point in the content's own coordinates.
+    const px = cropping.flipX ? cropping.w - local.x : local.x
+    const py = cropping.flipY ? cropping.h - local.y : local.y
+    // Over the shape, or over the part of its image that lies outside it.
+    const img = imageRect(cropping.w, cropping.h, cropping.props)
+    const inside = (x, y, w, h) => px >= x && py >= y && px <= x + w && py <= y + h
+    if (!inside(0, 0, cropping.w, cropping.h) && !inside(img.x, img.y, img.w, img.h)) return
     e.preventDefault()
     const factor = Math.exp(-e.deltaY * (e.deltaMode ? 0.05 : 0.0015))
     zoomImage(cropping, (z) => z * factor, px, py)
   })
 
   useEffect(() => {
-    const node = canvasRef.current
+    const node = canvasRef.current.parentElement
     const handler = (e) => onWheel(e)
     node.addEventListener('wheel', handler, { passive: false })
     return () => node.removeEventListener('wheel', handler)
@@ -113,6 +166,7 @@ export default function Canvas({
         if (Math.hypot(ev.clientX - sx, ev.clientY - sy) < 3) return
         started = true
         checkpoint()
+        setGesturing(true)
       }
       onMove((ev.clientX - sx) / zoom, (ev.clientY - sy) / zoom, ev)
     }
@@ -120,6 +174,7 @@ export default function Canvas({
       window.removeEventListener('pointermove', move)
       window.removeEventListener('pointerup', up)
       window.removeEventListener('pointercancel', up)
+      if (started) setGesturing(false)
       onEnd?.()
     }
     window.addEventListener('pointermove', move)
@@ -170,23 +225,56 @@ export default function Canvas({
     )
   }
 
-  // Drags the image inside a shape. imgX/imgY work like object-position: the image's offset is
-  // (box − image) · pct/100, so moving it by dx changes the percentage by dx·100/(box − image).
+  /**
+   * Resizes the image inside a shape by dragging a corner of its frame, keeping the opposite corner
+   * where it is (in repositioning mode). Free by default (width and height change independently);
+   * Shift keeps the image's proportions. Works on a rotated or mirrored shape too.
+   */
+  const startImageResize = (e, el, corner) => {
+    if (e.button !== 0) return
+    e.stopPropagation()
+    e.preventDefault()
+    const p0 = el.props
+    const r = imageRect(el.w, el.h, p0)
+    if (!r) return
+    const east = corner.includes('e')
+    const south = corner.includes('s')
+    // The corner that stays put, in the shape's own (unrotated, unmirrored) coordinates.
+    const ax = east ? r.x : r.x + r.w
+    const ay = south ? r.y : r.y + r.h
+    track(e, (pdx, pdy, ev) => {
+      const local = vectorToLocal(el, pdx, pdy)
+      const dx = (el.flipX ? -local.x : local.x) * (east ? 1 : -1)
+      const dy = (el.flipY ? -local.y : local.y) * (south ? 1 : -1)
+      if (ev.shiftKey) {
+        // Growth along the dragged diagonal; the image keeps its proportions.
+        const k = Math.max(0.05, ((r.w + dx) / r.w + (r.h + dy) / r.h) / 2)
+        setPropsLive(el.id, zoomImageAt(el.w, el.h, p0, p0.imgZoom * k, ax, ay))
+        return
+      }
+      const w = Math.max(MIN_IMAGE_SIZE, r.w + dx)
+      const h = Math.max(MIN_IMAGE_SIZE, r.h + dy)
+      setPropsLive(el.id, {
+        imgStretchX: Math.round((p0.imgStretchX || 1) * (w / r.w) * 1000) / 1000,
+        imgStretchY: Math.round((p0.imgStretchY || 1) * (h / r.h) * 1000) / 1000,
+        ...imageCenterProps(el.w, el.h, east ? r.x : r.x + r.w - w, south ? r.y : r.y + r.h - h, w, h),
+      })
+    })
+  }
+
+  // Drags the image inside a shape along the shape's own axes (see imageCenterProps).
   const startPan = (e, el) => {
     e.preventDefault()
     const r = imageRect(el.w, el.h, el.props)
     if (!r) return
-    const spanX = el.w - r.w
-    const spanY = el.h - r.h
-    const { imgX, imgY } = el.props
-    const pct = (v) => Math.round(clamp(v, 0, 100) * 10) / 10
+    // No bounds: the image can be dragged partly or entirely outside the shape.
     track(e, (pdx, pdy) => {
       // The image moves along the shape's own axes, which differ from the page's once it is rotated.
-      const { x: dx, y: dy } = vectorToLocal(el, pdx, pdy)
-      setPropsLive(el.id, {
-        imgX: spanX ? pct(imgX + (dx * 100) / spanX) : imgX,
-        imgY: spanY ? pct(imgY + (dy * 100) / spanY) : imgY,
-      })
+      const local = vectorToLocal(el, pdx, pdy)
+      // Dragging right on a mirrored shape moves its content left in its own coordinates.
+      const dx = el.flipX ? -local.x : local.x
+      const dy = el.flipY ? -local.y : local.y
+      setPropsLive(el.id, imageCenterProps(el.w, el.h, r.x + dx, r.y + dy, r.w, r.h))
     })
   }
 
@@ -398,7 +486,7 @@ export default function Canvas({
               <div
                 key={el.id}
                 className={`el${el.locked ? ' locked' : ''}${editingId === el.id ? (el.type === 'shape' ? ' cropping' : ' editing') : ''}`}
-                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1, transform: rotationTransform(el) }}
+                style={{ left: el.x, top: el.y, width: el.w, height: el.h, zIndex: i + 1, transform: elementTransform(el) }}
                 onPointerDown={(e) => startMove(e, el)}
                 onDoubleClick={() => {
                   if (el.locked) return
@@ -425,6 +513,38 @@ export default function Canvas({
 
         {/* Overlay sits outside the clipped canvas so handles stay visible at the page edges. */}
         <div className="canvas-overlay" style={{ width: page.width, height: page.height, transform: `scale(${zoom})` }}>
+          {cropping?.props.imgW > 0 && (
+            // The whole image frame, with corner handles to scale it (mirrors the shape's rotation/flip).
+            <div
+              className="crop-frame-box"
+              style={{ left: cropping.x, top: cropping.y, width: cropping.w, height: cropping.h, transform: elementTransform(cropping) }}
+            >
+              {(() => {
+                const r = imageRect(cropping.w, cropping.h, cropping.props)
+                return (
+                  // The frame itself can be grabbed too, so an image moved off the shape can still be dragged back.
+                  <div
+                    className="crop-frame"
+                    style={{ left: r.x, top: r.y, width: r.w, height: r.h }}
+                    onPointerDown={(e) => {
+                      if (e.button !== 0) return
+                      e.stopPropagation()
+                      startPan(e, cropping)
+                    }}
+                  >
+                    {IMAGE_CORNERS.map((c) => (
+                      <span
+                        key={c}
+                        className={`handle handle-${c}`}
+                        title="Kéo để co giãn ảnh (giữ Shift để giữ tỉ lệ)"
+                        onPointerDown={(e) => startImageResize(e, cropping, c)}
+                      />
+                    ))}
+                  </div>
+                )
+              })()}
+            </div>
+          )}
           {uploads.map((u) => {
             // On the element receiving the file, or a placeholder box where a dropped image will appear.
             const el = u.elementId && elements.find((e) => e.id === u.elementId && !e.hidden)
@@ -445,6 +565,16 @@ export default function Canvas({
               style={g.axis === 'x' ? { left: g.pos } : { top: g.pos }}
             />
           ))}
+          {selected && !gesturing && cropping?.id !== selected.id && (
+            <QuickToolbarAnchor
+              el={selected}
+              zoom={zoom}
+              setStyle={(patch, key) => onUpdate(selected.id, { style: patch }, key && `style.${key}`)}
+              setProps={(patch, key) => onUpdate(selected.id, { props: patch }, key && `props.${key}`)}
+              setEl={(patch) => onUpdate(selected.id, patch)}
+              onAction={onAction}
+            />
+          )}
           {selected && (
             <div
               className={`selection${selected.locked ? ' locked' : ''}`}
@@ -472,7 +602,7 @@ export default function Canvas({
                 </span>
               )}
               {cropping?.id === selected.id ? (
-                <div className="crop-bar" onPointerDown={(e) => e.stopPropagation()}>
+                <div className="crop-bar" style={{ top: `calc(100% + ${imageOverhang(selected)}px)` }} onPointerDown={(e) => e.stopPropagation()}>
                   <button type="button" title="Thu nhỏ ảnh" onClick={() => zoomImage(selected, (z) => z / ZOOM_STEP)}>
                     <Icon name="minus" size={14} />
                   </button>
@@ -480,7 +610,7 @@ export default function Canvas({
                   <button type="button" title="Phóng to ảnh" onClick={() => zoomImage(selected, (z) => z * ZOOM_STEP)}>
                     <Icon name="plus" size={14} />
                   </button>
-                  <span className="crop-hint">Kéo để dời · cuộn chuột để phóng</span>
+                  <span className="crop-hint">Kéo để dời · kéo góc để co giãn (Shift: giữ tỉ lệ)</span>
                   <button type="button" className="crop-done" onClick={() => onEdit(null)}>
                     Xong
                   </button>

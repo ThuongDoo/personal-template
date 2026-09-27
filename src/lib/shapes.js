@@ -44,6 +44,31 @@ function rng(seed) {
 const num = (v) => +v.toFixed(1)
 const polygon = (pts) => 'M' + pts.map(([x, y]) => `${num(x)},${num(y)}`).join('L') + 'Z'
 
+/**
+ * Polygon with its corners rounded by `r` px: each corner is cut back along both edges (never more
+ * than half an edge) and joined with a curve through the original point.
+ */
+function roundedPolygon(pts, r) {
+  if (!(r > 0)) return polygon(pts)
+  const n = pts.length
+  let d = ''
+  for (let i = 0; i < n; i++) {
+    const p = pts[i]
+    const prev = pts[(i - 1 + n) % n]
+    const next = pts[(i + 1) % n]
+    const lp = Math.hypot(prev[0] - p[0], prev[1] - p[1])
+    const ln = Math.hypot(next[0] - p[0], next[1] - p[1])
+    const c = Math.min(r, lp / 2, ln / 2)
+    const a = [p[0] + ((prev[0] - p[0]) * c) / lp, p[1] + ((prev[1] - p[1]) * c) / lp]
+    const b = [p[0] + ((next[0] - p[0]) * c) / ln, p[1] + ((next[1] - p[1]) * c) / ln]
+    d += `${i ? 'L' : 'M'}${num(a[0])},${num(a[1])}Q${num(p[0])},${num(p[1])} ${num(b[0])},${num(b[1])}`
+  }
+  return d + 'Z'
+}
+
+/** Shapes with sharp corners, which `cornerRadius` can round. */
+export const ROUNDABLE_SHAPES = ['diamond', 'triangle', 'hexagon', 'star']
+
 /** Stretches unit-space points (any bounding box) to fill w×h. */
 function fitPoints(pts, w, h) {
   const xs = pts.map((p) => p[0])
@@ -128,18 +153,18 @@ export function shapePaths(shape, w, h, p) {
     case 'torn':
       return tornPaths(w, h, p)
     case 'diamond':
-      return { fill: polygon([[w / 2, 0], [w, h / 2], [w / 2, h], [0, h / 2]]) }
+      return { fill: roundedPolygon([[w / 2, 0], [w, h / 2], [w / 2, h], [0, h / 2]], p.cornerRadius) }
     case 'triangle':
-      return { fill: polygon([[w / 2, 0], [w, h], [0, h]]) }
+      return { fill: roundedPolygon([[w / 2, 0], [w, h], [0, h]], p.cornerRadius) }
     case 'hexagon':
-      return { fill: polygon([[w / 4, 0], [(3 * w) / 4, 0], [w, h / 2], [(3 * w) / 4, h], [w / 4, h], [0, h / 2]]) }
+      return { fill: roundedPolygon([[w / 4, 0], [(3 * w) / 4, 0], [w, h / 2], [(3 * w) / 4, h], [w / 4, h], [0, h / 2]], p.cornerRadius) }
     case 'star': {
       const pts = Array.from({ length: 10 }, (_, i) => {
         const a = (i * Math.PI) / 5 - Math.PI / 2
         const r = i % 2 ? 0.4 : 1
         return [Math.cos(a) * r, Math.sin(a) * r]
       })
-      return { fill: polygon(fitPoints(pts, w, h)) }
+      return { fill: roundedPolygon(fitPoints(pts, w, h), p.cornerRadius) }
     }
     case 'circle':
       return {
@@ -177,16 +202,27 @@ export function shapePaths(shape, w, h, p) {
 }
 
 /**
- * Where the image sits inside the box: scaled to cover it, times `imgZoom`, then shifted like CSS
- * object-position (`imgX`/`imgY` in %, 0 = left/top edge aligned, 100 = right/bottom). Null if the size is unknown.
+ * Where the image sits inside the box: scaled to cover it, times `imgZoom`, then placed with its
+ * center at (`imgCX`, `imgCY`) — fractions of the box size, unbounded, so the image may leave the
+ * box entirely. Older designs only have `imgX`/`imgY` (CSS object-position %), used as a fallback.
+ * Null if the size is unknown.
  */
 export function imageRect(w, h, p) {
   if (!p.imgW || !p.imgH) return null
   const s = Math.max(w / p.imgW, h / p.imgH) * (p.imgZoom || 1)
-  const iw = p.imgW * s
-  const ih = p.imgH * s
-  return { x: ((w - iw) * p.imgX) / 100, y: ((h - ih) * p.imgY) / 100, w: iw, h: ih }
+  // imgStretchX/Y (default 1) let the image be resized freely, out of its natural proportions.
+  const iw = p.imgW * s * (p.imgStretchX || 1)
+  const ih = p.imgH * s * (p.imgStretchY || 1)
+  const x = p.imgCX != null ? p.imgCX * w - iw / 2 : ((w - iw) * (p.imgX ?? 50)) / 100
+  const y = p.imgCY != null ? p.imgCY * h - ih / 2 : ((h - ih) * (p.imgY ?? 50)) / 100
+  return { x, y, w: iw, h: ih }
 }
+
+/** `imgCX`/`imgCY` props putting an image of size (iw, ih) with its top-left at (x, y) in a w×h box. */
+export const imageCenterProps = (w, h, x, y, iw, ih) => ({
+  imgCX: Math.round(((x + iw / 2) / w) * 10000) / 10000,
+  imgCY: Math.round(((y + ih / 2) / h) * 10000) / 10000,
+})
 
 function imageTag(w, h, p, extra) {
   const r = imageRect(w, h, p)
@@ -259,7 +295,7 @@ export const isVideo = (p) => p.mediaType === 'video'
 
 /**
  * Where the shape's video sits, as CSS for an absolutely positioned <video>: the same framing as an
- * image (imgX/imgY/imgZoom over the natural size imgW/imgH), or covering the box until that is known.
+ * image (imgCX/imgCY/imgZoom over the natural size imgW/imgH), or covering the box until that is known.
  */
 export function videoBoxStyle(w, h, p) {
   const r = imageRect(w, h, p)
@@ -286,15 +322,16 @@ export function shapeVideoHtml(el, { autoplay = true } = {}) {
   )
 }
 
+/** Framing props for a centered image that just covers the box. */
+export const IMAGE_FRAME_RESET = { imgCX: 0.5, imgCY: 0.5, imgZoom: 1, imgStretchX: 1, imgStretchY: 1 }
+
 export const shapeImageProps = (img, name = '') => ({
   mediaType: img.mediaType ?? 'image',
   src: img.src,
   alt: name.replace(/\.[^.]+$/, ''),
   imgW: img.width,
   imgH: img.height,
-  imgX: 50,
-  imgY: 50,
-  imgZoom: 1,
+  ...IMAGE_FRAME_RESET,
 })
 
 export const IMG_ZOOM_MIN = 0.2
@@ -302,19 +339,14 @@ export const IMG_ZOOM_MAX = 5
 
 /**
  * Props for zooming the image to `zoom`, keeping the image point under (px, py) — box coordinates,
- * default the center — where it is. Below 1 the image is smaller than the box and stays inside it.
+ * default the center — where it is. The image is free to extend past (or leave) the box.
  */
 export function zoomImageAt(w, h, p, zoom, px = w / 2, py = h / 2) {
   const imgZoom = Math.min(IMG_ZOOM_MAX, Math.max(IMG_ZOOM_MIN, zoom))
   const r = imageRect(w, h, p)
   if (!r) return { imgZoom }
   const k = imgZoom / (p.imgZoom || 1)
-  // New top-left so the anchor keeps its position, converted back to object-position percentages.
-  const pct = (anchor, pos, size, box, prev) => {
-    const span = box - size * k
-    if (Math.abs(span) < 0.5) return prev
-    const next = ((anchor - (anchor - pos) * k) * 100) / span
-    return Math.round(Math.min(100, Math.max(0, next)) * 10) / 10
-  }
-  return { imgZoom, imgX: pct(px, r.x, r.w, w, p.imgX), imgY: pct(py, r.y, r.h, h, p.imgY) }
+  const x = px - (px - r.x) * k
+  const y = py - (py - r.y) * k
+  return { imgZoom, ...imageCenterProps(w, h, x, y, r.w * k, r.h * k) }
 }

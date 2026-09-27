@@ -1,4 +1,4 @@
-import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, youtubeEmbed } from './elements.js'
+import { GOOGLE_FONTS_URL, contentStyle, dividerLineStyle, elementTransform, youtubeEmbed } from './elements.js'
 import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
@@ -81,8 +81,8 @@ export function exportHtml(doc) {
         width: el.w,
         height: el.h,
         zIndex: i + 1,
-        // Rotated around the element's centre (the CSS default), matching the editor.
-        transform: el.rotation ? `rotate(${el.rotation}deg)` : undefined,
+        // Rotated (and mirrored) around the element's centre (the CSS default), matching the editor.
+        transform: elementTransform(el),
       })
       // A gradient border is an overlay on top of the element (see gradientBorderStyle).
       const border = gradientBorderStyle(el.style)

@@ -1,6 +1,6 @@
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
-import { rotationTransform } from '../lib/geometry.js'
+import { elementTransform } from '../lib/elements.js'
 
 /** Thumbnails are drawn at this width; the card grid uses fixed-width columns to match. */
 const THUMB_WIDTH = 280
@@ -23,7 +23,7 @@ export default function DesignThumb({ design }) {
                 width: el.w,
                 height: el.h,
                 zIndex: i + 1,
-                transform: rotationTransform(el),
+                transform: elementTransform(el),
               }}
             >
               {el.type === 'video' ? (

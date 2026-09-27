@@ -108,6 +108,28 @@ const ICONS = {
   centerH: <path d="M12 3v18M7 8h10v8H7z" />,
   layers: <path d="m12 3 9 4.5-9 4.5-9-4.5zM3 12l9 4.5 9-4.5M3 16.5 12 21l9-4.5" />,
   sliders: <path d="M4 6h10M18 6h2M4 12h4M12 12h8M4 18h12M20 18h0M14 4v4M8 10v4M16 16v4" />,
+  corner: <path d="M4 20v-9a7 7 0 0 1 7-7h9" />,
+  flipH: (
+    <>
+      <path d="M12 3v18" strokeDasharray="2 2" />
+      <path d="M8 7 3 12l5 5z" />
+      <path d="m16 7 5 5-5 5z" />
+    </>
+  ),
+  flipV: (
+    <>
+      <path d="M3 12h18" strokeDasharray="2 2" />
+      <path d="M7 8l5-5 5 5z" />
+      <path d="m7 16 5 5 5-5z" />
+    </>
+  ),
+  opacity: (
+    <>
+      <circle cx="12" cy="12" r="9" />
+      <path d="M12 3a9 9 0 0 1 0 18z" fill="currentColor" stroke="none" />
+    </>
+  ),
+  spacing: <path d="M3 6h12M3 12h12M3 18h12M20 4v16M18 6l2-2 2 2M18 18l2 2 2-2" />,
   italic: <path d="M19 4h-9M14 20H5M15 4 9 20" />,
   underline: <path d="M6 4v6a6 6 0 0 0 12 0V4M4 20h16" />,
   logo: (

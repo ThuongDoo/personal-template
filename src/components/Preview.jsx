@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
 import Icon from './Icon.jsx'
-import { rotationTransform } from '../lib/geometry.js'
+import { elementTransform } from '../lib/elements.js'
 
 export default function Preview({ doc, onClose, onOpenTab }) {
   const { page, elements } = doc
@@ -69,7 +69,7 @@ export default function Preview({ doc, onClose, onOpenTab }) {
                     width: el.w,
                     height: el.h,
                     zIndex: i + 1,
-                    transform: rotationTransform(el),
+                    transform: elementTransform(el),
                   }}
                 >
                   <ElementContent el={el} mode="preview" />

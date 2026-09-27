@@ -11,7 +11,7 @@ import { normalizeAngle } from '../lib/geometry.js'
 import { useMissingImage } from '../lib/useMissingImage.js'
 import { startUpload } from '../lib/uploadProgress.js'
 import { QuotaError } from '../lib/storageQuota.js'
-import { SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, zoomImageAt, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
+import { ROUNDABLE_SHAPES, SHAPES, SHAPE_ORDER, TORN_EDGES, randomSeed, shapeImageProps, imageRect, zoomImageAt, IMAGE_FRAME_RESET, IMG_ZOOM_MIN, IMG_ZOOM_MAX } from '../lib/shapes.js'
 
 const WEIGHTS = [
   [300, 'Mảnh'],
@@ -122,7 +122,7 @@ function ImageSection({ el, setProps, setGeom }) {
     latestSrc.current = url
     if (!isShape) return setProps({ src: url }, 'src')
     // Shapes frame their media from its natural size, measured once the URL loads.
-    setProps({ src: url, mediaType, imgW: 0, imgH: 0, imgX: 50, imgY: 50, imgZoom: 1 }, 'src')
+    setProps({ src: url, mediaType, imgW: 0, imgH: 0, ...IMAGE_FRAME_RESET }, 'src')
     if (!url) return
     ;(mediaType === 'video' ? loadVideoSize : loadImageSize)(url)
       .then(({ width, height }) => {
@@ -237,18 +237,22 @@ function ImagePositionSection({ el, editing, setProps, onAction }) {
     )
   }
 
+  // Where the image center sits, in % of the shape (0 = left/top edge, 100 = right/bottom; beyond = outside).
+  const r = imageRect(el.w, el.h, p)
+  const center = { x: Math.round(((r.x + r.w / 2) / el.w) * 100), y: Math.round(((r.y + r.h / 2) / el.h) * 100) }
+
   return (
     <Section title={`Vị trí ${noun} trong hình`}>
       <button type="button" className={`btn block${editing ? ' primary' : ''}`} onClick={() => onAction('crop')} disabled={el.locked}>
         <Icon name="move" size={14} />
         {editing ? 'Xong' : `Kéo ${noun} trực tiếp trên trang`}
       </button>
-      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời {noun}, cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
+      <p className="hint">Hoặc nhấp đúp vào hình: kéo để dời {noun}, kéo góc để co giãn (giữ Shift để giữ tỉ lệ), cuộn chuột để phóng to/thu nhỏ, Esc để xong.</p>
       <Field label="Ngang">
-        <RangeInput value={p.imgX} min={0} max={100} format={(v) => `${Math.round(v)}%`} onChange={(v) => setProps({ imgX: v }, 'imgX')} />
+        <RangeInput value={center.x} min={-50} max={150} format={(v) => `${v}%`} onChange={(v) => setProps({ imgCX: v / 100 }, 'imgCX')} />
       </Field>
       <Field label="Dọc">
-        <RangeInput value={p.imgY} min={0} max={100} format={(v) => `${Math.round(v)}%`} onChange={(v) => setProps({ imgY: v }, 'imgY')} />
+        <RangeInput value={center.y} min={-50} max={150} format={(v) => `${v}%`} onChange={(v) => setProps({ imgCY: v / 100 }, 'imgCY')} />
       </Field>
       <Field label="Thu phóng">
         <RangeInput
@@ -260,7 +264,7 @@ function ImagePositionSection({ el, editing, setProps, onAction }) {
           onChange={(v) => setProps(zoomImageAt(el.w, el.h, p, v), 'imgZoom')}
         />
       </Field>
-      <button type="button" className="btn block" onClick={() => setProps({ imgX: 50, imgY: 50, imgZoom: 1 })}>
+      <button type="button" className="btn block" onClick={() => setProps(IMAGE_FRAME_RESET)}>
         Đặt lại vị trí {noun}
       </button>
     </Section>
@@ -289,6 +293,11 @@ function ShapeSection({ el, setProps }) {
             </Field>
           </div>
         </>
+      )}
+      {ROUNDABLE_SHAPES.includes(p.shape) && (
+        <Field label="Bo góc">
+          <NumberInput value={p.cornerRadius ?? 0} min={0} max={200} suffix="px" onChange={(v) => setProps({ cornerRadius: v }, 'cornerRadius')} />
+        </Field>
       )}
       {(torn || p.shape === 'blob') && (
         <button type="button" className="btn block" onClick={() => setProps({ seed: randomSeed() })}>

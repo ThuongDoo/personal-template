@@ -425,6 +425,8 @@ export default function App({ user, designId, initialDoc, isAdmin = false }) {
           onCommitText={commitText}
           onDropElement={addElement}
           onDropFiles={addImageFiles}
+          onUpdate={updateElement}
+          onAction={onAction}
         />
 
         <aside className="panel panel-right">

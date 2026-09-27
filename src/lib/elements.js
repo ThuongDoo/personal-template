@@ -116,15 +116,20 @@ export const ELEMENT_TYPES = {
     h: 320,
     props: {
       shape: 'diamond',
-      // What fills the shape: 'image' or 'video' (src is either); imgW/imgX/… frame both.
+      // What fills the shape: 'image' or 'video' (src is either); imgW/imgCX/… frame both.
       mediaType: 'image',
+      // Rounds the corners of diamond / triangle / hexagon / star (ROUNDABLE_SHAPES), in px.
+      cornerRadius: 0,
       src: '',
       alt: '',
       imgW: 0,
       imgH: 0,
-      imgX: 50,
-      imgY: 50,
+      // Framing (see imageRect): imgCX/imgCY place the image center; unset means centered. Not given
+      // defaults here, so older designs keep their imgX/imgY position when loaded.
       imgZoom: 1,
+      // Free resizing: stretch of the image's width / height on top of imgZoom (1 = natural proportions).
+      imgStretchX: 1,
+      imgStretchY: 1,
       rim: 0,
       rimColor: '#ffffff',
       texture: false,
@@ -314,6 +319,9 @@ export function createElement(type, { props, style, ...rest } = {}) {
     w: t.w,
     h: t.h,
     rotation: 0,
+    // Mirror the element (images and shapes offer it).
+    flipX: false,
+    flipY: false,
     hidden: false,
     locked: false,
     ...rest,
@@ -361,6 +369,17 @@ export function fontStack(value) {
 export function youtubeEmbed(url) {
   const m = /(?:youtu\.be\/|[?&]v=|embed\/|shorts\/)([\w-]{11})/.exec(url || '')
   return m ? `https://www.youtube.com/embed/${m[1]}` : null
+}
+
+/**
+ * CSS transform of an element's positioned wrapper: its rotation, then any mirroring. The selection
+ * box only takes the rotation, so its labels never read backwards.
+ */
+export function elementTransform(el) {
+  const parts = []
+  if (el.rotation) parts.push(`rotate(${el.rotation}deg)`)
+  if (el.flipX || el.flipY) parts.push(`scale(${el.flipX ? -1 : 1}, ${el.flipY ? -1 : 1})`)
+  return parts.length ? parts.join(' ') : undefined
 }
 
 /** Style for the inner content box of an element (the outer wrapper handles position/size). */

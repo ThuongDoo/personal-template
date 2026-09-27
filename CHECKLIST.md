@@ -473,3 +473,81 @@ Nguyên nhân: token Vercel của backend hết hạn / bị thu hồi (Vercel t
 - [ ] Đã cập nhật `VERCEL_TOKEN` (và `VERCEL_TEAM_ID` nếu project thuộc team) ở `.env` **và** ở biến môi trường nơi backend đang chạy, rồi deploy lại backend
 - [ ] Bấm "Duyệt" lại yêu cầu đang chờ → xuất bản thành công
 - [ ] Khi token hỏng, dòng lỗi trong tab duyệt ghi rõ "Token Vercel (VERCEL_TOKEN) không hợp lệ hoặc đã hết hạn…" thay vì "Not authorized"
+
+## 42. Thanh công cụ nhanh nổi trên phần tử đang chọn
+
+- [ ] Chọn một phần tử → thanh công cụ nhỏ hiện phía trên (trên cả nút xoay); phần tử sát mép trên trang → thanh hiện phía dưới
+- [ ] Thanh giữ nguyên kích thước khi phóng to/thu nhỏ trang; không che bảng thuộc tính
+- [ ] Đang kéo / đổi cỡ / xoay → thanh tạm ẩn, thả chuột hiện lại; đang căn ảnh/video trong hình khối → ẩn
+- [ ] **Chữ** (tiêu đề, đoạn văn, nút): phông chữ, cỡ chữ (−/+ bước 2, gõ số trực tiếp), **B** / *I* / U (nút sáng khi đang bật), màu chữ ("A" gạch màu), màu nền, căn lề (bấm để đổi trái → giữa → phải → đều)
+- [ ] **Khối màu / video**: màu nền, bo góc; **ảnh**: bo góc
+- [ ] **Hình khối**: màu nền; nút màu viền chỉ hiện khi hình có viền
+- [ ] **Nút icon**: màu icon (biểu tượng ngôi sao gạch màu), màu nền
+- [ ] **Đường kẻ**: màu, độ dày; **Âm thanh**: Màu 1, Màu 2 (đơn sắc), màu nền
+- [ ] Mọi loại: Nhân bản, Xoá
+- [ ] Bấm ô màu → bảng chọn màu mở ngay dưới (Đơn sắc / Chuyển màu, trừ màu âm thanh chỉ đơn sắc); bấm ra ngoài → đóng
+- [ ] Mọi thay đổi trên thanh cập nhật ngay trên trang **và** bảng thuộc tính bên phải; Ctrl+Z hoàn tác được (bấm −/+ liên tục gộp thành 1 bước)
+- [ ] Dùng thanh công cụ không làm bỏ chọn hay kéo lệch phần tử
+- [ ] Gõ số trong ô cỡ chữ không kích hoạt phím tắt (Delete, mũi tên…)
+
+## 43. Thanh công cụ nhanh: độ mờ, giãn dòng, giãn chữ
+
+- [ ] Mọi loại phần tử: nút **Độ mờ** (hình tròn nửa đậm) → bảng có thanh trượt 0–100%, phần tử mờ dần ngay khi kéo
+- [ ] Chữ (tiêu đề, đoạn văn, nút): nút **Khoảng cách** → bảng có 2 thanh trượt: **Giãn dòng** (0,8–3) và **Giãn chữ** (−5 đến 30px)
+- [ ] Giá trị hiện cạnh tên thanh trượt (VD "1.60", "2px", "80%") và khớp với bảng thuộc tính bên phải
+- [ ] Mở bảng này thì bảng màu / bảng kia tự đóng; bấm ra ngoài → đóng
+- [ ] Kéo thanh trượt liên tục rồi Ctrl+Z → hoàn tác cả lần kéo
+- [ ] Độ mờ / giãn dòng / giãn chữ hiển thị đúng ở Xem trước và trang đã xuất bản
+
+## 44. Lật ảnh / hình khối và bo góc trên thanh công cụ nhanh
+
+- [ ] Chọn **ảnh** → thanh có: bo góc (icon góc bo + −/+), **Lật ngang**, **Lật dọc**
+- [ ] Chọn **hình khối** → thanh có: màu nền, (màu viền nếu có viền), **bo góc** (chỉ với hình Thoi, Tam giác, Lục giác, Ngôi sao), Lật ngang, Lật dọc
+- [ ] Lật ngang / dọc: nút sáng lên khi đang bật; bấm lại để bỏ lật; ảnh/video bên trong hình lật theo
+- [ ] Nhãn kích thước và tay nắm của khung chọn **không** bị lật ngược chữ
+- [ ] Phần tử vừa xoay vừa lật hiển thị đúng; đổi cỡ vẫn bình thường
+- [ ] Hình khối đã lật có ảnh: nhấp đúp để căn ảnh → kéo và cuộn chuột vẫn đúng hướng tay
+- [ ] Bo góc hình khối: các đỉnh tròn dần theo số px; ảnh/video bên trong và viền cũng tròn theo; bảng thuộc tính → "Hình dạng" cũng có ô "Bo góc" cho các hình này
+- [ ] Hình tròn, trái tim, mái vòm, hình cong, giấy rách: **không** có ô bo góc
+- [ ] Xem trước, ảnh thu nhỏ trang chủ và trang **đã xuất bản** hiển thị đúng lật và bo góc
+
+## 45. Nút "Chỉnh ảnh" (kéo ảnh trực tiếp) trên thanh công cụ nhanh
+
+- [ ] Chọn hình khối **có ảnh** → đầu thanh công cụ có nút "Chỉnh ảnh" (hình có video → "Chỉnh video"); hình không có ảnh/video → không có nút này
+- [ ] Bấm → vào chế độ kéo ảnh: toàn khung ảnh hiện mờ phía sau, thanh công cụ ẩn, thanh "− % + · Kéo để dời · cuộn chuột để phóng · Xong" hiện ra
+- [ ] Kéo để dời, cuộn chuột để phóng, "Xong" hoặc Esc để thoát → thanh công cụ hiện lại
+- [ ] Ảnh cũ chưa có kích thước gốc: bấm nút → "Đang tải…" rồi vào chế độ kéo ảnh
+- [ ] Hình khối đang khoá → nút bị mờ, không bấm được
+
+## 46. Phóng to / thu nhỏ ảnh trong hình bằng cách kéo góc (chế độ kéo ảnh)
+
+- [ ] Vào chế độ kéo ảnh (nút "Chỉnh ảnh", nhấp đúp hình, hoặc nút ở bảng thuộc tính) → khung toàn bộ ảnh có **4 tay nắm tròn ở 4 góc**
+- [ ] Kéo một góc ra ngoài → ảnh to lên; kéo vào trong → ảnh nhỏ lại; **góc đối diện đứng yên** (tỉ lệ: xem mục 47)
+- [ ] Số % trên thanh "− % +" cập nhật theo; vẫn dùng được nút −/+ và cuộn chuột
+- [ ] Kéo phần ảnh (không phải góc) vẫn là dời ảnh như cũ
+- [ ] Hình khối đã **xoay** và/hoặc **lật** → tay nắm nằm đúng góc ảnh, kéo ra ngoài vẫn to lên, góc đối diện đứng yên
+- [ ] Ảnh tràn xuống dưới hình → thanh "− % + · Xong" nằm **dưới khung ảnh**, không che tay nắm góc dưới
+- [ ] Kéo góc xong Ctrl+Z → hoàn tác cả lần kéo
+- [ ] Làm được với cả video trong hình
+
+## 47. Kéo góc ảnh trong hình: co giãn tự do, giữ Shift để giữ tỉ lệ
+
+- [ ] Chế độ kéo ảnh → kéo góc **không giữ phím**: chiều rộng và chiều cao đổi độc lập (VD kéo ngang chỉ làm ảnh rộng ra, không cao thêm) → ảnh bị kéo giãn theo ý
+- [ ] Kéo góc **giữ Shift**: ảnh giữ đúng tỉ lệ, số % trên thanh thay đổi
+- [ ] Cả hai cách: góc đối diện đứng yên; hình đã xoay/lật vẫn đúng hướng
+- [ ] Thanh gợi ý và bảng thuộc tính ghi "kéo góc để co giãn (giữ Shift để giữ tỉ lệ)"
+- [ ] "Đặt lại vị trí ảnh" hoặc đổi ảnh mới → ảnh trở về tỉ lệ gốc
+- [ ] Ảnh đã kéo giãn hiển thị giống hệt ở Xem trước và trang **đã xuất bản**; video trong hình cũng co giãn được
+
+## 48. Ảnh trong hình không bị giới hạn bởi khung — kéo ra ngoài hẳn được
+
+- [ ] Chế độ kéo ảnh → kéo ảnh sang một bên thật xa: ảnh **không dừng ở mép hình** mà đi tiếp, có thể ra ngoài hoàn toàn (hình khi đó chỉ còn màu nền)
+- [ ] Ảnh vừa khít hình (thu phóng 100%) vẫn dời được theo cả hai chiều
+- [ ] Phần ảnh nằm ngoài hình hiện mờ kèm khung + tay nắm góc; **bấm vào khung mờ bên ngoài** vẫn kéo ảnh về lại được
+- [ ] Cuộn chuột trên phần ảnh nằm ngoài hình → vẫn phóng to/thu nhỏ quanh con trỏ
+- [ ] Phóng to/thu nhỏ (cuộn, nút − +, kéo góc, giữ Shift) khi ảnh đã lệch ra ngoài → không bị kéo giật về trong khung
+- [ ] Hình đã xoay/lật: kéo ảnh ra ngoài theo đúng hướng tay kéo
+- [ ] Bảng thuộc tính: thanh Ngang / Dọc hiển thị vị trí tâm ảnh (50% = giữa); kéo được từ −50% đến 150%, giá trị ngoài khoảng này (do kéo trên trang) vẫn hiện đúng số
+- [ ] "Đặt lại vị trí ảnh" và đổi ảnh mới → ảnh về giữa hình, vừa khít
+- [ ] Thiết kế **cũ** (lưu trước bản cập nhật này) mở ra: ảnh giữ nguyên vị trí như trước
+- [ ] Xem trước và trang **đã xuất bản** (cần deploy lại backend): ảnh bị cắt theo hình ở đúng vị trí đã kéo; video trong hình cũng kéo ra ngoài được
