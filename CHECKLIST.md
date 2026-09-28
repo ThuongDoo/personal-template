@@ -869,3 +869,15 @@ Lưu ý: trình duyệt luôn chặn nhạc có tiếng khi khách vừa mở tr
 - [ ] Chạm thẳng vào nút phát → phát bình thường (không bị phát rồi dừng ngay)
 - [ ] Nhấn một phím (VD phím cách) thay vì bấm chuột → nhạc cũng phát
 - [ ] Xem trước trong trình chỉnh sửa vẫn phát ngay như cũ
+
+## 81. Template "Meme – Trang chủ cợt nhả"
+
+- [ ] Trang chủ → template **Meme – Trang chủ cợt nhả** đứng đầu danh sách mẫu
+- [ ] Mở template: nền vàng chói, băng đỏ trên cùng "TRANG WEB ĐANG XÂY DỰNG…" **nhấp nháy**
+- [ ] Tiêu đề WordArt "TUẤN ĐẸP TRAI" màu cầu vồng, nghiêng và **lắc lư**; không đè lên dòng "Xin chào" hay đoạn giới thiệu
+- [ ] Ảnh meme chó pug có dòng chú thích trắng + chữ "OK SẾP"; sticker "HOT!!!" phập phồng, "MỚI 100%" đập như nhịp tim, 😂 xoay tròn, 💯 nảy
+- [ ] 4 thanh "Kỹ năng đặc biệt" dài đúng theo % (100, 99, 100, 7)
+- [ ] Hộp thoại "Loi.exe" kiểu Windows 98; bấm "OK" / "Cũng OK" mở Zalo
+- [ ] Nút "BẤM VÀO ĐÂY ĐỂ NHẬN IPHONE" **rung** liên tục, bấm mở Facebook
+- [ ] Bộ đếm "000069" chữ xanh lá nhấp nháy; hàng icon Facebook · Zalo · Threads · TikTok bấm được
+- [ ] Đổi tên, chữ, ảnh, link được như template thường; Xem trước và trang xuất bản chạy đủ hiệu ứng
