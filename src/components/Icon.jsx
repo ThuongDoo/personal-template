@@ -46,6 +46,8 @@ const ICONS = {
   maximize: <path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M16 21h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3" />,
   minimize: <path d="M8 3v3a2 2 0 0 1-2 2H3M21 8h-3a2 2 0 0 1-2-2V3M16 21v-3a2 2 0 0 1 2-2h3M3 16h3a2 2 0 0 1 2 2v3" />,
   rotate: <path d="M21 12a9 9 0 1 1-2.6-6.4M21 3v6h-6" />,
+  // A ball with speed lines: motion effects.
+  motion: <path d="M14 5a7 7 0 1 1 0 14 7 7 0 0 1 0-14ZM2 9h4.5M3 15h3.5M4.5 12H7" />,
   rotateLeft: <path d="M3 12a9 9 0 1 0 2.6-6.4M3 3v6h6" />,
   eye: (
     <>
@@ -108,6 +110,7 @@ const ICONS = {
   chevronLeft: <path d="m15 6-6 6 6 6" />,
   chevronRight: <path d="m9 6 6 6-6 6" />,
   check: <path d="m5 12 5 5L20 7" />,
+  search: <path d="M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14ZM21 21l-5-5" />,
   shield: <path d="M12 3 5 6v6c0 4.4 3 7.6 7 9 4-1.4 7-4.6 7-9V6l-7-3ZM9 12l2 2 4-4" />,
   globe: <path d="M12 21a9 9 0 1 0 0-18 9 9 0 0 0 0 18ZM3 12h18M12 3a14 14 0 0 1 0 18M12 3a14 14 0 0 0 0 18" />,
   at: <path d="M16 12a4 4 0 1 1-8 0 4 4 0 0 1 8 0Zm0 0v1.5a2.5 2.5 0 0 0 5 0V12a9 9 0 1 0-3.5 7.1" />,

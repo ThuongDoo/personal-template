@@ -2,6 +2,7 @@ import { useEffect, useEffectEvent, useLayoutEffect, useRef, useState } from 're
 import { createPortal } from 'react-dom'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
+import Motion from './Motion.jsx'
 import Icon from './Icon.jsx'
 import QuickToolbar from './QuickToolbar.jsx'
 import UploadIndicator from './UploadIndicator.jsx'
@@ -561,13 +562,15 @@ export default function Canvas({
                   if (TEXT_TYPES.includes(el.type) || (el.type === 'shape' && el.props.src)) onEdit(el.id)
                 }}
               >
-                <ElementContent
-                  el={el}
-                  mode="editor"
-                  editing={editingId === el.id}
-                  onCommitText={(text) => onCommitText(el.id, text)}
-                />
-                <GradientBorder el={el} />
+                <Motion el={el}>
+                  <ElementContent
+                    el={el}
+                    mode="editor"
+                    editing={editingId === el.id}
+                    onCommitText={(text) => onCommitText(el.id, text)}
+                  />
+                  <GradientBorder el={el} />
+                </Motion>
               </div>
             ),
           )}
@@ -666,7 +669,7 @@ export default function Canvas({
               workspaceRef={workspaceRef}
               setStyle={(patch, key) => onUpdate(selected.id, { style: patch }, key && `style.${key}`)}
               setProps={(patch, key) => onUpdate(selected.id, { props: patch }, key && `props.${key}`)}
-              setEl={(patch) => onUpdate(selected.id, patch)}
+              setEl={(patch, key) => onUpdate(selected.id, patch, key)}
               onAction={onAction}
             />
           )}

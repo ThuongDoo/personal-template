@@ -5,6 +5,7 @@ import { shapeSvg, shapeVideoHtml } from './shapes.js'
 import { AUDIO_SCRIPT, audioAttrs } from './audioViz.js'
 import { ICON_LIBRARY, iconSvg } from './iconLibrary.js'
 import { gradientBorderStyle, textGradientStyle } from './gradient.js'
+import { MOTION_CSS, hasMotion, motionStyle } from './motion.js'
 
 const UNITLESS = new Set(['opacity', 'fontWeight', 'lineHeight', 'zIndex'])
 
@@ -78,7 +79,7 @@ function renderInner(el) {
       return `<a ${linkHtml(p)} aria-label="${attr(name)}" title="${attr(name)}" style="${css}">${iconSvg(p, `icon-${el.id}`)}</a>`
     }
     case 'audio': {
-      if (!p.src) return `<div style="${css}"></div>`
+      if (!p.src && !p.always) return `<div style="${css}"></div>`
       const data = Object.entries(audioAttrs(p))
         .map(([k, v]) => (v === '' ? k : `${k}="${attr(v)}"`))
         .join(' ')
@@ -101,7 +102,8 @@ export function exportHtml(doc) {
   // Only the fonts this page uses.
   const fontsUrl = googleFontsUrl(usedFonts(elements))
   const hasScrollLinks = elements.some((el) => !el.hidden && (el.type === 'button' || el.type === 'icon') && scrollLink(el.props.href))
-  const hasAudio = elements.some((el) => !el.hidden && el.type === 'audio' && el.props.src)
+  const hasAudio = elements.some((el) => !el.hidden && el.type === 'audio' && (el.props.src || el.props.always))
+  const moves = hasMotion(elements)
   const body = elements
     .filter((el) => !el.hidden)
     .map((el, i) => {
@@ -119,8 +121,11 @@ export function exportHtml(doc) {
       // A gradient border is an overlay on top of the element (see gradientBorderStyle).
       const border = gradientBorderStyle(el.style)
       const overlay = border ? `<span aria-hidden="true" style="${attr(toCssText(border))}"></span>` : ''
+      // A looping motion runs on a box inside the positioned wrapper (see motion.js).
+      const motion = motionStyle(el.motion)
+      const content = motion ? `<div class="kt-motion" style="${attr(toCssText(motion))}">${renderInner(el)}${overlay}</div>` : `${renderInner(el)}${overlay}`
       // The id is what in-page links scroll to.
-      return `    <div id="${anchorId(el.id)}" style="${wrap}">${renderInner(el)}${overlay}</div>`
+      return `    <div id="${anchorId(el.id)}" style="${wrap}">${content}</div>`
     })
     .join('\n')
 
@@ -139,7 +144,8 @@ ${fontsUrl ? `  <link rel="preconnect" href="https://fonts.googleapis.com">
     .wrap { position: relative; overflow: hidden; height: ${page.height}px; }
     .page { position: absolute; top: 0; left: 50%; width: ${page.width}px; height: ${page.height}px;
             transform: translateX(-50%); transform-origin: top center; }
-    a { text-decoration: none; }
+    a { text-decoration: none; }${moves ? `
+    ${MOTION_CSS.replace(/\n/g, '\n    ')}` : ''}
   </style>
 </head>
 <body>

@@ -3357,3 +3357,257 @@ button.card:disabled {
   justify-content: center;
   margin-top: 8px;
 }
+
+/* Admin: published sites and their expiry */
+.site-summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.site-summary .tone-wait {
+  color: #b45309;
+}
+
+.site-summary .tone-bad {
+  color: var(--danger);
+}
+
+.site-expiry {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin: 2px 0;
+}
+
+.site-row.site-bad {
+  border-color: #fca5a5;
+}
+
+.site-row.site-wait {
+  border-color: #fcd34d;
+}
+
+.expiry-line {
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.expiry-line.tone-wait {
+  color: #b45309;
+}
+
+.expiry-line.tone-bad {
+  color: var(--danger);
+}
+
+/* ---------------------------------------------------------------- admin filter bar */
+
+.admin-filters {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-bottom: 16px;
+  padding: 14px 16px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: var(--panel);
+}
+
+.admin-filters-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 10px;
+}
+
+.admin-search {
+  position: relative;
+  flex: 1 1 260px;
+  display: flex;
+  align-items: center;
+}
+
+.admin-search svg {
+  position: absolute;
+  left: 10px;
+  color: var(--muted);
+  pointer-events: none;
+}
+
+.admin-search .input {
+  height: 36px;
+  padding-left: 34px;
+}
+
+.admin-filter-field {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  font-size: 12px;
+  color: var(--muted);
+}
+
+.admin-filter-field .input,
+.admin-filter-dates .input {
+  height: 36px;
+  width: auto;
+}
+
+.admin-filter-dates {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--muted);
+}
+
+.admin-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.admin-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 12px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 13px;
+  cursor: pointer;
+}
+
+.admin-chip:hover {
+  border-color: var(--line-strong);
+}
+
+.admin-chip.on {
+  border-color: var(--accent);
+  background: var(--accent);
+  color: #fff;
+}
+
+.admin-chip-count {
+  min-width: 18px;
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg);
+  color: var(--muted);
+  font-size: 11px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.admin-chip.on .admin-chip-count {
+  background: rgba(255, 255, 255, 0.25);
+  color: #fff;
+}
+
+.admin-filters-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 30px;
+  font-size: 13px;
+  color: var(--muted);
+}
+
+.site-summary .hint {
+  flex: 1;
+  margin: 0;
+}
+
+.site-summary {
+  margin-bottom: 12px;
+}
+
+/* An element being typed into or cropped holds still (its motion comes back afterwards). */
+.el.editing .kt-motion,
+.el.cropping .kt-motion {
+  animation: none !important;
+}
+
+/* Motion picker (quick toolbar): each effect plays on a small dot */
+.qt-popover.qt-panel:has(.motion-picks) {
+  width: 320px;
+}
+
+.motion-picks {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 6px;
+}
+
+.motion-pick {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 2px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  background: var(--panel);
+  color: var(--text);
+  font-size: 11px;
+  line-height: 1.2;
+  text-align: center;
+  cursor: pointer;
+}
+
+.motion-pick:hover {
+  border-color: var(--line-strong);
+}
+
+.motion-pick.on {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: var(--accent-soft);
+}
+
+.motion-pick-art {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+}
+
+.motion-pick-art .kt-motion {
+  display: grid;
+  place-items: center;
+  width: 22px !important;
+  height: 22px !important;
+}
+
+/* A rounded square with a notch, so turns are visible. */
+.motion-pick-dot {
+  display: block;
+  width: 18px;
+  height: 18px;
+  border-radius: 5px;
+  background: currentColor;
+  opacity: 0.8;
+  box-shadow: inset 5px 0 0 rgba(255, 255, 255, 0.55);
+}
+
+.motion-dir {
+  display: flex;
+}
+
+.motion-dir button {
+  flex: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+.motion-hint {
+  margin: 0;
+  font-size: 11px;
+  color: var(--muted);
+}

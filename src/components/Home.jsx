@@ -17,6 +17,7 @@ import {
 import { normalizeDoc } from '../lib/elements.js'
 import { cleanupMyStorage, getPublishOverview } from '../lib/api.js'
 import { goAdmin, openDesignRoute } from '../lib/route.js'
+import { siteExpiry } from '../lib/expiry.js'
 import { formatTime } from '../lib/format.js'
 import { BLANK_TEMPLATE } from '../lib/templates.js'
 
@@ -67,8 +68,14 @@ function publishBadges(designId, overview) {
   const badges = []
   const { site } = overview
   if (site?.designId === designId) {
-    if (site.url) badges.push({ tone: 'live', label: 'Đang xuất bản', title: site.url })
+    const exp = siteExpiry(site)
+    if (exp?.expired) badges.push({ tone: 'bad', label: 'Đã hết hạn', title: 'Liên hệ quản trị viên để gia hạn' })
+    else if (site.url) badges.push({ tone: 'live', label: 'Đang xuất bản', title: site.url })
     else if (siteBuilding(site)) badges.push({ tone: 'wait', label: 'Đang triển khai' })
+    // Running out soon (the trial, or a paid period's last days): say so while there's time to pay.
+    if (exp && !exp.expired && exp.tone === 'wait') {
+      badges.push({ tone: 'wait', label: exp.days <= 1 ? 'Hết hạn hôm nay' : `Còn ${exp.days} ngày`, title: `${exp.trial ? 'Dùng thử · ' : ''}${exp.label}` })
+    }
   }
   const r = overview.requests[designId]
   if (r?.status === 'pending') {

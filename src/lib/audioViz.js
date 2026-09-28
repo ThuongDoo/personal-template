@@ -7,18 +7,22 @@
  *
  * The box it mounts on carries the settings as data attributes:
  *   data-src, data-viz (see AUDIO_PRESETS), data-color, data-color2, data-bars, data-loop, data-autoplay,
+ *   data-always (dances to a steady beat while nothing plays, even with no file yet: no play button then),
+ *   data-inner (round effects: radius of the empty middle, % of the box),
  *   data-editor (in the editor: never autoplays, may show a note when the effect is simulated)
  * It returns a cleanup function.
  */
 export function mountAudio(box) {
   var src = box.getAttribute('data-src')
-  if (!src) return function () {}
+  var always = box.hasAttribute('data-always')
+  if (!src && !always) return function () {}
   var viz = box.getAttribute('data-viz') || 'bars'
   var color = box.getAttribute('data-color') || '#a78bfa'
   var color2 = box.getAttribute('data-color2') || color
   var count = Math.max(4, Math.min(128, parseInt(box.getAttribute('data-bars'), 10) || 32))
   // Round effects are drawn around the centre and keep the play button there.
   var radial = viz === 'circle' || viz === 'pulse'
+  var inner = Math.max(10, Math.min(40, parseFloat(box.getAttribute('data-inner')) || 20)) / 100
 
   if (getComputedStyle(box).position === 'static') box.style.position = 'relative'
 
@@ -32,7 +36,7 @@ export function mountAudio(box) {
   // Needed to read the audio data from another origin (Firebase Storage in the editor). If the server
   // doesn't allow it, we fall back to playing without analysis (see the error handler).
   audio.crossOrigin = 'anonymous'
-  audio.src = src
+  if (src) audio.src = src
 
   var PLAY = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>'
   var PAUSE = '<svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M6 5h4v14H6zM14 5h4v14h-4z"/></svg>'
@@ -47,7 +51,7 @@ export function mountAudio(box) {
     (radial ? 'left:50%;top:50%;transform:translate(-50%,-50%)' : 'left:10px;bottom:10px')
 
   box.appendChild(canvas)
-  box.appendChild(btn)
+  if (src) box.appendChild(btn)
 
   var levels = []
   for (var i = 0; i < count; i++) levels.push(0)
@@ -129,8 +133,9 @@ export function mountAudio(box) {
         if (!silentSince) silentSince = now
         else if (now - silentSince > 2000) simulate()
       } else silentSince = 0
-    } else if (!audio.paused) {
-      // No audio data (e.g. the file's server blocks cross-origin reads): a steady 120 bpm pattern.
+    } else if (!audio.paused || always) {
+      // No audio data (e.g. the file's server blocks cross-origin reads), or dancing while nothing plays:
+      // a steady 120 bpm pattern.
       if (now - lastBeat > 500) {
         beat = 1
         lastBeat = now
@@ -164,7 +169,7 @@ export function mountAudio(box) {
     if (viz === 'circle') {
       var cx = W / 2
       var cy = H / 2
-      var R = s * 0.2 * (1 + beat * 0.08) // the ring swells on each beat
+      var R = s * inner * (1 + beat * 0.08) // the ring swells on each beat
       var maxLen = s / 2 - R - pad / 2
       ctx.lineCap = 'round'
       ctx.lineWidth = Math.max(2, ((2 * Math.PI * R) / count) * 0.55)
@@ -183,7 +188,7 @@ export function mountAudio(box) {
       // A soft blob whose outline follows the levels, around a core that swells with the bass.
       var pcx = W / 2
       var pcy = H / 2
-      var base = s * 0.2
+      var base = s * inner
       var reach = s / 2 - base - pad / 2
       var bass = (levels[0] + levels[1] + levels[2]) / 3
       var pts = []
@@ -309,7 +314,7 @@ export function mountAudio(box) {
     if (disposed) return
     update(now)
     draw()
-    if (!audio.paused || now < settleUntil) raf = requestAnimationFrame(frame)
+    if (!audio.paused || always || now < settleUntil) raf = requestAnimationFrame(frame)
   }
   function run() {
     if (!raf) raf = requestAnimationFrame(frame)
@@ -351,15 +356,18 @@ export function mountAudio(box) {
   })
 
   // Runs `fn` on the visitor's first interaction with the page (the moment browsers allow sound).
+  // Not every event of a tap counts: on phones the pointerdown comes first but only the touchend /
+  // pointerup lets sound start, so events that don't grant it (userActivation.isActive) are skipped.
   var gestureOffs = []
   function onFirstGesture(fn) {
-    var events = ['pointerdown', 'keydown', 'touchend']
+    var events = ['pointerdown', 'pointerup', 'touchend', 'click', 'keydown']
     function off() {
       events.forEach(function (t) {
         document.removeEventListener(t, handler, true)
       })
     }
     function handler(e) {
+      if (navigator.userActivation && !navigator.userActivation.isActive) return
       off()
       fn(e)
     }
@@ -414,22 +422,37 @@ export function mountAudio(box) {
 
   // Autoplay: only the first autoplaying element on the page. Browsers usually refuse sound before the
   // visitor interacts; then it starts on their first click/tap/key press instead.
-  if (box.hasAttribute('data-autoplay') && document.querySelector('[data-audio][data-autoplay]') === box) {
+  if (src && box.hasAttribute('data-autoplay') && document.querySelector('[data-audio][data-autoplay]') === box) {
     audio.preload = 'auto'
-    start().catch(function () {
+    // Blocked until the visitor interacts: the play button pulses meanwhile, as a hint.
+    var hint = null
+    function waitForGesture() {
+      if (!hint && btn.animate) {
+        hint = btn.animate(
+          [{ boxShadow: '0 0 0 0 rgba(255,255,255,.75)' }, { boxShadow: '0 0 0 16px rgba(255,255,255,0)' }],
+          { duration: 1400, iterations: Infinity },
+        )
+      }
       onFirstGesture(function (e) {
         if (disposed || !audio.paused) return
         // Pressing a play button is an explicit choice; let that button decide.
         if (e.target && e.target.closest && e.target.closest('[data-audio] button')) return
-        start().catch(function () {})
+        // Still refused (a browser without userActivation, on an event that didn't count): wait for the next one.
+        start().catch(waitForGesture)
       })
+    }
+    audio.addEventListener('playing', function () {
+      if (hint) hint.cancel()
+      hint = null
     })
+    start().catch(waitForGesture)
   }
 
   var ro = window.ResizeObserver ? new ResizeObserver(resize) : null
   if (ro) ro.observe(box)
   for (var n = 0; n < count; n++) levels[n] = idle(n)
   resize()
+  if (always) run()
 
   return function cleanup() {
     disposed = true
@@ -484,6 +507,8 @@ export function audioAttrs(p, { autoplay = true } = {}) {
     'data-bars': String(p.bars),
   }
   if (p.loop) attrs['data-loop'] = ''
+  if (p.always) attrs['data-always'] = ''
+  if (p.inner) attrs['data-inner'] = String(p.inner)
   if (p.autoplay && autoplay) attrs['data-autoplay'] = ''
   // The editor never autoplays, and is where the "simulated" note may show.
   if (!autoplay) attrs['data-editor'] = ''

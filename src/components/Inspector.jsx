@@ -352,16 +352,19 @@ function IconSection({ el, link, setProps }) {
         <Field label="Cỡ icon">
           <RangeInput value={p.iconSize} min={20} max={100} format={(v) => `${v}%`} onChange={(v) => setProps({ iconSize: v }, 'iconSize')} />
         </Field>
-        <Field label="Độ dày nét">
-          <RangeInput
-            value={p.strokeWidth}
-            min={1}
-            max={3.5}
-            step={0.25}
-            format={(v) => String(v)}
-            onChange={(v) => setProps({ strokeWidth: v }, 'strokeWidth')}
-          />
-        </Field>
+        {/* Filled icons (e.g. the Zalo logo) have no stroke to thicken. */}
+        {!ICON_LIBRARY[p.icon]?.filled && (
+          <Field label="Độ dày nét">
+            <RangeInput
+              value={p.strokeWidth}
+              min={1}
+              max={3.5}
+              step={0.25}
+              format={(v) => String(v)}
+              onChange={(v) => setProps({ strokeWidth: v }, 'strokeWidth')}
+            />
+          </Field>
+        )}
       </Section>
       <Section title="Khi bấm">
         <LinkFields el={el} {...link} setProps={setProps} placeholder="https://..., tel:09..., mailto:..." />
@@ -427,6 +430,11 @@ function AudioSection({ el, setProps }) {
           <input type="checkbox" checked={p.autoplay} onChange={(e) => setProps({ autoplay: e.target.checked })} />
           Tự động phát khi mở trang
         </label>
+        <label className="check">
+          <input type="checkbox" checked={Boolean(p.always)} onChange={(e) => setProps({ always: e.target.checked })} />
+          Luôn nhảy (cả khi chưa phát nhạc)
+        </label>
+        {p.always && !p.src && <p className="hint">Chưa có tệp: sóng nhảy theo nhịp mẫu, chưa có nút phát. Tải nhạc lên để khách bấm nghe.</p>}
         {p.autoplay && (
           <p className="hint">
             Trình duyệt thường chặn tự phát nhạc cho tới khi người xem chạm vào trang; khi đó nhạc bắt đầu ở lần chạm
@@ -442,6 +450,11 @@ function AudioSection({ el, setProps }) {
         <Field label="Số thanh">
           <RangeInput value={p.bars} min={8} max={96} format={(v) => String(v)} onChange={(v) => setProps({ bars: v }, 'bars')} />
         </Field>
+        {(p.viz === 'circle' || p.viz === 'pulse') && (
+          <Field label="Khoảng trống giữa">
+            <RangeInput value={p.inner ?? 20} min={10} max={40} format={(v) => `${v}%`} onChange={(v) => setProps({ inner: v }, 'inner')} />
+          </Field>
+        )}
       </Section>
     </>
   )

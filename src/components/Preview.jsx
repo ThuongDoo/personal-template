@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import ElementContent from './ElementContent.jsx'
 import GradientBorder from './GradientBorder.jsx'
+import Motion from './Motion.jsx'
 import Icon from './Icon.jsx'
 import { anchorId, blendMode, elementTransform, scrollLink } from '../lib/elements.js'
 
@@ -91,8 +92,10 @@ export default function Preview({ doc, onClose, onOpenTab }) {
                     mixBlendMode: blendMode(el),
                   }}
                 >
-                  <ElementContent el={el} mode="preview" />
-                  <GradientBorder el={el} />
+                  <Motion el={el}>
+                    <ElementContent el={el} mode="preview" />
+                    <GradientBorder el={el} />
+                  </Motion>
                 </div>
               ),
             )}

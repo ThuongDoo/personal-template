@@ -144,7 +144,8 @@ export const ELEMENT_TYPES = {
     w: 420,
     h: 140,
     // viz: one of AUDIO_PRESETS in audioViz.js, which also draws it (mountAudio).
-    props: { src: '', name: '', viz: 'bars', color: '#a78bfa', color2: '#f472b6', bars: 32, loop: false, autoplay: true },
+    // always: dance to a steady beat while nothing plays; inner: round effects' empty middle (% of the box).
+    props: { src: '', name: '', viz: 'bars', color: '#a78bfa', color2: '#f472b6', bars: 32, loop: false, autoplay: true, always: false, inner: 20 },
     style: { radius: 16, background: 'transparent' },
   },
   icon: {

@@ -4,12 +4,16 @@ import Icon from './Icon.jsx'
 import Preview from './Preview.jsx'
 import TemplateDialog from './TemplateDialog.jsx'
 import UserChip from './UserChip.jsx'
-import { Segmented } from './fields.jsx'
+import AdminFilterBar from './AdminFilters.jsx'
 import {
   approveDomainRequest,
   approvePublishRequest,
   cleanupAllStorage,
+  expireDueSites,
+  extendAdminSite,
   getPublishRequest,
+  listAdminSites,
+  revokeAdminSite,
   listDomainRequests,
   listPublishRequests,
   rejectDomainRequest,
@@ -18,6 +22,8 @@ import {
 import { ROLES, deleteTemplate, listDesigns, listTemplates, listUsers, signOut } from '../lib/cloud.js'
 import { normalizeDoc } from '../lib/elements.js'
 import { exportHtml } from '../lib/exportHtml.js'
+import { FUTURE_RANGES, useAdminFilters } from '../lib/adminFilters.js'
+import { TRIAL_DAYS, extendedEnd, formatDate, siteExpiry } from '../lib/expiry.js'
 import { formatTime } from '../lib/format.js'
 import { goHome } from '../lib/route.js'
 
@@ -107,71 +113,84 @@ function UserDesigns({ user, onPreview, onMakeTemplate }) {
 
 function UsersTab({ onPreview, onMakeTemplate }) {
   const users = useLoad(listUsers, [])
-  const [search, setSearch] = useState('')
   const [selected, setSelected] = useState(null)
-
-  const q = search.trim().toLowerCase()
-  const shown = (users.data ?? []).filter(
-    (u) => !q || [u.displayName, u.email, u.uid].some((v) => v?.toLowerCase().includes(q)),
-  )
+  const f = useAdminFilters()
+  const all = users.data ?? []
+  const roles = [
+    { value: 'all', label: 'Tất cả' },
+    { value: ROLES.admin, label: 'Quản trị viên', count: all.filter((u) => u.role === ROLES.admin).length },
+    { value: ROLES.user, label: 'Người dùng', count: all.filter((u) => u.role !== ROLES.admin).length },
+  ]
+  const shown = f.apply(all, {
+    text: (u) => [u.displayName, u.email, u.uid],
+    date: (u) => u.lastLoginAt,
+    status: (u, role) => (role === ROLES.admin ? u.role === ROLES.admin : u.role !== ROLES.admin),
+  })
 
   return (
-    <div className="admin-users">
-      <aside className="admin-user-list">
-        <input
-          className="input"
-          type="search"
-          placeholder="Tìm theo tên, email…"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-        {!users.data ? (
-          <Status error={users.error} loading onRetry={users.reload} />
-        ) : (
-          <ul>
-            {shown.map((u) => (
-              <li key={u.uid}>
-                <button
-                  type="button"
-                  className={`admin-user${selected?.uid === u.uid ? ' active' : ''}`}
-                  onClick={() => setSelected(u)}
-                >
-                  {u.photoURL ? (
-                    <img src={u.photoURL} alt="" referrerPolicy="no-referrer" />
-                  ) : (
-                    <span className="user-initial">{(u.displayName || u.email || '?')[0].toUpperCase()}</span>
-                  )}
-                  <span className="admin-user-text">
-                    <strong>{u.displayName || '(không tên)'}</strong>
-                    <small>{u.email || u.uid}</small>
-                  </span>
-                  {u.role === ROLES.admin && <span className="role-badge">Admin</span>}
-                </button>
-              </li>
-            ))}
-            {!shown.length && <li className="home-empty">Không tìm thấy người dùng.</li>}
-          </ul>
-        )}
-      </aside>
-      <section className="admin-user-designs">
-        {selected ? (
-          <>
-            <h2>
-              Trang của {selected.displayName || selected.email || selected.uid}
-              <small className="admin-sub">Đăng nhập gần nhất: {formatTime(selected.lastLoginAt)}</small>
-            </h2>
-            <UserDesigns key={selected.uid} user={selected} onPreview={onPreview} onMakeTemplate={onMakeTemplate} />
-          </>
-        ) : (
-          <p className="home-empty">Chọn một người dùng để xem các trang của họ.</p>
-        )}
-      </section>
-    </div>
+    <>
+      <AdminFilterBar
+        f={f}
+        statuses={roles}
+        dateLabel="Đăng nhập gần nhất"
+        sortLabels={['Đăng nhập gần nhất', 'Đăng nhập lâu nhất']}
+        placeholder="Tìm theo tên, email…"
+        shown={shown.length}
+        total={all.length}
+      />
+      <div className="admin-users">
+        <aside className="admin-user-list">
+          {!users.data ? (
+            <Status error={users.error} loading onRetry={users.reload} />
+          ) : (
+            <ul>
+              {shown.map((u) => (
+                <li key={u.uid}>
+                  <button
+                    type="button"
+                    className={`admin-user${selected?.uid === u.uid ? ' active' : ''}`}
+                    onClick={() => setSelected(u)}
+                  >
+                    {u.photoURL ? (
+                      <img src={u.photoURL} alt="" referrerPolicy="no-referrer" />
+                    ) : (
+                      <span className="user-initial">{(u.displayName || u.email || '?')[0].toUpperCase()}</span>
+                    )}
+                    <span className="admin-user-text">
+                      <strong>{u.displayName || '(không tên)'}</strong>
+                      <small>{u.email || u.uid}</small>
+                    </span>
+                    {u.role === ROLES.admin && <span className="role-badge">Admin</span>}
+                  </button>
+                </li>
+              ))}
+              {!shown.length && <li className="home-empty">Không tìm thấy người dùng.</li>}
+            </ul>
+          )}
+        </aside>
+        <section className="admin-user-designs">
+          {selected ? (
+            <>
+              <h2>
+                Trang của {selected.displayName || selected.email || selected.uid}
+                <small className="admin-sub">Đăng nhập gần nhất: {formatTime(selected.lastLoginAt)}</small>
+              </h2>
+              <UserDesigns key={selected.uid} user={selected} onPreview={onPreview} onMakeTemplate={onMakeTemplate} />
+            </>
+          ) : (
+            <p className="home-empty">Chọn một người dùng để xem các trang của họ.</p>
+          )}
+        </section>
+      </div>
+    </>
   )
 }
 
 function TemplatesTab({ onPreview, version }) {
   const templates = useLoad(listTemplates, [version])
+  const f = useAdminFilters()
+  const all = templates.data ?? []
+  const shown = f.apply(all, { text: (t) => [t.name, t.description], date: () => null })
 
   const remove = async (t) => {
     if (!confirm(`Xoá mẫu "${t.name}"? Trang người dùng đã tạo từ mẫu này không bị ảnh hưởng.`)) return
@@ -184,36 +203,43 @@ function TemplatesTab({ onPreview, version }) {
     templates.reload()
   }
 
-  if (!templates.data?.length) {
+  const bar = <AdminFilterBar f={f} ranges={null} placeholder="Tìm theo tên mẫu…" shown={shown.length} total={all.length} />
+  if (!shown.length) {
     return (
-      <Status
-        error={templates.error}
-        loading={!templates.data}
-        empty='Chưa có mẫu nào. Vào tab "Người dùng" để lưu một thiết kế làm mẫu.'
-        onRetry={templates.reload}
-      />
+      <>
+        {all.length > 0 && bar}
+        <Status
+          error={templates.error}
+          loading={!templates.data}
+          empty={all.length ? 'Không có mẫu nào khớp bộ lọc.' : 'Chưa có mẫu nào. Vào tab "Người dùng" để lưu một thiết kế làm mẫu.'}
+          onRetry={templates.reload}
+        />
+      </>
     )
   }
   return (
-    <div className="card-grid">
-      {templates.data.map((t) => {
-        const design = t.create()
-        return (
-          <div key={t.id} className="card">
-            <button type="button" className="card-open" onClick={() => onPreview(design)} title="Xem trước">
-              <DesignThumb design={design} />
-              <span className="card-text">
-                <strong>{t.name}</strong>
-                <small>{t.description || '—'}</small>
-              </span>
-            </button>
-            <button type="button" className="icon-btn danger card-delete" title="Xoá mẫu" onClick={() => remove(t)}>
-              <Icon name="trash" />
-            </button>
-          </div>
-        )
-      })}
-    </div>
+    <>
+      {bar}
+      <div className="card-grid">
+        {shown.map((t) => {
+          const design = t.create()
+          return (
+            <div key={t.id} className="card">
+              <button type="button" className="card-open" onClick={() => onPreview(design)} title="Xem trước">
+                <DesignThumb design={design} />
+                <span className="card-text">
+                  <strong>{t.name}</strong>
+                  <small>{t.description || '—'}</small>
+                </span>
+              </button>
+              <button type="button" className="icon-btn danger card-delete" title="Xoá mẫu" onClick={() => remove(t)}>
+                <Icon name="trash" />
+              </button>
+            </div>
+          )
+        })}
+      </div>
+    </>
   )
 }
 
@@ -329,24 +355,36 @@ function RequestRow({ request: r, onPreview, onDone }) {
 }
 
 function PublishRequestsTab({ onPreview, onNotice }) {
-  const [filter, setFilter] = useState('pending')
-  const requests = useLoad(() => listPublishRequests(filter), [filter])
+  // Status is filtered by the server; waiting requests are handled oldest first by default.
+  const f = useAdminFilters({ status: 'pending', sort: 'old' })
+  const requests = useLoad(() => listPublishRequests(f.filters.status), [f.filters.status])
+  const all = requests.data ?? []
+  const shown = f.apply(all, {
+    text: (r) => [r.title, r.user?.name, r.user?.email, r.domain, r.contact?.threadsUrl],
+    date: (r) => r.submittedAt,
+  })
 
   return (
     <section>
-      <div className="request-filter">
-        <Segmented value={filter} options={REQUEST_FILTERS} onChange={setFilter} />
-      </div>
-      {!requests.data?.length ? (
+      <AdminFilterBar
+        f={f}
+        statuses={REQUEST_FILTERS}
+        dateLabel="Ngày gửi"
+        sortLabels={['Gửi gần nhất', 'Gửi lâu nhất']}
+        placeholder="Tìm theo tên trang, người gửi, email, tên miền…"
+        shown={shown.length}
+        total={all.length}
+      />
+      {!shown.length ? (
         <Status
           error={requests.error}
           loading={!requests.data}
-          empty={filter === 'pending' ? 'Không có yêu cầu nào đang chờ duyệt.' : 'Chưa có yêu cầu nào.'}
+          empty={all.length ? 'Không có yêu cầu nào khớp bộ lọc.' : f.filters.status === 'pending' ? 'Không có yêu cầu nào đang chờ duyệt.' : 'Chưa có yêu cầu nào.'}
           onRetry={requests.reload}
         />
       ) : (
         <ul className="requests">
-          {requests.data.map((r) => (
+          {shown.map((r) => (
             <RequestRow
               key={r.id}
               request={r}
@@ -443,24 +481,35 @@ function DomainRequestRow({ request: r, onDone }) {
 }
 
 function DomainRequestsTab({ onNotice }) {
-  const [filter, setFilter] = useState('pending')
-  const requests = useLoad(() => listDomainRequests(filter), [filter])
+  const f = useAdminFilters({ status: 'pending', sort: 'old' })
+  const requests = useLoad(() => listDomainRequests(f.filters.status), [f.filters.status])
+  const all = requests.data ?? []
+  const shown = f.apply(all, {
+    text: (r) => [r.user?.name, r.user?.email, r.domain, r.pendingDomain],
+    date: (r) => r.submittedAt,
+  })
 
   return (
     <section>
-      <div className="request-filter">
-        <Segmented value={filter} options={REQUEST_FILTERS} onChange={setFilter} />
-      </div>
-      {!requests.data?.length ? (
+      <AdminFilterBar
+        f={f}
+        statuses={REQUEST_FILTERS}
+        dateLabel="Ngày gửi"
+        sortLabels={['Gửi gần nhất', 'Gửi lâu nhất']}
+        placeholder="Tìm theo người gửi, email, tên miền cũ / mới…"
+        shown={shown.length}
+        total={all.length}
+      />
+      {!shown.length ? (
         <Status
           error={requests.error}
           loading={!requests.data}
-          empty={filter === 'pending' ? 'Không có yêu cầu đổi tên miền nào đang chờ.' : 'Chưa có yêu cầu nào.'}
+          empty={all.length ? 'Không có yêu cầu nào khớp bộ lọc.' : f.filters.status === 'pending' ? 'Không có yêu cầu đổi tên miền nào đang chờ.' : 'Chưa có yêu cầu nào.'}
           onRetry={requests.reload}
         />
       ) : (
         <ul className="requests">
-          {requests.data.map((r) => (
+          {shown.map((r) => (
             <DomainRequestRow
               key={r.uid}
               request={r}
@@ -479,6 +528,188 @@ function DomainRequestsTab({ onNotice }) {
 const formatBytes = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.round(n / 1e3)} KB`)
 
 /** Sweeps every user's unused uploads (and template images) now, instead of waiting for them to visit. */
+/** One published site: owner, domain, how long it still runs, and the buttons to extend it after payment. */
+function SiteRow({ site: s, months, onDone }) {
+  const [busy, setBusy] = useState(null)
+  const [error, setError] = useState('')
+  const exp = siteExpiry(s)
+  const who = s.user?.name || s.user?.email || s.uid
+
+  const extend = async (m) => {
+    const until = formatDate(extendedEnd(s, m))
+    const back = exp?.expired ? '\nTrang đang hết hạn sẽ được bật lại ngay.' : ''
+    if (!confirm(`Gia hạn ${s.domain} thêm ${m} tháng (đến ${until})?${back}\n\nChỉ bấm khi người dùng đã thanh toán.`)) return
+    setBusy(m)
+    setError('')
+    try {
+      await extendAdminSite(s.uid, m)
+      onDone(`Đã gia hạn ${s.domain} thêm ${m} tháng, đến ${until}.`)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  const revoke = async () => {
+    const note = exp.trial ? 'thời gian dùng thử' : `hạn dùng còn lại (đến ${formatDate(exp.end)})`
+    if (!confirm(`Huỷ ${note} của ${s.domain}?\n\nTrang sẽ hết hạn và tạm ngưng NGAY (khách thấy “Trang web đã hết hạn”). Thiết kế và tên miền vẫn giữ; gia hạn lại sẽ bật trang lên.`)) return
+    setBusy('revoke')
+    setError('')
+    try {
+      await revokeAdminSite(s.uid)
+      onDone(`Đã huỷ hạn dùng của ${s.domain}. Trang đã tạm ngưng.`)
+    } catch (e) {
+      setError(e.message)
+    } finally {
+      setBusy(null)
+    }
+  }
+
+  return (
+    <li className={`request site-row${exp ? ` site-${exp.tone}` : ''}`}>
+      <div className="request-main">
+        <strong>
+          {s.url ? (
+            <a href={s.url} target="_blank" rel="noopener noreferrer">
+              {s.domain}
+            </a>
+          ) : (
+            s.domain
+          )}
+        </strong>
+        <small>
+          {who}
+          {s.user?.name && s.user?.email ? ` · ${s.user.email}` : ''} · trang “{s.title || 'Chưa đặt tên'}”
+        </small>
+        {s.user?.threadsUrl && (
+          <small>
+            Liên hệ:{' '}
+            <a href={s.user.threadsUrl} target="_blank" rel="noopener noreferrer">
+              Threads {s.user.threadsUrl.replace(/^https:\/\/www\.threads\.com\//, '')}
+            </a>
+          </small>
+        )}
+        <span className="site-expiry">
+          {exp ? (
+            <span className={`badge badge-${exp.tone === 'ok' ? 'live' : exp.tone}`}>
+              {exp.trial && !exp.expired ? 'Dùng thử · ' : ''}
+              {exp.label}
+            </span>
+          ) : (
+            <span className="badge badge-wait">Chưa đặt hạn (xuất bản trước khi có hạn dùng)</span>
+          )}
+        </span>
+        {s.extensions?.length > 0 && (
+          <small>
+            Lịch sử:{' '}
+            {s.extensions.map((e) => `${e.revoked ? 'Huỷ hạn' : `+${e.months} tháng`} (${formatDate(new Date(e.at))})`).join(', ')}
+          </small>
+        )}
+        {error && <small className="warn">{error}</small>}
+      </div>
+      <div className="request-actions">
+        {months.map((m) => (
+          <button key={m} type="button" className="btn" onClick={() => extend(m)} disabled={!!busy}>
+            {busy === m ? 'Đang gia hạn…' : `+${m} tháng`}
+          </button>
+        ))}
+        {exp && !exp.expired && (
+          <button type="button" className="btn danger-btn" onClick={revoke} disabled={!!busy} title="Đưa hạn dùng về 0: trang hết hạn và tạm ngưng ngay">
+            {busy === 'revoke' ? 'Đang huỷ…' : 'Huỷ hạn dùng'}
+          </button>
+        )}
+      </div>
+    </li>
+  )
+}
+
+/** Every published site, soonest to expire first; extend them once users have paid. */
+/** Which status chip a site belongs to (a site can be in several: e.g. on trial and ending soon). */
+const SITE_STATUSES = [
+  ['all', 'Tất cả', () => true],
+  ['running', 'Đang chạy', (e) => !e || !e.expired],
+  ['trial', 'Đang dùng thử', (e) => e && !e.expired && e.trial],
+  ['paid', 'Đã gia hạn', (e) => e && !e.expired && !e.trial],
+  ['soon', 'Sắp hết hạn (≤ 3 ngày)', (e) => e && !e.expired && e.tone === 'wait'],
+  ['expired', 'Đã hết hạn', (e) => e?.expired],
+  ['unset', 'Chưa đặt hạn', (e) => !e],
+]
+
+/** Every published site; filter by state, expiry date or owner, and extend them once users have paid. */
+function SitesTab({ onNotice }) {
+  const sites = useLoad(listAdminSites, [])
+  const [sweeping, setSweeping] = useState(false)
+  // Soonest to expire first by default: those are the ones to chase for payment.
+  const f = useAdminFilters({ sort: 'old' })
+  const all = sites.data?.sites ?? []
+  const statuses = SITE_STATUSES.map(([value, label, test]) => ({ value, label, count: all.filter((s) => test(siteExpiry(s))).length }))
+  const shown = f.apply(all, {
+    text: (s) => [s.domain, s.title, s.user?.name, s.user?.email, s.user?.threadsUrl],
+    date: (s) => s.expiresAt,
+    status: (s, value) => SITE_STATUSES.find(([v]) => v === value)[2](siteExpiry(s)),
+  })
+
+  const sweep = async () => {
+    setSweeping(true)
+    try {
+      const { expired } = await expireDueSites()
+      onNotice(expired ? `Đã tạm ngưng ${expired} trang hết hạn.` : 'Không có trang nào cần tạm ngưng.')
+      sites.reload()
+    } catch (e) {
+      onNotice(e.message)
+    } finally {
+      setSweeping(false)
+    }
+  }
+
+  return (
+    <section>
+      <div className="site-summary">
+        <p className="hint">
+          Trang mới duyệt chạy thử {TRIAL_DAYS} ngày. Khi người dùng đã thanh toán, bấm +3 / +6 / +12 tháng để gia hạn. Trang hết hạn
+          hiện thông báo “Trang web đã hết hạn”; gia hạn sẽ bật lại ngay.
+        </p>
+        <button type="button" className="btn" onClick={sweep} disabled={sweeping} title="Máy chủ tự kiểm tra mỗi 10 phút">
+          {sweeping ? 'Đang kiểm tra…' : 'Tạm ngưng các trang hết hạn ngay'}
+        </button>
+      </div>
+      <AdminFilterBar
+        f={f}
+        statuses={statuses}
+        ranges={FUTURE_RANGES}
+        dateLabel="Ngày hết hạn"
+        sortLabels={['Hết hạn muộn nhất', 'Hết hạn sớm nhất']}
+        placeholder="Tìm theo tên miền, tên trang, chủ trang, email…"
+        shown={shown.length}
+        total={all.length}
+      />
+      {!shown.length ? (
+        <Status
+          error={sites.error}
+          loading={!sites.data}
+          empty={all.length ? 'Không có trang nào khớp bộ lọc.' : 'Chưa có trang web nào được xuất bản.'}
+          onRetry={sites.reload}
+        />
+      ) : (
+        <ul className="requests">
+          {shown.map((s) => (
+            <SiteRow
+              key={s.uid}
+              site={s}
+              months={sites.data.extendMonths}
+              onDone={(message) => {
+                onNotice(message)
+                sites.reload()
+              }}
+            />
+          ))}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 function CleanupButton({ onNotice }) {
   const [busy, setBusy] = useState(false)
   const run = async () => {
@@ -535,6 +766,9 @@ export default function AdminPage({ user }) {
         <button type="button" className={`tab${tab === 'requests' ? ' active' : ''}`} onClick={() => setTab('requests')}>
           Duyệt xuất bản
         </button>
+        <button type="button" className={`tab${tab === 'sites' ? ' active' : ''}`} onClick={() => setTab('sites')}>
+          Trang web & hạn dùng
+        </button>
         <button type="button" className={`tab${tab === 'domains' ? ' active' : ''}`} onClick={() => setTab('domains')}>
           Đổi tên miền
         </button>
@@ -549,6 +783,8 @@ export default function AdminPage({ user }) {
       <main className="home-main">
         {tab === 'requests' ? (
           <PublishRequestsTab onPreview={setPreviewing} onNotice={setNotice} />
+        ) : tab === 'sites' ? (
+          <SitesTab onNotice={setNotice} />
         ) : tab === 'domains' ? (
           <DomainRequestsTab onNotice={setNotice} />
         ) : tab === 'users' ? (

@@ -79,6 +79,23 @@ export const approvePublishRequest = (id) => api(`/admin/publish-requests/${enc(
 export const rejectPublishRequest = (id, reason) =>
   api(`/admin/publish-requests/${enc(id)}/reject`, { method: 'POST', body: { reason } })
 
+// ---------------------------------------------------------------- published sites & expiry (admin)
+
+/**
+ * `{ sites, extendMonths }`: every published site (expiresAt, expired, extensions…) with its owner
+ * (`user: { name, email, picture, threadsUrl }`), the soonest to expire first.
+ */
+export const listAdminSites = () => api('/admin/sites')
+
+/** Extends a user's site by 3, 6 or 12 months after they paid; an expired site comes back online. */
+export const extendAdminSite = (uid, months) => api(`/admin/sites/${enc(uid)}/extend`, { method: 'POST', body: { months } })
+
+/** Takes down every site past its date now (the server also does this every 10 minutes). */
+export const expireDueSites = () => api('/admin/sites/expire-due', { method: 'POST' })
+
+/** Cancels the time left on a user's site: it expires and goes offline now (extending brings it back). */
+export const revokeAdminSite = (uid) => api(`/admin/sites/${enc(uid)}/revoke`, { method: 'POST' })
+
 // ---------------------------------------------------------------- domain changes (admin)
 
 export const listDomainRequests = (status = 'pending') => api(`/admin/domain-requests?status=${enc(status)}`)

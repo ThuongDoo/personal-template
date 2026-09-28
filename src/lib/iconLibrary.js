@@ -1,7 +1,8 @@
 /**
  * Icons for icon buttons: 24×24 outline drawings (stroke = the icon colour), shared by the editor and
  * published pages. `svg` is the inner markup of an <svg viewBox="0 0 24 24">. Constants only, never
- * user input, so they can be injected as HTML.
+ * user input, so they can be injected as HTML. `filled: true` marks a solid drawing painted with the icon
+ * colour as a fill (no stroke, so no stroke width); `{id}` in its markup becomes an id unique to the icon.
  */
 import { svgGradientDef, svgPaint } from './gradient.js'
 
@@ -25,6 +26,27 @@ export const ICON_LIBRARY = {
     label: 'Zalo',
     group: 'social',
     svg: '<path d="M12 3C6.5 3 2 6.8 2 11.5c0 2.6 1.4 4.9 3.6 6.5L5 21l3.6-1.7c1.1.3 2.2.5 3.4.5 5.5 0 10-3.8 10-8.5S17.5 3 12 3z"/><path d="M8 9h5l-5 5h5M16 9v5"/>',
+  },
+  // Threads' "@"-like mark: an open outer loop that curls into the inner ring.
+  threads: {
+    label: 'Threads',
+    group: 'social',
+    svg: '<path d="M17.7 7.2A7.4 7.4 0 1 0 19.3 13.3c.3-3-1.9-4-4.8-3.8-3.5.2-5.7 1.4-5.6 3.3.1 1.7 1.7 2.5 3.3 2.3 2.2-.3 3-2.3 2.8-4.3-.1-1.2-.4-2-.9-2.6"/>',
+  },
+  // The app's logo in one colour: the tile in the icon colour, the speech bubble cut out (the button's
+  // background shows through) with "Zalo" inside it. Blue #0068FF on white gives the real logo.
+  zaloApp: {
+    label: 'Zalo (logo ứng dụng)',
+    group: 'social',
+    filled: true,
+    svg:
+      '<mask id="{id}-m">' +
+      '<rect x="1" y="1" width="22" height="22" rx="5.5" fill="#fff"/>' +
+      '<rect x="3.6" y="5.2" width="16.8" height="11.2" rx="5.6" fill="#000"/>' +
+      '<path d="M6.4 15.2 4.9 19.3l4.6-2.9z" fill="#000"/>' +
+      '<text x="12" y="13.1" text-anchor="middle" font-family="Arial, Helvetica, sans-serif" font-size="6.1" font-weight="700" fill="#fff">Zalo</text>' +
+      '</mask>' +
+      '<rect x="1" y="1" width="22" height="22" rx="5.5" mask="url(#{id}-m)"/>',
   },
   messenger: {
     label: 'Messenger',
@@ -307,9 +329,13 @@ export function iconSvg(p, id = 'icon') {
   const stroke = Math.max(0.5, Math.min(4, Number(p.strokeWidth) || 2))
   // Spans the whole 24×24 drawing, so single straight strokes (dots, dashes) still get painted.
   const def = svgGradientDef(p.iconColor, `${id}-g`, [0, 0, 24, 24])
+  const paint = esc(svgPaint(p.iconColor, `${id}-g`))
+  // Outline icons are stroked with the colour; filled ones are painted with it and have no stroke.
+  const look = icon.filled
+    ? `fill="${paint}" stroke="none"`
+    : `fill="none" stroke="${paint}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round"`
   return (
-    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}%" height="${size}%" fill="none" ` +
-    `stroke="${esc(svgPaint(p.iconColor, `${id}-g`))}" stroke-width="${stroke}" stroke-linecap="round" stroke-linejoin="round" ` +
-    `style="display:block;flex:none" aria-hidden="true">${def ? `<defs>${def}</defs>` : ''}${icon.svg}</svg>`
+    `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" width="${size}%" height="${size}%" ${look} ` +
+    `style="display:block;flex:none" aria-hidden="true">${def ? `<defs>${def}</defs>` : ''}${icon.svg.replaceAll('{id}', id)}</svg>`
   )
 }

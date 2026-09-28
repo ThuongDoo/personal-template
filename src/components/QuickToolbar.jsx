@@ -9,6 +9,7 @@ import { fontOf } from '../lib/fonts.js'
 import { loadImageSize, loadVideoSize } from '../lib/image.js'
 import { ROUNDABLE_SHAPES, randomSeed } from '../lib/shapes.js'
 import { DECORS, INK_STYLES, STAIN_PRESETS, decorSvg } from '../lib/decor.js'
+import { MOTIONS, MOTION_CSS, motionOf, motionStyle, normalizeMotion } from '../lib/motion.js'
 
 const ALIGNS = ['left', 'center', 'right', 'justify']
 const ALIGN_ICONS = { left: 'alignLeft', center: 'alignCenter', right: 'alignRight', justify: 'alignJustify' }
@@ -51,13 +52,13 @@ function ColorButton({ id, title, value, onChange, openId, setOpenId, allowNone 
 }
 
 /** Toolbar button that opens a small panel under it (sliders etc.); shares the open state with the colour buttons. */
-function PanelButton({ id, title, icon, openId, setOpenId, children }) {
+function PanelButton({ id, title, icon, openId, setOpenId, active = false, children }) {
   const open = openId === id
   return (
     <span className="qt-color">
       <button
         type="button"
-        className={`qt-btn${open ? ' on' : ''}`}
+        className={`qt-btn${open || active ? ' on' : ''}`}
         title={title}
         aria-label={title}
         aria-expanded={open}
@@ -189,6 +190,56 @@ function StainPicker({ value, onChange }) {
         />
       ))}
     </div>
+  )
+}
+
+/**
+ * Looping motion of the element (see motion.js): every effect as a chip that plays it on a small dot,
+ * then its speed, start delay and, for turns, the direction.
+ */
+function MotionPanel({ el, setEl }) {
+  const m = normalizeMotion(el.motion)
+  const set = (patch, key) => setEl({ motion: { ...m, ...patch } }, key && `motion.${key}`)
+  const kinds = [['none', 'Không'], ...Object.entries(MOTIONS).map(([k, d]) => [k, d.label])]
+  return (
+    <>
+      <span className="qt-popover-title">Chuyển động</span>
+      <style href="kt-motion" precedence="default">
+        {MOTION_CSS}
+      </style>
+      <div className="motion-picks" role="radiogroup" aria-label="Hiệu ứng chuyển động">
+        {kinds.map(([kind, label]) => {
+          const on = (m?.kind ?? 'none') === kind
+          return (
+            <button key={kind} type="button" role="radio" aria-checked={on} className={`motion-pick${on ? ' on' : ''}`} onClick={() => setEl({ motion: motionOf(kind) })}>
+              <span className="motion-pick-art" aria-hidden="true">
+                <span className="kt-motion" style={motionStyle(motionOf(kind))}>
+                  <span className="motion-pick-dot" />
+                </span>
+              </span>
+              <span>{label}</span>
+            </button>
+          )
+        })}
+      </div>
+      {m && (
+        <>
+          <Slider label="Mỗi vòng" value={m.duration} min={0.2} max={20} step={0.1} format={(v) => `${v}s`} onChange={(v) => set({ duration: v }, 'duration')} />
+          <Slider label="Bắt đầu sau" value={m.delay} min={0} max={10} step={0.1} format={(v) => `${v}s`} onChange={(v) => set({ delay: v }, 'delay')} />
+          {MOTIONS[m.kind].turns && (
+            <div className="seg motion-dir">
+              <button type="button" className={m.reverse ? '' : 'active'} onClick={() => set({ reverse: false })}>
+                <Icon name="rotate" size={14} /> Thuận chiều
+              </button>
+              <button type="button" className={m.reverse ? 'active' : ''} onClick={() => set({ reverse: true })}>
+                <Icon name="rotateLeft" size={14} /> Ngược chiều
+              </button>
+            </div>
+          )}
+          <p className="motion-hint">Số giây càng nhỏ càng nhanh.</p>
+        </>
+      )}
+    </>
   )
 }
 
@@ -463,6 +514,9 @@ export default function QuickToolbar({ el, setStyle, setProps, setEl, onAction, 
           format={(v) => `${v}%`}
           onChange={(v) => setStyle({ opacity: v / 100 }, 'opacity')}
         />
+      </PanelButton>
+      <PanelButton id="motion" title="Chuyển động (xoay, nảy, nhấp nháy…)" icon="motion" active={Boolean(normalizeMotion(el.motion))} openId={openId} setOpenId={setOpenId}>
+        <MotionPanel el={el} setEl={setEl} />
       </PanelButton>
       <button type="button" className="qt-btn" title="Nhân bản (Ctrl+D)" onClick={() => onAction('duplicate')}>
         <Icon name="copy" size={15} />

@@ -762,3 +762,110 @@ Mỗi mẫu là một trang dài gồm 8–9 phần, mỗi phần tương ứng 
 - [ ] Bước 4 bấm **Gửi yêu cầu xuất bản** (hoặc "Gửi bản cập nhật để duyệt") thành công → hộp thoại chuyển sang thông báo: dấu ✓ xanh lá, **"Đã gửi yêu cầu thành công!"**, "Yêu cầu xuất bản đang chờ quản trị viên xử lý…", nút **OK**
 - [ ] Bấm **OK** (hoặc Enter vì nút OK được chọn sẵn, Esc, bấm ra ngoài) → đóng hộp thoại; mở lại "Xuất bản" → vào thẳng bước 4 với trạng thái "Đang chờ quản trị viên duyệt"
 - [ ] Gửi lỗi (mất mạng, chưa lưu được…) → không hiện thông báo thành công, lỗi hiện ngay trong hộp thoại như cũ
+
+## 71. Hạn dùng trang web: dùng thử 3 ngày, gia hạn 3 / 6 / 12 tháng
+
+- [ ] Admin duyệt xuất bản một trang → trang có hạn **3 ngày dùng thử** (Quản trị → tab **Trang web & hạn dùng**: nhãn vàng "Dùng thử · Còn 3 ngày (đến …)")
+- [ ] Tab **Trang web & hạn dùng**: dòng tổng (số trang đang chạy / sắp hết hạn / đã hết hạn); mỗi trang có tên miền (link), chủ trang + email, link Threads, nhãn hạn dùng (xanh: còn lâu, vàng: ≤ 3 ngày, đỏ: đã hết hạn), lịch sử gia hạn; xếp trang sắp hết hạn lên đầu
+- [ ] Người dùng đã thanh toán → bấm **+3 tháng / +6 tháng / +12 tháng** → hộp xác nhận ghi rõ ngày hết hạn mới → OK → thông báo "Đã gia hạn … đến …", nhãn cập nhật; gia hạn được cộng từ hạn hiện tại (hoặc từ hôm nay nếu đã hết hạn)
+- [ ] Quá hạn mà chưa gia hạn → trong vòng ~10 phút (hoặc bấm **"Tạm ngưng các trang hết hạn ngay"**) mở tên miền thấy trang "⏳ Trang web đã hết hạn … liên hệ quản trị viên để gia hạn"; tên miền và thiết kế vẫn giữ
+- [ ] Gia hạn một trang **đã hết hạn** → trang tự bật lại đúng bản đã duyệt (chờ vài giây để Vercel triển khai)
+- [ ] Trang đã trả tiền mà người dùng gửi **bản cập nhật** → sau khi duyệt vẫn giữ nguyên ngày hết hạn đã trả (không bị về 3 ngày)
+- [ ] Người dùng: hộp thoại Xuất bản (bước 4) hiện "Hạn dùng: Còn X ngày (đến …)", khi đang dùng thử có lời nhắc thanh toán để gia hạn; trang hết hạn hiện khung đỏ "Trang web đã hết hạn"; màn hình "Đã gửi yêu cầu" nhắc dùng thử 3 ngày
+- [ ] Trang chủ: trang sắp hết hạn có nhãn vàng "Còn X ngày" / "Hết hạn hôm nay", trang hết hạn có nhãn đỏ "Đã hết hạn"
+- [ ] Trang xuất bản **trước** khi có tính năng này hiện "Chưa đặt hạn" và không tự hết hạn; admin bấm gia hạn một lần để đặt hạn cho nó
+- [ ] (Cần deploy lại backend; máy chủ phải chạy liên tục để tự kiểm tra hết hạn mỗi 10 phút)
+
+## 72. Bộ lọc ở trang Quản trị
+
+Mỗi tab có thanh lọc: ô tìm kiếm (không cần gõ dấu), chọn khoảng thời gian (Hôm nay / 7 ngày / 30 ngày / Tháng này / Tuỳ chọn từ ngày → đến ngày), sắp xếp, chip trạng thái, dòng "Hiển thị X / Y" và nút **Xoá bộ lọc**.
+
+- [ ] **Duyệt xuất bản**: chip Chờ duyệt / Đã duyệt / Đã từ chối; lọc theo **ngày gửi**; tìm theo tên trang, người gửi, email, tên miền, Threads; mặc định xếp **gửi lâu nhất trước** (duyệt theo thứ tự)
+- [ ] **Trang web & hạn dùng**: chip có số lượng — Tất cả, Đang chạy, Đang dùng thử, Đã gia hạn, Sắp hết hạn (≤ 3 ngày), Đã hết hạn, Chưa đặt hạn; lọc theo **ngày hết hạn** (Trong 3 / 7 / 30 ngày tới, Đã qua, Tuỳ chọn); tìm theo tên miền, tên trang, chủ trang, email; mặc định **hết hạn sớm nhất trước**
+- [ ] **Đổi tên miền**: chip trạng thái, lọc ngày gửi, tìm theo người gửi / tên miền cũ / mới
+- [ ] **Người dùng**: chip Quản trị viên / Người dùng (có số lượng), lọc theo **đăng nhập gần nhất**, tìm theo tên / email
+- [ ] **Mẫu đã tạo**: tìm theo tên / mô tả mẫu
+- [ ] Không có kết quả → "Không có … khớp bộ lọc."; bấm **Xoá bộ lọc** → về mặc định
+- [ ] Chọn "Tuỳ chọn…" → hiện 2 ô ngày; "Đến ngày" tính trọn cả ngày đó
+
+## 73. Huỷ hạn dùng (đưa hạn về 0) ở trang Quản trị
+
+- [ ] Tab **Trang web & hạn dùng**: trang đang còn hạn (dùng thử hoặc đã gia hạn) có nút đỏ **Huỷ hạn dùng**; trang đã hết hạn / chưa đặt hạn không có nút này
+- [ ] Bấm → hộp xác nhận ghi rõ huỷ "thời gian dùng thử" hoặc "hạn dùng còn lại (đến …)" và cảnh báo trang sẽ tạm ngưng NGAY → OK → thông báo "Đã huỷ hạn dùng của … Trang đã tạm ngưng."; nhãn chuyển đỏ "Đã hết hạn"
+- [ ] Mở tên miền (chờ vài giây) → thấy trang "Trang web đã hết hạn"; người dùng thấy "Đã hết hạn" ở trang chủ và hộp thoại Xuất bản
+- [ ] Dòng **Lịch sử** ghi "Huỷ hạn (ngày)" cùng các lần "+X tháng"
+- [ ] Sau khi huỷ, bấm **+3 / +6 / +12 tháng** → trang bật lại, hạn tính từ hôm nay
+- [ ] (Cần deploy lại backend)
+
+## 74. Icon logo ứng dụng Zalo (đổi màu được)
+
+- [ ] Chọn nút icon → "Đổi icon" (thanh công cụ nhỏ) → nhóm Mạng xã hội có **Zalo (logo ứng dụng)** cạnh icon Zalo nét; tìm "zalo" ra cả hai
+- [ ] Logo là ô vuông tô màu icon, bong bóng chat khoét rỗng (lộ màu nền nút) và chữ "Zalo" bên trong
+- [ ] **Đổi màu icon** được như icon thường (kể cả chuyển màu): màu icon xanh #0068FF + nền trắng → giống logo Zalo thật; màu trắng + nền xanh → logo đảo màu
+- [ ] Với logo này bảng thuộc tính không có "Độ dày nét" (vẫn có Cỡ icon); đổi lại icon thường → "Độ dày nét" hiện lại
+- [ ] Nhiều nút logo Zalo khác màu trên cùng trang → mỗi nút đúng màu, không lẫn nhau
+- [ ] Gắn link (VD `https://zalo.me/0901234567`) → Xem trước / trang **đã xuất bản** (cần deploy lại backend) hiển thị đúng, bấm mở Zalo
+
+## 75. Mọi template mẫu đều có icon liên hệ Facebook · Zalo · Threads
+
+- [ ] Nhóm Mạng xã hội có icon mới **Threads** (hình chữ @ cuộn); tìm "threads" ra icon này, đổi màu / độ dày nét như icon thường
+- [ ] Trang chủ → lướt qua cả 14 template mẫu: template nào cũng có hàng icon **Facebook, Zalo (logo), Threads** ở khu liên hệ, không đè lên chữ/ảnh khác
+- [ ] 5 template dài (Pastel, Designer, Developer, Photographer, Creator): hàng mạng xã hội là Facebook · Zalo · Threads + 1 icon riêng (Instagram/LinkedIn/GitHub/TikTok)
+- [ ] 9 template một trang (Doodle, Blush, Noir, Avery, Maroon, Ink đỏ, My, Teal, Adora): 3 icon nằm cạnh email/số điện thoại, màu hợp với template
+- [ ] Mở một template → chọn từng icon → đã gắn sẵn link mẫu (facebook.com/…, zalo.me/…, threads.com/@…), mở tab mới; sửa thành link thật được
+- [ ] Xem trước trang tạo từ template → bấm icon mở đúng link
+- [ ] Các web **đã xuất bản trước đó** và các trang đã lưu của user **không thay đổi** (không tự có thêm icon)
+
+## 76. Hiệu ứng chuyển động cho thành phần (xoay tròn quanh tâm…)
+
+- [ ] Chọn một thành phần bất kỳ (chữ, nút, icon, ảnh, hình, trang trí…) → thanh công cụ nhỏ có nút **Chuyển động** (quả bóng có vệt gió), mặc định "Không" (xem mục 77)
+- [ ] Chọn **Xoay tròn** → thành phần xoay quanh tâm của nó ngay trong khung soạn thảo; đổi **Chiều xoay** Thuận/Ngược chiều → đổi hướng
+- [ ] Thử lần lượt: Lật xoay (3D), Phập phồng, Nhịp tim, Bay lơ lửng, Nảy, Lắc lư, Rung, Nhấp nháy → mỗi kiểu chạy lặp mãi
+- [ ] **Mỗi vòng** (giây): số nhỏ → nhanh hơn, số lớn → chậm hơn; **Bắt đầu sau**: hiệu ứng chờ đúng số giây rồi mới chạy
+- [ ] Thành phần đã có **Góc xoay** / lật gương vẫn giữ góc đó, hiệu ứng cộng thêm lên trên
+- [ ] Kéo, đổi cỡ, xoay thành phần đang chuyển động vẫn bình thường; khi gõ chữ (bấm đúp) hoặc chỉnh ảnh trong hình thì thành phần đứng yên, xong lại chạy tiếp
+- [ ] Hoàn tác (Ctrl+Z) bỏ được thay đổi hiệu ứng; nhân bản thành phần thì bản sao giữ hiệu ứng
+- [ ] Xem trước và trang **đã xuất bản** (cần deploy lại backend) chạy hiệu ứng giống khung soạn thảo; trang không dùng hiệu ứng thì không thay đổi gì
+- [ ] Máy bật chế độ "giảm chuyển động" (Windows: Cài đặt → Trợ năng → Hiệu ứng hình ảnh → tắt Hiệu ứng động) → trang xuất bản đứng yên
+
+## 77. Chuyển động trên thanh công cụ nhỏ
+
+- [ ] Chọn thành phần → thanh công cụ nhỏ có nút **Chuyển động** (quả bóng có vệt gió) cạnh nút Độ mờ; bảng thuộc tính bên phải **không còn** mục Chuyển động
+- [ ] Bấm nút → bảng hiện 10 ô: Không, Xoay tròn, Lật xoay (3D), Phập phồng, Nhịp tim, Bay lơ lửng, Nảy, Lắc lư, Rung, Nhấp nháy; mỗi ô có hình nhỏ đang chạy đúng kiểu đó
+- [ ] Bấm một ô → thành phần chạy hiệu ứng ngay, ô đó được tô đậm, nút Chuyển động trên thanh sáng lên (kể cả khi đã đóng bảng)
+- [ ] Thanh trượt **Mỗi vòng** (0.2–20 giây) và **Bắt đầu sau** (0–10 giây) đổi tốc độ / độ trễ ngay khi kéo; kéo xong bấm Ctrl+Z một lần là về giá trị cũ
+- [ ] Xoay tròn / Lật xoay có thêm nút **Thuận chiều / Ngược chiều**; các kiểu khác không có
+- [ ] Chọn **Không** → thành phần đứng yên, thanh trượt ẩn đi, nút hết sáng
+- [ ] Bấm ra ngoài → bảng đóng
+
+## 78. Template "Âm nhạc – Đĩa than xoay" + chuyển động Sóng toả / Nhảy theo nhạc
+
+- [ ] Trang chủ → template **Âm nhạc – Đĩa than xoay** đứng đầu danh sách mẫu
+- [ ] Mở template: đĩa than có rãnh, **avatar giữa đĩa xoay tròn** cùng đĩa (8 giây/vòng); vệt sáng trên đĩa và cần đọc đĩa đứng yên
+- [ ] Quanh đĩa: vòng **sóng nhạc** hồng/tím nhảy liên tục — đây là thành phần **Âm thanh** (kiểu Vòng tròn), xem mục 79
+- [ ] Từ đĩa có 3 **vòng sóng âm toả ra** rồi mờ dần, nối tiếp nhau
+- [ ] Bấm vào avatar → đổi ảnh được (ảnh mới vẫn xoay); đổi tên, chữ, link nút "Nghe nhạc" / "Mời biểu diễn", icon Facebook · Zalo · Threads · TikTok
+- [ ] Chọn một vòng sóng toả → nút Chuyển động trên thanh công cụ sáng, bảng hiện đúng hiệu ứng **Sóng toả**
+- [ ] Bảng Chuyển động có thêm 2 ô mới: **Sóng toả**, **Nhảy theo nhạc** (bảng xếp 4 cột); dùng được cho thành phần bất kỳ
+- [ ] Xem trước và trang xuất bản (cần deploy lại backend) chạy hiệu ứng giống trong khung soạn thảo
+
+## 79. Âm thanh: "Luôn nhảy" và "Khoảng trống giữa" (sóng nhạc của template Đĩa than)
+
+- [ ] Template Đĩa than → chọn vòng sóng quanh đĩa → bảng bên phải là **Âm thanh**, kiểu **Vòng tròn**, có tích **Luôn nhảy (cả khi chưa phát nhạc)**, chưa có tệp
+- [ ] Chưa có tệp mà sóng vẫn nhảy theo nhịp mẫu (trong khung soạn thảo, Xem trước và trang xuất bản); không có nút phát
+- [ ] **Tải tệp nhạc lên** → nút phát hiện ở giữa đĩa (trên avatar); bấm phát → sóng nhảy theo nhạc thật; tạm dừng → sóng vẫn nhảy theo nhịp mẫu
+- [ ] Bỏ tích "Luôn nhảy" → khi dừng nhạc sóng lặng xuống như trước; nếu không có tệp thì hiện ô "Âm thanh – Tải tệp âm thanh…" trong khung soạn thảo
+- [ ] Kiểu Vòng tròn / Nhịp đập có thanh **Khoảng trống giữa** (10–40%): kéo lên → lỗ giữa rộng ra, sóng ôm ra ngoài; kiểu khác không có thanh này
+- [ ] Để chọn avatar (nằm dưới lớp âm thanh), chọn trong bảng **Lớp** rồi đổi ảnh
+- [ ] Thành phần Âm thanh cũ (không tích Luôn nhảy) hoạt động y như trước
+
+## 80. Tự động phát nhạc trên trang đã xuất bản (sửa lỗi điện thoại)
+
+Lưu ý: trình duyệt luôn chặn nhạc có tiếng khi khách vừa mở trang và chưa bấm gì. Nhạc sẽ bắt đầu ở lần chạm/bấm/gõ phím đầu tiên, không thể phát trước đó. Cần **deploy lại backend** rồi **xuất bản lại trang** thì trang mới được sửa.
+
+- [ ] Tích "Tự động phát khi mở trang" → xuất bản → mở trang ở tab ẩn danh: nhạc chưa phát, **nút phát nhấp nháy vòng sáng** gợi ý
+- [ ] Máy tính: bấm vào chỗ bất kỳ trên trang (không phải nút phát) → nhạc phát ngay, nút thôi nhấp nháy, đổi thành nút Tạm dừng
+- [ ] **Điện thoại** (Android Chrome, iPhone Safari): chạm vào chỗ bất kỳ → nhạc phát ngay ở lần chạm đầu (trước đây chạm mãi không phát)
+- [ ] Chạm thẳng vào nút phát → phát bình thường (không bị phát rồi dừng ngay)
+- [ ] Nhấn một phím (VD phím cách) thay vì bấm chuột → nhạc cũng phát
+- [ ] Xem trước trong trình chỉnh sửa vẫn phát ngay như cũ

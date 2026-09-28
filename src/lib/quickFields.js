@@ -8,7 +8,7 @@ import { ROUNDABLE_SHAPES } from './shapes.js'
  */
 export function quickFields(el) {
   const p = el.props
-  const keys = ['opacity', 'duplicate', 'delete']
+  const keys = ['opacity', 'motion', 'duplicate', 'delete']
   if (TEXT_TYPES.includes(el.type)) {
     keys.push('fontFamily', 'fontSize', 'italic', 'underline', 'color', 'background', 'textAlign', 'lineHeight', 'letterSpacing')
   } else if (el.type === 'box' || el.type === 'video') {

@@ -222,7 +222,7 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
       return <DecorBlock el={el} css={css} />
 
     case 'audio':
-      if (!p.src) {
+      if (!p.src && !p.always) {
         return isEditor ? (
           <div style={css} className="placeholder">
             <span>Âm thanh</span>
@@ -235,7 +235,7 @@ export default function ElementContent({ el, mode, editing = false, onCommitText
       // Keyed by the settings so a change remounts it: mountAudio owns the node's children.
       return (
         <AudioBlock
-          key={[p.src, p.viz, p.color, p.color2, p.bars, p.loop, p.autoplay].join('|')}
+          key={[p.src, p.viz, p.color, p.color2, p.bars, p.loop, p.autoplay, p.always, p.inner].join('|')}
           p={p}
           css={css}
           isEditor={isEditor}
