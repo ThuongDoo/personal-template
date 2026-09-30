@@ -4,8 +4,6 @@ import { signIn } from '../lib/cloud.js'
 
 const ERRORS = {
   'auth/popup-blocked': 'Trình duyệt đã chặn cửa sổ đăng nhập. Hãy cho phép popup rồi thử lại.',
-  'auth/account-exists-with-different-credential':
-    'Email này đã được dùng với một cách đăng nhập khác. Hãy đăng nhập bằng cách bạn đã dùng lần trước.',
   'auth/operation-not-allowed': 'Cách đăng nhập này chưa được bật trong Firebase Console.',
   'auth/unauthorized-domain': 'Tên miền này chưa được thêm vào "Authorized domains" trong Firebase Console.',
   'auth/network-request-failed': 'Không kết nối được mạng. Hãy kiểm tra kết nối và thử lại.',
@@ -24,27 +22,19 @@ function GoogleLogo() {
   )
 }
 
-function FacebookLogo() {
-  return (
-    <svg width="18" height="18" viewBox="0 0 24 24" aria-hidden="true">
-      <path fill="#1877F2" d="M24 12a12 12 0 1 0-13.9 11.9v-8.4h-3V12h3V9.4c0-3 1.8-4.7 4.5-4.7 1.3 0 2.7.2 2.7.2v3h-1.5c-1.5 0-2 .9-2 1.9V12h3.4l-.5 3.5h-2.9v8.4A12 12 0 0 0 24 12z" />
-    </svg>
-  )
-}
-
 export default function Login() {
-  const [busy, setBusy] = useState(null)
+  const [busy, setBusy] = useState(false)
   const [error, setError] = useState('')
 
-  const login = async (provider) => {
-    setBusy(provider)
+  const login = async () => {
+    setBusy(true)
     setError('')
     try {
-      await signIn(provider)
+      await signIn()
     } catch (e) {
       if (!IGNORED.includes(e.code)) setError(ERRORS[e.code] ?? `Đăng nhập thất bại (${e.code ?? e.message}).`)
     } finally {
-      setBusy(null)
+      setBusy(false)
     }
   }
 
@@ -54,15 +44,11 @@ export default function Login() {
         <span className="brand-mark login-mark">
           <Icon name="logo" size={24} />
         </span>
-        <h1>Kéo Thả Web</h1>
-        <p>Đăng nhập để tạo trang web. Thiết kế của bạn được lưu tự động lên đám mây và mở được trên mọi máy.</p>
-        <button type="button" className="login-btn" onClick={() => login('google')} disabled={!!busy}>
+        <h1>Web Siêu Lỏ</h1>
+        <p>Kéo thả để làm trang web của riêng bạn.</p>
+        <button type="button" className="login-btn" onClick={login} disabled={busy}>
           <GoogleLogo />
-          {busy === 'google' ? 'Đang đăng nhập…' : 'Tiếp tục với Google'}
-        </button>
-        <button type="button" className="login-btn" onClick={() => login('facebook')} disabled={!!busy}>
-          <FacebookLogo />
-          {busy === 'facebook' ? 'Đang đăng nhập…' : 'Tiếp tục với Facebook'}
+          {busy ? 'Đang đăng nhập…' : 'Tiếp tục với Google'}
         </button>
         {error && <p className="login-error">{error}</p>}
       </div>

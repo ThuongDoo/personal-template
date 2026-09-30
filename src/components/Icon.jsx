@@ -70,6 +70,7 @@ const ICONS = {
       <path d="M8 11V7a4 4 0 0 1 7.9-1" />
     </>
   ),
+  tag: <path d="M3 12.2V4a1 1 0 0 1 1-1h8.2L21 11.8 11.8 21zM7.5 7.5h.01" />,
   trash: <path d="M3 6h18M8 6V4h8v2M19 6l-1 14H6L5 6M10 11v5M14 11v5" />,
   copy: (
     <>

@@ -1,5 +1,5 @@
 import { initializeApp } from 'firebase/app'
-import { FacebookAuthProvider, GoogleAuthProvider, getAuth } from 'firebase/auth'
+import { GoogleAuthProvider, getAuth } from 'firebase/auth'
 import { initializeFirestore } from 'firebase/firestore'
 import { getStorage } from 'firebase/storage'
 
@@ -29,6 +29,3 @@ export const storage = app && getStorage(app)
 
 export const googleProvider = new GoogleAuthProvider()
 googleProvider.setCustomParameters({ prompt: 'select_account' })
-
-export const facebookProvider = new FacebookAuthProvider()
-facebookProvider.addScope('email')

@@ -96,6 +96,12 @@ export const expireDueSites = () => api('/admin/sites/expire-due', { method: 'PO
 /** Cancels the time left on a user's site: it expires and goes offline now (extending brings it back). */
 export const revokeAdminSite = (uid) => api(`/admin/sites/${enc(uid)}/revoke`, { method: 'POST' })
 
+/** Admin: `{ starred?, labels? }` on a site (a star for "needs attention", label ids). Resolves to `{ starred, labels }`. */
+export const markAdminSite = (uid, marks) => api(`/admin/sites/${enc(uid)}/marks`, { method: 'PATCH', body: marks })
+
+/** Admin: replaces the shared label list `[{ id, name, color }]`. Resolves to `{ labels }`. */
+export const saveSiteLabels = (labels) => api('/admin/site-labels', { method: 'PUT', body: { labels } })
+
 // ---------------------------------------------------------------- domain changes (admin)
 
 export const listDomainRequests = (status = 'pending') => api(`/admin/domain-requests?status=${enc(status)}`)

@@ -4,6 +4,7 @@ import Icon from './Icon.jsx'
 import Preview from './Preview.jsx'
 import TemplateDialog from './TemplateDialog.jsx'
 import UserChip from './UserChip.jsx'
+import { LabelManager, LabelMenu, LabelTag, MarkFilter, StarButton } from './SiteMarks.jsx'
 import AdminFilterBar from './AdminFilters.jsx'
 import {
   approveDomainRequest,
@@ -13,13 +14,15 @@ import {
   extendAdminSite,
   getPublishRequest,
   listAdminSites,
+  markAdminSite,
   revokeAdminSite,
   listDomainRequests,
   listPublishRequests,
   rejectDomainRequest,
   rejectPublishRequest,
+  saveSiteLabels,
 } from '../lib/api.js'
-import { ROLES, deleteTemplate, listDesigns, listTemplates, listUsers, signOut } from '../lib/cloud.js'
+import { ROLES, deleteTemplate, listDesigns, listTemplates, listUsers, setTemplateHidden, signOut } from '../lib/cloud.js'
 import { normalizeDoc } from '../lib/elements.js'
 import { exportHtml } from '../lib/exportHtml.js'
 import { FUTURE_RANGES, useAdminFilters } from '../lib/adminFilters.js'
@@ -190,7 +193,25 @@ function TemplatesTab({ onPreview, version }) {
   const templates = useLoad(listTemplates, [version])
   const f = useAdminFilters()
   const all = templates.data ?? []
-  const shown = f.apply(all, { text: (t) => [t.name, t.description], date: () => null })
+  const statuses = [
+    { value: 'all', label: 'Tất cả', count: all.length },
+    { value: 'shown', label: 'Đang hiện', count: all.filter((t) => !t.hidden).length },
+    { value: 'hidden', label: 'Đang ẩn', count: all.filter((t) => t.hidden).length },
+  ]
+  const shown = f.apply(all, { text: (t) => [t.name, t.description], date: () => null, status: (t, v) => (v === 'hidden' ? t.hidden : !t.hidden) })
+  const [toggling, setToggling] = useState(null)
+
+  const toggle = async (t) => {
+    setToggling(t.id)
+    try {
+      await setTemplateHidden(t.templateId, !t.hidden)
+    } catch (e) {
+      console.error(e)
+      alert(t.hidden ? 'Không hiện lại được mẫu.' : 'Không ẩn được mẫu.')
+    }
+    setToggling(null)
+    templates.reload()
+  }
 
   const remove = async (t) => {
     if (!confirm(`Xoá mẫu "${t.name}"? Trang người dùng đã tạo từ mẫu này không bị ảnh hưởng.`)) return
@@ -203,7 +224,7 @@ function TemplatesTab({ onPreview, version }) {
     templates.reload()
   }
 
-  const bar = <AdminFilterBar f={f} ranges={null} placeholder="Tìm theo tên mẫu…" shown={shown.length} total={all.length} />
+  const bar = <AdminFilterBar f={f} statuses={statuses} ranges={null} placeholder="Tìm theo tên mẫu…" shown={shown.length} total={all.length} />
   if (!shown.length) {
     return (
       <>
@@ -224,13 +245,26 @@ function TemplatesTab({ onPreview, version }) {
         {shown.map((t) => {
           const design = t.create()
           return (
-            <div key={t.id} className="card">
+            <div key={t.id} className={`card${t.hidden ? ' card-hidden' : ''}`}>
               <button type="button" className="card-open" onClick={() => onPreview(design)} title="Xem trước">
                 <DesignThumb design={design} />
                 <span className="card-text">
                   <strong>{t.name}</strong>
                   <small>{t.description || '—'}</small>
                 </span>
+              </button>
+              {/* Users only see the templates that are shown. */}
+              <button
+                type="button"
+                className={`tpl-visibility${t.hidden ? '' : ' on'}`}
+                role="switch"
+                aria-checked={!t.hidden}
+                disabled={toggling === t.id}
+                onClick={() => toggle(t)}
+                title={t.hidden ? 'Người dùng không thấy mẫu này — bấm để hiện' : 'Người dùng đang thấy mẫu này — bấm để ẩn'}
+              >
+                <Icon name={t.hidden ? 'eyeOff' : 'eye'} size={14} />
+                {toggling === t.id ? 'Đang lưu…' : t.hidden ? 'Đang ẩn' : 'Đang hiện'}
               </button>
               <button type="button" className="icon-btn danger card-delete" title="Xoá mẫu" onClick={() => remove(t)}>
                 <Icon name="trash" />
@@ -529,7 +563,7 @@ const formatBytes = (n) => (n >= 1e6 ? `${(n / 1e6).toFixed(1)} MB` : `${Math.ro
 
 /** Sweeps every user's unused uploads (and template images) now, instead of waiting for them to visit. */
 /** One published site: owner, domain, how long it still runs, and the buttons to extend it after payment. */
-function SiteRow({ site: s, months, onDone }) {
+function SiteRow({ site: s, months, labels, onMark, onManageLabels, onDone }) {
   const [busy, setBusy] = useState(null)
   const [error, setError] = useState('')
   const exp = siteExpiry(s)
@@ -567,9 +601,10 @@ function SiteRow({ site: s, months, onDone }) {
   }
 
   return (
-    <li className={`request site-row${exp ? ` site-${exp.tone}` : ''}`}>
+    <li className={`request site-row${exp ? ` site-${exp.tone}` : ''}${s.starred ? ' starred' : ''}`}>
+      <StarButton starred={s.starred} onToggle={() => onMark({ starred: !s.starred })} />
       <div className="request-main">
-        <strong>
+        <strong className="site-domain">
           {s.url ? (
             <a href={s.url} target="_blank" rel="noopener noreferrer">
               {s.domain}
@@ -577,6 +612,12 @@ function SiteRow({ site: s, months, onDone }) {
           ) : (
             s.domain
           )}
+          {s.labels
+            ?.map((id) => labels.find((l) => l.id === id))
+            .filter(Boolean)
+            .map((l) => (
+              <LabelTag key={l.id} label={l} onRemove={() => onMark({ labels: s.labels.filter((id) => id !== l.id) })} />
+            ))}
         </strong>
         <small>
           {who}
@@ -609,6 +650,7 @@ function SiteRow({ site: s, months, onDone }) {
         {error && <small className="warn">{error}</small>}
       </div>
       <div className="request-actions">
+        <LabelMenu labels={labels} value={s.labels ?? []} onChange={(ids) => onMark({ labels: ids })} onManage={onManageLabels} />
         {months.map((m) => (
           <button key={m} type="button" className="btn" onClick={() => extend(m)} disabled={!!busy}>
             {busy === m ? 'Đang gia hạn…' : `+${m} tháng`}
@@ -642,13 +684,40 @@ function SitesTab({ onNotice }) {
   const [sweeping, setSweeping] = useState(false)
   // Soonest to expire first by default: those are the ones to chase for payment.
   const f = useAdminFilters({ sort: 'old' })
-  const all = sites.data?.sites ?? []
+  // Stars and labels change in place (no reload): these override what was loaded.
+  const [marks, setMarks] = useState({})
+  const [labelList, setLabelList] = useState(null)
+  const [markFilter, setMarkFilter] = useState('all')
+  const [managing, setManaging] = useState(false)
+  const labels = labelList ?? sites.data?.labels ?? []
+  const all = (sites.data?.sites ?? []).map((s) => ({ ...s, ...marks[s.uid] }))
   const statuses = SITE_STATUSES.map(([value, label, test]) => ({ value, label, count: all.filter((s) => test(siteExpiry(s))).length }))
   const shown = f.apply(all, {
     text: (s) => [s.domain, s.title, s.user?.name, s.user?.email, s.user?.threadsUrl],
     date: (s) => s.expiresAt,
     status: (s, value) => SITE_STATUSES.find(([v]) => v === value)[2](siteExpiry(s)),
-  })
+  }).filter((s) => markFilter === 'all' || (markFilter === 'starred' ? s.starred : s.labels?.includes(markFilter)))
+
+  const mark = async (site, patch) => {
+    const before = { starred: site.starred, labels: site.labels ?? [] }
+    setMarks((m) => ({ ...m, [site.uid]: { ...before, ...patch } }))
+    try {
+      const saved = await markAdminSite(site.uid, patch)
+      setMarks((m) => ({ ...m, [site.uid]: saved }))
+    } catch (e) {
+      setMarks((m) => ({ ...m, [site.uid]: before }))
+      onNotice(`Không lưu được đánh dấu: ${e.message}`)
+    }
+  }
+
+  const labelCounts = Object.fromEntries(labels.map((l) => [l.id, all.filter((s) => s.labels?.includes(l.id)).length]))
+  const saveLabels = async (list) => {
+    const { labels: saved } = await saveSiteLabels(list)
+    setLabelList(saved)
+    // A deleted label can't stay selected as the filter.
+    if (markFilter !== 'all' && markFilter !== 'starred' && !saved.some((l) => l.id === markFilter)) setMarkFilter('all')
+    onNotice('Đã lưu danh sách nhãn.')
+  }
 
   const sweep = async () => {
     setSweeping(true)
@@ -684,6 +753,7 @@ function SitesTab({ onNotice }) {
         shown={shown.length}
         total={all.length}
       />
+      {all.length > 0 && <MarkFilter value={markFilter} onChange={setMarkFilter} labels={labels} sites={all} />}
       {!shown.length ? (
         <Status
           error={sites.error}
@@ -698,6 +768,9 @@ function SitesTab({ onNotice }) {
               key={s.uid}
               site={s}
               months={sites.data.extendMonths}
+              labels={labels}
+              onMark={(patch) => mark(s, patch)}
+              onManageLabels={() => setManaging(true)}
               onDone={(message) => {
                 onNotice(message)
                 sites.reload()
@@ -706,6 +779,7 @@ function SitesTab({ onNotice }) {
           ))}
         </ul>
       )}
+      {managing && <LabelManager labels={labels} counts={labelCounts} onSave={saveLabels} onClose={() => setManaging(false)} />}
     </section>
   )
 }

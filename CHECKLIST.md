@@ -14,11 +14,10 @@ Chỉ giải thích, không có gì để test.
 
 ---
 
-## 2. Kết nối Firebase: đăng nhập Google/Facebook, lưu thông tin user, lưu dữ liệu lên Firebase
+## 2. Kết nối Firebase: đăng nhập Google, lưu thông tin user, lưu dữ liệu lên Firebase
 
 - [ ] Chưa đăng nhập: mở web → chỉ thấy màn hình đăng nhập, không vào được trình soạn thảo
 - [ ] Đăng nhập bằng **Google** thành công
-- [ ] Đăng nhập bằng **Facebook** thành công
 - [ ] Đóng popup đăng nhập giữa chừng → không hiện lỗi
 - [ ] Firestore có `users/{uid}` với: tên, email, ảnh, providers, `createdAt`, `lastLoginAt`, `role: "user"`
 - [ ] Sửa trang → sau ~1,5 giây toolbar báo "Đã lưu lên đám mây"; tải lại trang → nội dung còn nguyên
@@ -715,12 +714,10 @@ Mỗi mẫu là một trang dài gồm 8–9 phần, mỗi phần tương ứng 
 
 - [ ] Bên trái là một **cột nhỏ**: trên cùng nút **Trang trắng** (khung nét đứt), dưới là **Trang đã lưu x/3** dạng danh sách gọn (ảnh nhỏ, tên, giờ sửa, nhãn Đang xuất bản / Chờ duyệt / Bị từ chối, link trang đang chạy); rê chuột → hiện nút xoá
 - [ ] Bấm một trang đã lưu → mở trình chỉnh sửa; bấm **Trang trắng** → tạo trang trống
-- [ ] Phần còn lại là **một mẫu phóng to**: "Mẫu 1 / N", tên, mô tả, nút **Dùng mẫu này**; khung xem trước to gần hết màn hình, **cuộn chuột trong khung** để xem hết cả trang mẫu
-- [ ] Nút **‹ ›** hai bên và phím **← →** chuyển mẫu (từ mẫu cuối → quay về mẫu đầu); đổi mẫu thì khung cuộn về đầu
-- [ ] Hàng chấm bên dưới: chấm đang xem kéo dài, bấm chấm bất kỳ → nhảy tới mẫu đó; rê chuột vào chấm → hiện tên mẫu
+- [ ] Phần còn lại là **danh sách mẫu** 2 cột, cuộn lên xuống (xem mục 82)
 - [ ] Đủ 3/3 trang → nút Trang trắng và "Dùng mẫu này" bị khoá, cột trái hiện nhắc xoá bớt trang
 - [ ] Thanh dung lượng góc trái dưới không che danh sách trang
-- [ ] Điện thoại: cột trang đã lưu nằm trên, khung mẫu bên dưới, vẫn chuyển mẫu được
+- [ ] Điện thoại: cột trang đã lưu nằm trên, danh sách mẫu bên dưới
 
 ## 66. Hỏi link Threads khi gửi yêu cầu xuất bản (chỉ lần đầu)
 
@@ -881,3 +878,70 @@ Lưu ý: trình duyệt luôn chặn nhạc có tiếng khi khách vừa mở tr
 - [ ] Nút "BẤM VÀO ĐÂY ĐỂ NHẬN IPHONE" **rung** liên tục, bấm mở Facebook
 - [ ] Bộ đếm "000069" chữ xanh lá nhấp nháy; hàng icon Facebook · Zalo · Threads · TikTok bấm được
 - [ ] Đổi tên, chữ, ảnh, link được như template thường; Xem trước và trang xuất bản chạy đủ hiệu ứng
+
+## 82. Trang chủ: danh sách mẫu 2 cột, cuộn lên xuống
+
+- [ ] Bên phải trang chủ có tiêu đề **Mẫu trang** + "N mẫu · bấm vào ảnh để xem toàn trang"; bên dưới là các mẫu xếp **2 mẫu mỗi hàng**
+- [ ] Mỗi ô: ảnh màn hình đầu của mẫu, tên, mô tả (tối đa 2 dòng), nút **Dùng mẫu này**; rê chuột → viền ô sáng lên, góc ảnh hiện "Xem toàn trang"
+- [ ] **Cuộn chuột** trong vùng mẫu → cuộn lên xuống xem hết các mẫu; cột trang đã lưu bên trái đứng yên
+- [ ] Bấm vào **ảnh** một mẫu → mở khung xem **toàn trang** (cuộn được tới cuối mẫu dài), có tên, mô tả, nút Dùng mẫu này; bấm ✕, phím **Esc** hoặc bấm ra ngoài → đóng
+- [ ] **Dùng mẫu này** (ở ô hoặc trong khung xem) → tạo trang từ mẫu và mở trình chỉnh sửa; đang tạo thì nút hiện "Đang tạo…"
+- [ ] Đủ 3/3 trang → mọi nút Dùng mẫu này bị khoá
+- [ ] Không còn nút ‹ › , hàng chấm và phím ← → chuyển mẫu như trước
+- [ ] Màn hình hẹp / điện thoại: danh sách trang đã lưu ở trên, bên dưới là mẫu **1 cột**, ảnh rộng kín ô, không đè lên danh sách trang đã lưu
+
+## 83. Admin ẩn / hiện mẫu cho người dùng
+
+- [ ] Quản trị → tab **Mẫu đã tạo**: mỗi mẫu có nút tròn góc trái trên — xanh **"Đang hiện"** (có hình con mắt)
+- [ ] Bấm nút → đổi thành xám **"Đang ẩn"** (mắt gạch chéo), ảnh + chữ của mẫu mờ đi; bấm lại → hiện lại. Lúc đang lưu nút hiện "Đang lưu…"
+- [ ] Hàng lọc có **Tất cả / Đang hiện / Đang ẩn** kèm số lượng, số đổi ngay khi ẩn/hiện; bấm "Đang ẩn" → chỉ còn các mẫu đang ẩn
+- [ ] Đăng nhập bằng tài khoản thường (hoặc tải lại trang chủ) → mẫu đang ẩn **không có** trong danh sách mẫu; mẫu hiện lại thì xuất hiện trở lại
+- [ ] Trang người dùng đã tạo từ mẫu bị ẩn vẫn mở và sửa bình thường
+- [ ] Bấm ảnh mẫu (kể cả mẫu đang ẩn) ở tab admin → vẫn xem trước được; nút xoá mẫu vẫn hoạt động
+- [ ] Chạy lại `npm run seed:templates` ở backend → mẫu mẫu đang ẩn **vẫn giữ ẩn**
+
+## 84. Gắn sao và nhãn cho trang web (tab Trang web & hạn dùng)
+
+Cần **deploy lại backend** trước khi thử.
+
+- [ ] Mỗi trang web có **ngôi sao** bên trái: bấm → sao vàng, cả dòng nền vàng nhạt; bấm lại → bỏ sao. Tải lại trang → vẫn giữ
+- [ ] Nút **Nhãn** (bên phải mỗi dòng) → menu tick chọn: Cần liên hệ, Đã thanh toán, Khách VIP, Có vấn đề, Theo dõi; tick → nhãn màu hiện cạnh tên miền ngay; bấm ra ngoài hoặc Esc → đóng menu
+- [ ] Bấm **×** trên một nhãn cạnh tên miền → bỏ nhãn đó
+- [ ] Hàng **Đánh dấu:** dưới bộ lọc — Tất cả / ★ Gắn sao / từng nhãn, kèm số trang; bấm → chỉ còn các trang đó (dùng chung được với bộ lọc trạng thái + ô tìm kiếm)
+- [ ] Menu Nhãn → **Quản lý nhãn…** → đổi tên, chọn màu, xoá nhãn (hỏi lại nếu đang gắn trên trang nào), **Thêm nhãn**; tên trống → nút Lưu bị khoá; Lưu → danh sách + màu cập nhật ngay, admin khác tải lại cũng thấy
+- [ ] Xoá một nhãn đang gắn → nhãn biến mất khỏi các trang; đang lọc theo nhãn đó thì tự về "Tất cả"
+- [ ] Mất mạng khi bấm sao / nhãn → trả về như cũ, hiện thông báo "Không lưu được đánh dấu…"
+- [ ] Người dùng xuất bản lại (cùng trang hoặc trang khác) → sao và nhãn **vẫn giữ**
+- [ ] Người dùng thường không thấy sao / nhãn ở đâu cả
+
+## 85. Bỏ đăng nhập bằng Facebook
+
+- [ ] Màn hình đăng nhập chỉ còn nút **Tiếp tục với Google**; không còn nút Facebook
+- [ ] Bấm nút → hiện "Đang đăng nhập…", đăng nhập Google bình thường; đóng popup giữa chừng → không báo lỗi
+- [ ] Tài khoản trước đây đã đăng nhập bằng Google vẫn vào được, thấy đủ trang đã lưu
+
+## 86. Đổi tên web thành "Web Siêu Lỏ", lời giới thiệu đăng nhập gọn lại
+
+- [ ] Tab trình duyệt hiện **"Web Siêu Lỏ — Thiết kế web kéo thả"**
+- [ ] Màn hình đăng nhập: tiêu đề **Web Siêu Lỏ**, dưới là một dòng "Kéo thả để làm trang web của riêng bạn.", rồi nút Tiếp tục với Google
+- [ ] Trang chủ: góc trái trên ghi **Web Siêu Lỏ**
+- [ ] Template Designer / Developer: dòng cuối trang ghi "… bằng Web Siêu Lỏ"; không còn chỗ nào ghi "Kéo Thả Web"
+
+## 87. Template "Thú cưng – Hồ sơ Boss mèo"
+
+- [ ] Trang chủ → template **Thú cưng – Hồ sơ Boss mèo** đứng đầu danh sách mẫu
+- [ ] Mở template: nền kem, tên "MÍT" chữ cam lớn, lời giới thiệu, ảnh mèo lớn trong khung vòm trên mảng màu đào
+- [ ] Bóng chat "Meo~ 😽" bay lên xuống, tim hồng đập, dấu chân 🐾 bay nhẹ
+- [ ] Thẻ **Thông tin cơ bản** (sinh nhật, cân nặng, giống, tiêm phòng, nơi ở, giờ ngủ), hai ô **Tui thích / Tui ghét**
+- [ ] 3 ảnh polaroid nghiêng có chú thích viết tay
+- [ ] Dưới cùng: "Thấy tui đi lạc? Gọi sen…" + số điện thoại + icon Facebook · Zalo · Threads bấm được
+- [ ] Đổi ảnh vòm / polaroid thành ảnh mèo của mình, sửa tên, thông tin được như template thường
+
+## 88. Template "Meme – Mọi thứ đều ổn 👍"
+
+- [ ] Trang chủ → template **Meme – Mọi thứ đều ổn 👍** đứng đầu danh sách mẫu
+- [ ] Nền xanh xám có chấm lưới và vệt mưa đen chéo kiểu truyện tranh; khung tiêu đề hồng viền đen "MỌI THỨ ĐỀU ỔN 👍" (đủ dấu)
+- [ ] Bong bóng thoại trắng, 4 dòng tình hình (Deadline, Ví tiền, Ngủ, Crush) mỗi dòng có nhãn "ỔN 👍" hồng, hơi lệch nghiêng
+- [ ] Khung hồng lớn viền đen bên phải có 👍 to nhảy nảy, nhãn "ỔN MÀ 👍" phía trên
+- [ ] **Thả ảnh meme** (kéo tệp ảnh) vào khung hồng → ảnh lấp vào hình, viền đen vẫn giữ; xoá 👍 và hai vệt má hồng nếu không cần
+- [ ] Nút đen "BẤM ĐỂ ĐƯỢC KHEN 👍" phập phồng, mở Facebook; icon Facebook · Zalo · Threads bấm được

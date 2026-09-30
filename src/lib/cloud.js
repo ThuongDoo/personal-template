@@ -7,7 +7,8 @@
  *   users/{uid}/designs/{id}    one document per page the user made ({ page, elements, createdAt, updatedAt })
  *   users/{uid}/exports/{id}    one record per "Lưu" / "Xuất HTML" (file name, kind, size, Storage path, url)
  *
- *   templates/{id}              page templates made by admins ({ name, description, page, elements, … })
+ *   templates/{id}              page templates made by admins ({ name, description, page, elements, hidden, … });
+ *                               hidden ones stay out of users' template list
  *
  * Storage
  *   users/{uid}/images/…        uploaded images (the design stores their download URLs)
@@ -27,17 +28,16 @@ import {
   query,
   serverTimestamp,
   setDoc,
+  updateDoc,
 } from 'firebase/firestore'
 import { getDownloadURL, ref, uploadBytes, uploadBytesResumable } from 'firebase/storage'
 import { normalizeDoc, uid as randomId } from './elements.js'
-import { auth, db, facebookProvider, googleProvider, storage } from './firebase.js'
+import { auth, db, googleProvider, storage } from './firebase.js'
 import { MAX_VIDEO_BYTES, readImageFile, readVideoSize } from './image.js'
 import { ensureRoom, noteUploaded } from './storageQuota.js'
 
 /** Firestore documents are capped at 1 MiB; leave room for field names and metadata. */
 const MAX_DESIGN_BYTES = 900_000
-
-const PROVIDERS = { google: googleProvider, facebook: facebookProvider }
 
 const IMAGE_EXT = {
   'image/jpeg': 'jpg',
@@ -69,7 +69,8 @@ const currentUid = () => {
 
 // ---------------------------------------------------------------- auth & profile
 
-export const signIn = (provider) => signInWithPopup(auth, PROVIDERS[provider])
+/** Signs in with Google, the only way in. */
+export const signIn = () => signInWithPopup(auth, googleProvider)
 
 export const signOut = () => fbSignOut(auth)
 
@@ -296,6 +297,7 @@ export async function listTemplates() {
           templateId: d.id,
           name: data.name,
           description: data.description ?? '',
+          hidden: data.hidden === true,
           create: () => normalizeDoc(structuredClone(design)),
         },
       ]
@@ -356,6 +358,9 @@ export async function saveTemplate(design, { name, description, source }) {
   })
   return { id: ref.id, failedImages }
 }
+
+/** Admin: shows or hides a template in users' template list. */
+export const setTemplateHidden = (id, hidden) => updateDoc(doc(templatesCol(), id), { hidden })
 
 // Copied images stay in Storage: another template may still use them.
 export const deleteTemplate = (id) => deleteDoc(doc(templatesCol(), id))

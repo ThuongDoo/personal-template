@@ -105,7 +105,8 @@ export default function Home({ user, isAdmin }) {
   // create() returns a fresh copy every call.
   const templates = useMemo(
     () =>
-      [BLANK_TEMPLATE, ...cloudTemplates].map((t) => ({
+      // Templates an admin hid aren't offered.
+      [BLANK_TEMPLATE, ...cloudTemplates.filter((t) => !t.hidden)].map((t) => ({
         ...t,
         preview: t.create(),
       })),
@@ -275,7 +276,7 @@ export default function Home({ user, isAdmin }) {
           <span className="brand-mark">
             <Icon name="logo" size={18} />
           </span>
-          <span>Kéo Thả Web</span>
+          <span>Web Siêu Lỏ</span>
         </div>
         <div className="spacer" />
         {isAdmin && (
